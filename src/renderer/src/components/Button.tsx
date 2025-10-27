@@ -96,6 +96,22 @@ export const Button: React.FC<ButtonProps> = ({
         box-shadow: none;
       }
 
+      .button--sm {
+        font: var(--preRegular14);
+        padding: 6px 16px;
+      }
+
+      .button--md {
+        font: var(--preMedium16);
+        padding: 8px 24px;
+      }
+
+      .button--lg {
+        font: var(--preMedium20);
+        padding: 10px 28px;
+      }
+
+
       /* spinner */
       .button__spinner {
         width: 14px;
