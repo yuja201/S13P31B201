@@ -1,17 +1,17 @@
 import { useState } from 'react'
 import type { ReactElement, CSSProperties } from 'react'
 
-interface SearchBarProps {
+interface MiniSearchBoxProps {
   placeholder?: string
   onSearch?: (value: string) => void
   onSearchClick?: () => void
 }
 
-const SearchBox = ({
+const MiniSearchBox = ({
   placeholder = '프로젝트 검색',
   onSearch,
   onSearchClick
-}: SearchBarProps): ReactElement => {
+}: MiniSearchBoxProps): ReactElement => {
   const [searchValue, setSearchValue] = useState('')
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
@@ -30,8 +30,8 @@ const SearchBox = ({
 
   const containerStyle: CSSProperties = {
     position: 'relative',
-    width: '675px',
-    height: '60px',
+    width: '228px',
+    height: '36px',
     display: 'flex',
     alignItems: 'center'
   }
@@ -41,8 +41,8 @@ const SearchBox = ({
     height: '100%',
     border: '1px solid #e8e8e8',
     borderRadius: '20px',
-    padding: '0 64px 0 32px',
-    fontSize: '24px',
+    padding: '8px 40px 8px 16px',
+    fontSize: '12px',
     fontFamily: 'var(--font-family)',
     fontWeight: 'var(--fw-regular)' as React.CSSProperties['fontWeight'],
     color: 'var(--color-dark-gray)',
@@ -54,7 +54,7 @@ const SearchBox = ({
 
   const iconStyle: CSSProperties = {
     position: 'absolute',
-    right: '32px',
+    right: '16px',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -64,14 +64,14 @@ const SearchBox = ({
     padding: 0,
     cursor: 'pointer',
     transition: 'color 0.2s ease',
-    fontSize: '30px'
+    fontSize: '20px'
   }
 
   return (
     <>
       <style>
         {`
-          .search-bar-input::placeholder {
+          .mini-search-box-input::placeholder {
             color: var(--color-placeholder);
             font-weight: var(--fw-regular);
           }
@@ -80,7 +80,7 @@ const SearchBox = ({
       <div style={containerStyle}>
         <input
           type="text"
-          className="search-bar-input"
+          className="mini-search-box-input"
           placeholder={placeholder}
           value={searchValue}
           onChange={handleChange}
@@ -108,4 +108,4 @@ const SearchBox = ({
   )
 }
 
-export default SearchBox
+export default MiniSearchBox
