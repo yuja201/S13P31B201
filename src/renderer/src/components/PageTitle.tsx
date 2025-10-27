@@ -1,9 +1,15 @@
+import React from 'react'
+
 type PageTitleProps = {
   title: string
   description?: string
+  size?: 'large' | 'small'
 }
 
-export default function PageTitle({ title, description }: PageTitleProps): JSX.Element {
+const PageTitle: React.FC<PageTitleProps> = ({ title, description, size = 'large' }) => {
+  const titleClass = size === 'small' ? 'preSemiBold24' : 'preBold32'
+  const descClass = size === 'small' ? 'preRegular16' : 'preLight20'
+
   return (
     <div
       style={{
@@ -16,7 +22,7 @@ export default function PageTitle({ title, description }: PageTitleProps): JSX.E
       }}
     >
       <h2
-        className="preSemiBold32"
+        className={titleClass}
         style={{
           color: 'var(--color-black)',
           lineHeight: '1.3'
@@ -24,19 +30,20 @@ export default function PageTitle({ title, description }: PageTitleProps): JSX.E
       >
         {title}
       </h2>
-
       {description && (
         <p
-          className="preMedium20"
+          className={descClass}
           style={{
             color: 'var(--color-dark-gray)',
-            lineHeight: '1.5',
+            lineHeight: '1.3',
             whiteSpace: 'pre-line'
           }}
         >
-          {description}
+          {description.replace(/\\n/g, '\n')}
         </p>
       )}
     </div>
   )
 }
+
+export default PageTitle
