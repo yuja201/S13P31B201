@@ -41,13 +41,12 @@ export const Button: React.FC<ButtonProps> = ({
         height: auto;
         padding: 8px 24px;
         border-radius: 8px;
-        font-family: var(--font-family-base);
-        font-weight: var(--font-semiBold);
-        font-size: var(--text-subtitle);
+        font-family: var(--font-family);
+        font: var(--preMedium20);
         cursor: pointer;
         transition: all 0.25s ease-in-out;
         border: none;
-        box-shadow: var(--shadow-default);
+        box-shadow: var(--shadow);
       }
 
       /* ORANGE */
@@ -72,7 +71,7 @@ export const Button: React.FC<ButtonProps> = ({
 
       /* MAIN */
       .button--main {
-        background-color: var(--color-main);
+        background-color: var(--color-main-blue);
         color: var(--color-white);
       }
       .button--main:hover {
@@ -82,11 +81,11 @@ export const Button: React.FC<ButtonProps> = ({
 
       /* GRAY */
       .button--gray {
-        background-color: var(--color-selected);
-        color: var(--color-gray-700);
+        background-color: rgba(250, 250, 250, 1);
+        color: var(--color-dark-gray);
       }
       .button--gray:hover {
-        background-color: var(--color-gray-300);
+        background-color: rgba(230, 230, 230, 1);
         box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.15);
       }
 
