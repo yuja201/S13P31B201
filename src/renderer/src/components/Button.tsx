@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 
-type ButtonVariant = 'orange' | 'yellow' | 'main' | 'gray'
+type ButtonVariant = 'orange' | 'yellow' | 'blue' | 'gray'
 type ButtonSize = 'sm' | 'md' | 'lg'
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
@@ -69,12 +69,12 @@ export const Button: React.FC<ButtonProps> = ({
         box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.15);
       }
 
-      /* MAIN */
-      .button--main {
+      /* BLUE */
+      .button--blue {
         background-color: var(--color-main-blue);
         color: var(--color-white);
       }
-      .button--main:hover {
+      .button--blue:hover {
         background-color: #0f3a6e;
         box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.15);
       }
