@@ -3,20 +3,11 @@ import React, { ReactNode, useEffect } from 'react'
 interface ModalProps {
   isOpen: boolean
   onClose: () => void
-  title?: string
-  subtitle?: string
   children: ReactNode
   width?: string
 }
 
-const Modal: React.FC<ModalProps> = ({
-  isOpen,
-  onClose,
-  title,
-  subtitle,
-  children,
-  width = '790px'
-}) => {
+const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, width = '790px' }) => {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent): void => {
       if (e.key === 'Escape') onClose()
@@ -34,11 +25,7 @@ const Modal: React.FC<ModalProps> = ({
           <button className="modal-close" onClick={onClose}>
             ✕
           </button>
-
-          {title && <h1 className="modal-title">{title}</h1>}
-          {subtitle && <p className="modal-subtitle">{subtitle}</p>}
-
-          <div className="modal-content">{children}</div>
+          {children}
         </div>
       </div>
 
@@ -77,23 +64,6 @@ const Modal: React.FC<ModalProps> = ({
           transition: color 0.2s;
         }
         .modal-close:hover {
-          color: var(--ev-c-black);
-        }
-
-        .modal-title {
-          font-size: 20px;
-          font-weight: 600;
-          margin-bottom: 6px;
-          color: var(--ev-c-black);
-        }
-        .modal-subtitle {
-          font-size: 14px;
-          color: var(--ev-c-gray-1);
-          margin-bottom: 20px;
-        }
-
-        .modal-content {
-          font-size: 14px;
           color: var(--ev-c-black);
         }
 
