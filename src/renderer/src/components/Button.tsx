@@ -50,7 +50,7 @@ export const Button: React.FC<ButtonProps> = ({
         box-shadow: var(--shadow-default);
       }
 
-      /* 🟧 ORANGE */
+      /* ORANGE */
       .button--orange {
         background-color: var(--color-orange);
         color: var(--color-white);
@@ -60,7 +60,7 @@ export const Button: React.FC<ButtonProps> = ({
         box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.15);
       }
 
-      /* 🟨 YELLOW */
+      /* YELLOW */
       .button--yellow {
         background-color: var(--color-yellow);
         color: var(--color-white);
@@ -70,7 +70,7 @@ export const Button: React.FC<ButtonProps> = ({
         box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.15);
       }
 
-      /* 🔵 MAIN */
+      /* MAIN */
       .button--main {
         background-color: var(--color-main);
         color: var(--color-white);
@@ -80,7 +80,7 @@ export const Button: React.FC<ButtonProps> = ({
         box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.15);
       }
 
-      /* ⚫ GRAY */
+      /* GRAY */
       .button--gray {
         background-color: var(--color-selected);
         color: var(--color-gray-700);
