@@ -239,17 +239,6 @@ body {
   background-color: var(--color-background);
 }
 
-.sidebar {
-  display: flex;
-  flex-direction: column;
-  width: 240px;
-  background-color: var(--color-main-blue);
-  color: white;
-  padding: 56px 16px 16px 16px;
-  box-sizing: border-box;
-  align-items: center;
-}
-
 .main-content {
   flex: 1;
   padding: 80px;

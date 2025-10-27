@@ -1,8 +1,8 @@
 // src/renderer/src/App.tsx
 import React from 'react'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import LandingPage from '@renderer/pages/LandingPage'
-import MainPage from '@renderer/pages/MainPage'
+import LandingPage from '@renderer/pages/LandingView'
+import MainPage from '@renderer/pages/MainView'
 import MainLayout from '@renderer/layouts/MainLayout'
 
 const App: React.FC = () => {
