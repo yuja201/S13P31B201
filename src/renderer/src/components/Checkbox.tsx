@@ -1,5 +1,5 @@
 import React from 'react'
-import checkIcon from '@renderer/assets/icons/check.png'
+import { FaCheck } from 'react-icons/fa'
 
 interface CheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
   label?: string
@@ -13,7 +13,9 @@ export const Checkbox: React.FC<CheckboxProps> = ({ label, size = 'md', ...props
     <>
       <label className={classNames}>
         <input type="checkbox" className="checkbox__input" {...props} />
-        <span className="checkbox__box" />
+        <span className="checkbox__box">
+          <FaCheck className="checkbox__icon" />
+        </span>
         {label && <span className="checkbox__label">{label}</span>}
       </label>
 
@@ -60,35 +62,33 @@ export const Checkbox: React.FC<CheckboxProps> = ({ label, size = 'md', ...props
           height: 22px;
         }
 
+        .checkbox--sm .checkbox__icon {
+          font-size: 8px;
+        }
+        .checkbox--md .checkbox__icon {
+          font-size: 10px;
+        }
+        .checkbox--lg .checkbox__icon {
+          font-size: 12px;
+        }
+
         /* 체크된 상태 */
         .checkbox__input:checked + .checkbox__box {
           background-color: var(--color-main-blue);
           border-color: var(--color-main-blue);
         }
 
-        .checkbox__input:checked + .checkbox__box::after {
-          content: '';
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          background-image: url(${checkIcon});
-          background-position: center;
-          background-size: contain;
-          background-repeat: no-repeat;
+        .checkbox__input:checked + .checkbox__box .checkbox__icon {
+          color: var(--color-white);
+          opacity: 1;
+          transform: scale(1);
         }
 
-        .checkbox--sm .checkbox__input:checked + .checkbox__box::after {
-          width: 9px;
-          height: 7px;
-        }
-        .checkbox--md .checkbox__input:checked + .checkbox__box::after {
-          width: 12px;
-          height: 10px;
-        }
-        .checkbox--lg .checkbox__input:checked + .checkbox__box::after {
-          width: 15px;
-          height: 13px;
+        .checkbox__box .checkbox__icon {
+          color: var(--color-white);
+          opacity: 0;
+          transform: scale(0.5);
+          transition: all 0.2s ease;
         }
 
         .checkbox:hover .checkbox__box {
