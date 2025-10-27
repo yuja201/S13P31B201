@@ -17,12 +17,22 @@ export const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props
 }) => {
-  useEffect(() => {
-    if (document.getElementById('button-component-style')) return
+  useEffect(() => {}, [])
 
-    const style = document.createElement('style')
-    style.id = 'button-component-style'
-    style.innerHTML = `
+  const classNames = [
+    'button',
+    `button--${variant}`,
+    `button--${size}`,
+    disabled ? 'button--disabled' : ''
+  ].join(' ')
+
+  return (
+    <>
+      <button className={classNames} disabled={disabled || isLoading} {...props}>
+        {isLoading && <span className="button__spinner" />}
+        {children}
+      </button>
+      <style>{`
       .button {
         display: inline-flex;
         align-items: center;
@@ -101,21 +111,7 @@ export const Button: React.FC<ButtonProps> = ({
       @keyframes spin {
         to { transform: rotate(360deg); }
       }
-    `
-    document.head.appendChild(style)
-  }, [])
-
-  const classNames = [
-    'button',
-    `button--${variant}`,
-    `button--${size}`,
-    disabled ? 'button--disabled' : ''
-  ].join(' ')
-
-  return (
-    <button className={classNames} disabled={disabled || isLoading} {...props}>
-      {isLoading && <span className="button__spinner" />}
-      {children}
-    </button>
+    `}</style>
+    </>
   )
 }
