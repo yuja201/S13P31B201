@@ -1,0 +1,113 @@
+/* ==============================
+       Font (Local Pretendard)
+   ============================== */
+@font-face {
+  font-family: 'Pretendard';
+  src: url('../assets/fonts/Pretendard-Regular.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('../assets/fonts/Pretendard-Medium.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Pretendard';
+  src: url('../assets/fonts/Pretendard-SemiBold.woff2') format('woff2');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ==============================
+     Global Design Tokens
+   ============================== */
+:root {
+  /* Color Palette */
+  --color-orange: #f48523;
+  --color-main-blue: #134686;
+  --color-yellow: #feb21a;
+  --color-light-blue: #d7f0ff;
+  --color-light-green: #ecfdf3;
+  --color-placeholder: #d5d7da;
+  --color-dark-gray: #666666;
+  --color-white: #ffffff;
+  --color-black: #000000;
+  --color-header: #fafafa;
+
+  /* Font Family & Weights */
+  --font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
+  --fw-light: 300;
+  --fw-regular: 400;
+  --fw-medium: 500;
+  --fw-semiBold: 600;
+
+  /* Text Styles */
+  --preSemiBold32: var(--fw-semiBold) 32px/1.3 var(--font-family);
+  --preSemiBold24: var(--fw-semiBold) 24px/1.4 var(--font-family);
+  --preMedium20: var(--fw-medium) 20px/1.4 var(--font-family);
+  --preRegular16: var(--fw-regular) 16px/1.6 var(--font-family);
+  --preLight18: var(--fw-light) 18px/1.6 var(--font-family);
+  --preMedium16: var(--fw-medium) 16px/1.4 var(--font-family);
+  --preSemiBold12: var(--fw-semiBold) 12px/1.3 var(--font-family);
+  --preLight12: var(--fw-light) 12px/1.3 var(--font-family);
+
+  /* Shadow */
+  --shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* ==============================
+    Utility Classes
+   ============================== */
+.preSemiBold32 {
+  font: var(--preSemiBold32);
+}
+.preSemiBold24 {
+  font: var(--preSemiBold24);
+}
+.preMedium20 {
+  font: var(--preMedium20);
+}
+.preLight18 {
+  font: var(--preLight18);
+}
+.preRegular16 {
+  font: var(--preRegular16);
+}
+.preMedium16 {
+  font: var(--preMedium16);
+}
+.preSemiBold12 {
+  font: var(--preSemiBold12);
+}
+.preLight12 {
+  font: var(--preLight12);
+}
+
+.shadow {
+  box-shadow: var(--shadow);
+}
+
+/* ==============================
+      Reset & Defaults
+   ============================== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--font-family);
+  font-weight: var(--fw-regular);
+  color: var(--color-black);
+  background-color: var(--color-white);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
