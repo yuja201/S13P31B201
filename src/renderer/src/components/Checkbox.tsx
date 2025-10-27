@@ -65,7 +65,7 @@ export const Checkbox: React.FC<CheckboxProps> = ({ label, ...props }) => {
         }
 
         .checkbox__label {
-          font: var(--preRegular16);
+          font: var(--preMedium20);
           color: var(--color-dark-gray);
         }
 
