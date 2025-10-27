@@ -1,14 +1,17 @@
 import React from 'react'
-import checkIcon from '../assets/icons/check.png'
+import checkIcon from '@renderer/assets/icons/check.png'
 
-interface CheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> {
+interface CheckboxProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, 'size'> {
   label?: string
+  size?: 'sm' | 'md' | 'lg'
 }
 
-export const Checkbox: React.FC<CheckboxProps> = ({ label, ...props }) => {
+export const Checkbox: React.FC<CheckboxProps> = ({ label, size = 'md', ...props }) => {
+  const classNames = ['checkbox', `checkbox--${size}`].join(' ')
+
   return (
     <>
-      <label className="checkbox">
+      <label className={classNames}>
         <input type="checkbox" className="checkbox__input" {...props} />
         <span className="checkbox__box" />
         {label && <span className="checkbox__label">{label}</span>}
@@ -32,16 +35,29 @@ export const Checkbox: React.FC<CheckboxProps> = ({ label, ...props }) => {
         }
 
         .checkbox__box {
-          width: 18px;
-          height: 18px;
-          border-radius: 3px;
-          border: 2px solid var(--color-placeholder);
-          background-color: var(--color-white);
+          position: relative;
           display: inline-flex;
           align-items: center;
           justify-content: center;
+          border-radius: 3px;
+          border: 2px solid var(--color-placeholder);
+          background-color: var(--color-white);
           transition: all 0.2s ease;
           box-shadow: var(--shadow);
+          flex-shrink: 0;
+        }
+
+        .checkbox--sm .checkbox__box {
+          width: 14px;
+          height: 14px;
+        }
+        .checkbox--md .checkbox__box {
+          width: 18px;
+          height: 18px;
+        }
+        .checkbox--lg .checkbox__box {
+          width: 22px;
+          height: 22px;
         }
 
         /* 체크된 상태 */
@@ -52,24 +68,48 @@ export const Checkbox: React.FC<CheckboxProps> = ({ label, ...props }) => {
 
         .checkbox__input:checked + .checkbox__box::after {
           content: '';
-          width: 12px;
-          height: 10px;
-          background-image: url(${checkIcon}); 
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background-image: url(${checkIcon});
           background-position: center;
           background-size: contain;
           background-repeat: no-repeat;
+        }
+
+        .checkbox--sm .checkbox__input:checked + .checkbox__box::after {
+          width: 9px;
+          height: 7px;
+        }
+        .checkbox--md .checkbox__input:checked + .checkbox__box::after {
+          width: 12px;
+          height: 10px;
+        }
+        .checkbox--lg .checkbox__input:checked + .checkbox__box::after {
+          width: 15px;
+          height: 13px;
         }
 
         .checkbox:hover .checkbox__box {
           border-color: var(--color-main-blue);
         }
 
-        .checkbox__label {
+        .checkbox--sm .checkbox__label {
+          font: var(--preRegular14);
+        }
+        .checkbox--md .checkbox__label {
+          font: var(--preMedium16);
+        }
+        .checkbox--lg .checkbox__label {
           font: var(--preMedium20);
+        }
+
+        .checkbox__label {
           color: var(--color-dark-gray);
         }
 
-        /* 비활성화 상태 */
+        /* disabled 상태 */
         .checkbox__input:disabled + .checkbox__box {
           background-color: var(--color-placeholder);
           border-color: var(--color-placeholder);
@@ -85,3 +125,5 @@ export const Checkbox: React.FC<CheckboxProps> = ({ label, ...props }) => {
     </>
   )
 }
+
+export default Checkbox
