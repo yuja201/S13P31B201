@@ -1,9 +1,14 @@
 // src/renderer/src/components/Sidebar.tsx
 import React from 'react'
 import { Link } from 'react-router-dom'
-import { FaDatabase, FaLink, FaChartBar, FaClipboardList, FaHistory, FaCog } from 'react-icons/fa'
+import { FaDatabase, FaLink, FaChartBar, FaHistory } from 'react-icons/fa'
 import logoIcon from '@renderer/assets/icons/logo.svg'
 import { LiaExchangeAltSolid } from 'react-icons/lia'
+import { GrUpdate } from "react-icons/gr";
+import { RxDashboard } from "react-icons/rx";
+import { IoSettingsSharp } from "react-icons/io5";
+
+
 
 const Sidebar: React.FC = () => {
   const currentTime = new Date().toLocaleString('ko-KR', {
@@ -32,11 +37,11 @@ const Sidebar: React.FC = () => {
               <LiaExchangeAltSolid />
             </p>
             <div className="project-box shadow">
-              <div className="preSemiBold20">FORINGKOR</div>
-              <div className="preLight12">PostgreSQL</div>
+              <div className="project-name preSemiBold20">FORINGKOR</div>
+              <div className="project-db preLight12">PostgreSQL</div>
             </div>
             <div className="preLight12 project-time">
-              <FaHistory style={{ marginRight: '6px' }} />
+              <GrUpdate />
               {currentTime}
             </div>
           </div>
@@ -44,7 +49,7 @@ const Sidebar: React.FC = () => {
         {/* 네비게이션 메뉴 */}
         <nav className="sidebar-menu">
           <Link to="/main/dashboard" className="sidebar-link">
-            <FaClipboardList /> 프로젝트 대시보드
+            <RxDashboard /> 프로젝트 대시보드
           </Link>
           <Link to="/main/info" className="sidebar-link">
             <FaLink /> 프로젝트 정보
@@ -62,7 +67,7 @@ const Sidebar: React.FC = () => {
 
         {/* 하단 설정 아이콘 */}
         <div className="sidebar-footer">
-          <FaCog size={20} />
+          <IoSettingsSharp size={28} />
         </div>
       </aside>
 
@@ -114,6 +119,37 @@ const Sidebar: React.FC = () => {
           padding: 16px 8px;
           border-radius: 10px;
           width: 100%;
+        }
+        .project-time{
+          display: flex;
+          gap: 8px;
+          justify-content: center;
+        }
+        .sidebar-menu{
+          width: 100%;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+        }
+        .sidebar-link{
+          width: 100%;
+          height: 52px;
+          display: flex;
+          padding: 0 16px;
+          align-items: center;
+          gap: 24px;
+          font: preSemibold16;
+          color: var(--color-white);
+
+        }
+        .sidebar-footer{
+          width: 100%;
+          height: 100%;
+          display: flex;
+          align-items: start;
+          justify-content: flex-end;
+          flex-direction: column;
+          padding: 16px;
         }
       `}
       </style>
