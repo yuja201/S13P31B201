@@ -242,6 +242,6 @@ body {
 .main-content {
   flex: 1;
   padding: 80px;
-  background-color: #fff;
+  background-color: var(--color-background);
   overflow-y: auto;
 }
