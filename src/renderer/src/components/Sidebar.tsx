@@ -1,5 +1,4 @@
-// src/renderer/src/components/Sidebar.tsx
-import React from 'react'
+import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FaDatabase, FaLink, FaChartBar, FaHistory } from 'react-icons/fa'
 import logoIcon from '@renderer/assets/icons/logo.svg'
@@ -7,10 +6,12 @@ import { LiaExchangeAltSolid } from 'react-icons/lia'
 import { GrUpdate } from "react-icons/gr";
 import { RxDashboard } from "react-icons/rx";
 import { IoSettingsSharp } from "react-icons/io5";
-
-
+import { BsLayoutSidebar } from "react-icons/bs";
 
 const Sidebar: React.FC = () => {
+  const [collapsed, setCollapsed] = useState(false)
+  const toggleSidebar = () => setCollapsed(!collapsed)
+
   const currentTime = new Date().toLocaleString('ko-KR', {
     year: 'numeric',
     month: '2-digit',
@@ -22,31 +23,48 @@ const Sidebar: React.FC = () => {
 
   return (
     <>
-      <aside className="sidebar">
+      <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
+
+        {/* 헤더 */}
         <div className="sidebar-header">
-          {/* 로고 영역 */}
-          <div className="sidebar-logo">
-            <img src={logoIcon} alt="Logo" className="logo" />
-            <h2 className="preSemiBold24 sidebar-title">Here&apos;s Dummy</h2>
+          <div className="logo-row">
+            {/* 로고/아이콘 전환 영역 */}
+            <div
+              className="logo-hover-wrapper"
+              onClick={collapsed ? toggleSidebar : undefined}
+            >
+              <img src={logoIcon} alt="Logo" className={`logo ${collapsed ? 'logo-collapsed' : ''}`} />
+              {collapsed && (
+                <div className="sidebar-hover-icon">
+                  <BsLayoutSidebar size={22} />
+                </div>
+              )}
+            </div>
+
+            {/* 펼쳐진 상태일 때 오른쪽 상단 아이콘 */}
+            {!collapsed && (
+              <button className="sidebar-toggle-btn" onClick={toggleSidebar}>
+                <BsLayoutSidebar size={20} />
+              </button>
+            )}
           </div>
 
-          {/* 현재 프로젝트 정보 */}
+          {/* 프로젝트 정보 */}
           <div className="sidebar-project">
             <p className="preRegular16 project-label">
               현재 프로젝트
-              <LiaExchangeAltSolid />
             </p>
             <div className="project-box shadow">
               <div className="project-name preSemiBold20">FORINGKOR</div>
               <div className="project-db preLight12">PostgreSQL</div>
             </div>
             <div className="preLight12 project-time">
-              <GrUpdate />
-              {currentTime}
+              <GrUpdate /> {currentTime}
             </div>
           </div>
-        </div>
-        {/* 네비게이션 메뉴 */}
+        </div >
+
+        {/* 메뉴 */}
         <nav className="sidebar-menu">
           <Link to="/main/dashboard" className="sidebar-link">
             <RxDashboard /> 프로젝트 대시보드
@@ -65,52 +83,111 @@ const Sidebar: React.FC = () => {
           </Link>
         </nav>
 
-        {/* 하단 설정 아이콘 */}
-        <div className="sidebar-footer">
+        {/* footer */}
+        <div className={`sidebar-footer ${collapsed ? 'footer-collapsed' : ''}`}>
           <IoSettingsSharp size={28} />
         </div>
-      </aside>
+      </aside >
 
       <style>
         {`
         .sidebar {
           display: flex;
           flex-direction: column;
-          width: 240px;
+          width: 260px;
           background-color: var(--color-main-blue);
           color: white;
-          padding: 56px 16px 16px 16px;
+          padding: 24px 16px;
           box-sizing: border-box;
           align-items: center;
-          gap: 80px
+          transition: width 0.3s ease;
+          position: relative;
         }
-        .sidebar-header{
+
+        .collapsed {
+          width: 90px;
+        }
+
+        .sidebar-header {
           display: flex;
           flex-direction: column;
-          gap: 40px;
-          width:100%
+          width: 100%;
+          padding: 16px;
         }
-        .sidebar-logo{
+
+        /* 로고 줄 */
+        .logo-row {
           display: flex;
-          flex-direction: column;
+          justify-content: space-between;
+          width: 100%;
           align-items: center;
+          min-height: 32px; 
         }
-        .logo{
-          width: 38px
           
+        .logo-hover-wrapper {
+          position: relative;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
         }
-        .sidebar-project{
+
+        .logo {
+          width: 26px;
+          transition: transform 0.2s ease, opacity 0.25s ease;
+        }
+
+       .sidebar.collapsed .logo-hover-wrapper:hover .logo {
+          opacity: 0;
+        }
+       .sidebar-hover-icon {
+          position: absolute;
+          opacity: 0;
+          transition: opacity 0.25s ease;
+          color: white;
+          z-index: 1;
+        }
+
+        .sidebar.collapsed .logo-hover-wrapper:hover .sidebar-hover-icon {
+          opacity: 1;
+          z-index: 3;
+        }
+
+        /* 펼쳐진 상태 오른쪽 상단 토글 아이콘 */
+        .sidebar-toggle-btn {
+          background: transparent;
+          border: none;
+          color: white;
+          cursor: pointer;
+          border-radius: 6px;
+          transition: background 0.2s ease;
+          display: flex;
+          padding: 6px;
+        }
+        .sidebar-toggle-btn:hover {
+          background: rgba(255,255,255,0.1);
+        }
+
+        .sidebar-project {
           display: flex;
           flex-direction: column;
           align-items: center;
           gap: 16px;
+          margin-top: 56px;
+          width: 100%;
+          transition: opacity 0.2s ease-out, max-height 0.3s ease, margin-top 0.3s ease;
+          opacity: 1;
+          max-height: 500px; /* (충분히 큰 값) */
+          overflow: hidden;
         }
-        .project-label{
+
+        .project-label {
           display: flex;
           align-items: center;
           gap: 8px;
         }
-        .project-box{
+
+        .project-box {
           display: flex;
           flex-direction: column;
           align-items: center;
@@ -120,36 +197,59 @@ const Sidebar: React.FC = () => {
           border-radius: 10px;
           width: 100%;
         }
-        .project-time{
+
+        .project-time {
           display: flex;
           gap: 8px;
           justify-content: center;
         }
-        .sidebar-menu{
-          width: 100%;
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-        }
-        .sidebar-link{
-          width: 100%;
-          height: 52px;
-          display: flex;
-          padding: 0 16px;
-          align-items: center;
-          gap: 24px;
-          font: preSemibold16;
-          color: var(--color-white);
 
-        }
-        .sidebar-footer{
+        .sidebar-menu {
           width: 100%;
-          height: 100%;
           display: flex;
-          align-items: start;
-          justify-content: flex-end;
           flex-direction: column;
-          padding: 16px;
+          align-items: center;
+          margin-top: 56px; 
+          transition: opacity 0.2s ease-out, max-height 0.3s ease, margin-top 0.3s ease;
+          opacity: 1;
+          max-height: 500px; /* (충분히 큰 값) */
+          overflow: hidden;
+        }
+
+        .sidebar-link {
+          width: 100%;
+          height: 48px;
+          display: flex;
+          align-items: center;
+          gap: 20px;
+          padding: 0 16px;
+          border-radius: 8px;
+          color: var(--color-white);
+          text-decoration: none;
+          transition: all 0.2s;
+        }
+
+        .sidebar-link:hover {
+          background: var(--color-white);
+          color: var(--color-main-blue);
+        }
+
+        .sidebar-footer {
+          width: 100%;
+          margin-top: auto;
+          display: flex;
+          justify-content: start;
+          padding: 15px;
+          transition: all 0.3s ease;
+        }
+        
+        /* --- 접혔을 때 콘텐츠 숨김 처리 --- */
+        .sidebar.collapsed .sidebar-project,
+        .sidebar.collapsed .sidebar-menu {
+          opacity: 0;
+          max-height: 0;
+          margin-top: 0;
+          pointer-events: none; /* (숨겨졌을 때 클릭 방지) */
         }
       `}
       </style>
