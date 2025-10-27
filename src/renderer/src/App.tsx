@@ -1,35 +1,23 @@
-import Versions from './components/Versions'
-import electronLogo from './assets/electron.svg'
-import './styles/global.css'
+// src/renderer/src/App.tsx
+import React from 'react'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import LandingPage from '@renderer/pages/LandingPage'
+import MainPage from '@renderer/pages/MainPage'
+import MainLayout from '@renderer/layouts/MainLayout'
 
-function App(): React.JSX.Element {
-  const ipcHandle = (): void => window.electron.ipcRenderer.send('ping')
-
+const App: React.FC = () => {
   return (
-    <>
-      <img alt="logo" className="logo" src={electronLogo} />
-      <div className="creator">Powered by electron-vite</div>
-      <div className="text">
-        Build an Electron app with <span className="react">React</span>
-        &nbsp;and <span className="ts">TypeScript</span>
-      </div>
-      <p className="tip">
-        Please try pressing <code>F12</code> to open the devTool
-      </p>
-      <div className="actions">
-        <div className="action">
-          <a href="https://electron-vite.org/" target="_blank" rel="noreferrer">
-            Documentation
-          </a>
-        </div>
-        <div className="action">
-          <a target="_blank" rel="noreferrer" onClick={ipcHandle}>
-            Send IPC
-          </a>
-        </div>
-      </div>
-      <Versions></Versions>
-    </>
+    <BrowserRouter>
+      <Routes>
+        {/* 첫 진입 화면: 사이드바 없는 랜딩 페이지 */}
+        <Route path="/" element={<LandingPage />} />
+
+        {/* 사이드바 포함된 페이지들 */}
+        <Route path="/main" element={<MainLayout />}>
+          <Route index element={<MainPage />} />
+        </Route>
+      </Routes>
+    </BrowserRouter>
   )
 }
 
