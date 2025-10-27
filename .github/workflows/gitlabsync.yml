@@ -1,0 +1,32 @@
+name: Sync this repository to another repository
+ 
+on:
+  push: # push가 발생하면
+    branches: '**'
+  pull_request: # PR이 발생하면
+    branches: '**'
+ 
+  # Actions 수동 실행 옵션
+  workflow_dispatch:
+ 
+jobs:
+  push-to-gitlab:
+    runs-on: ubuntu-latest
+ 
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0 # Fetch all history for all tags and branches
+      
+      - name: Set remote repository
+        env: # 환경 변수 세팅(토큰, 주소)
+          gitlab_url: ${{ secrets.GITLAB_URL }}
+          gitlab_token_name: ${{ secrets.GITLAB_TOKEN_NAME }}
+          gitlab_token: ${{ secrets.GITLAB_TOKEN }}
+        run: | # gitlab을 remote로 추가
+          git remote add gitlab https://${gitlab_token_name}:${gitlab_token}@${gitlab_url#https://};
+      - name: Force push everthing
+        run: | # 모든 브랜치와 태그를 푸시
+          git push -f --all gitlab;
+          git push -f --tags gitlab;
