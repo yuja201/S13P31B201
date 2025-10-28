@@ -3,7 +3,7 @@ import PageTitle from '@renderer/components/PageTitle'
 import DBTableList from '@renderer/components/DBTableList'
 import DBTableDetail from '@renderer/components/DBTableDetail'
 
-// 컬럼 상세 정보 타입을 정의
+// 컬럼 상세 정보 타입
 export type ColumnDetail = {
   name: string
   type: string
@@ -12,7 +12,7 @@ export type ColumnDetail = {
   setting: string
 }
 
-// 테이블 전체 정보 타입을 정의(DBTableList가 import할 수 있게 export)
+// 테이블 전체 정보 타입
 export type TableInfo = {
   id: string
   name: string
@@ -21,7 +21,7 @@ export type TableInfo = {
   columnDetails: ColumnDetail[] // columnDetails를 포함시킵니다.
 }
 
-// Mock 데이터 (원래는 API로 받아와야 합니다)
+// Mock 데이터
 const mockTables = [
   {
     id: 'users',
@@ -69,7 +69,163 @@ const mockTables = [
       }
       // ... (posts 테이블의 컬럼들)
     ]
+  },
+  {
+    id: 'name',
+    name: 'name',
+    columns: 6,
+    rows: 15324,
+
+    // 컬럼 데이터
+    columnDetails: [
+      {
+        name: 'id',
+        type: 'VARCHAR(50)',
+        constraints: ['PK', 'NOT NULL', 'UNIQUE'],
+        generation: 'Faker.js',
+        setting: '아이디'
+      },
+      {
+        name: 'age',
+        type: 'INTEGER',
+        constraints: ['FK', 'ENUM'],
+        generation: '참조',
+        setting: 'user.id(2)'
+      },
+      {
+        name: 'created_at',
+        type: 'DATETIME',
+        constraints: ['NOT NULL'],
+        generation: '-',
+        setting: '-'
+      }
+    ]
+  },
+  {
+    id: 'age',
+    name: 'age',
+    columns: 6,
+    rows: 15324,
+
+    // 컬럼 데이터
+    columnDetails: [
+      {
+        name: 'id',
+        type: 'VARCHAR(50)',
+        constraints: ['PK', 'NOT NULL', 'UNIQUE'],
+        generation: 'Faker.js',
+        setting: '아이디'
+      },
+      {
+        name: 'age',
+        type: 'INTEGER',
+        constraints: ['FK', 'ENUM'],
+        generation: '참조',
+        setting: 'user.id(2)'
+      },
+      {
+        name: 'created_at',
+        type: 'DATETIME',
+        constraints: ['NOT NULL'],
+        generation: '-',
+        setting: '-'
+      }
+    ]
+  },
+  {
+    id: 'age',
+    name: 'age',
+    columns: 6,
+    rows: 15324,
+
+    // 컬럼 데이터
+    columnDetails: [
+      {
+        name: 'id',
+        type: 'VARCHAR(50)',
+        constraints: ['PK', 'NOT NULL', 'UNIQUE'],
+        generation: 'Faker.js',
+        setting: '아이디'
+      },
+      {
+        name: 'age',
+        type: 'INTEGER',
+        constraints: ['FK', 'ENUM'],
+        generation: '참조',
+        setting: 'user.id(2)'
+      },
+      {
+        name: 'created_at',
+        type: 'DATETIME',
+        constraints: ['NOT NULL'],
+        generation: '-',
+        setting: '-'
+      }
+    ]
+  },
+  {
+    id: 'age',
+    name: 'age',
+    columns: 6,
+    rows: 15324,
+
+    // 컬럼 데이터
+    columnDetails: [
+      {
+        name: 'id',
+        type: 'VARCHAR(50)',
+        constraints: ['PK', 'NOT NULL', 'UNIQUE'],
+        generation: 'Faker.js',
+        setting: '아이디'
+      },
+      {
+        name: 'age',
+        type: 'INTEGER',
+        constraints: ['FK', 'ENUM'],
+        generation: '참조',
+        setting: 'user.id(2)'
+      },
+      {
+        name: 'created_at',
+        type: 'DATETIME',
+        constraints: ['NOT NULL'],
+        generation: '-',
+        setting: '-'
+      }
+    ]
+  },
+  {
+    id: 'age',
+    name: 'age',
+    columns: 6,
+    rows: 15324,
+
+    // 컬럼 데이터
+    columnDetails: [
+      {
+        name: 'id',
+        type: 'VARCHAR(50)',
+        constraints: ['PK', 'NOT NULL', 'UNIQUE'],
+        generation: 'Faker.js',
+        setting: '아이디'
+      },
+      {
+        name: 'age',
+        type: 'INTEGER',
+        constraints: ['FK', 'ENUM'],
+        generation: '참조',
+        setting: 'user.id(2)'
+      },
+      {
+        name: 'created_at',
+        type: 'DATETIME',
+        constraints: ['NOT NULL'],
+        generation: '-',
+        setting: '-'
+      }
+    ]
   }
+
   // ... (product, reviews 등 나머지 테이블)
 ]
 
@@ -89,13 +245,11 @@ const CreateDummyView: React.FC = () => {
         {/* --- 메인 컨텐츠 (2단 레이아웃) --- */}
         <div className="dummy-content-wrapper">
           {/* ---  왼쪽 테이블 목록 --- */}
-          <div className="table-list-container shadow">
-            <DBTableList
-              tables={mockTables}
-              focusedTableId={focusedTable.id}
-              onTableSelect={setFocusedTable}
-            />
-          </div>
+          <DBTableList
+            tables={mockTables}
+            focusedTableId={focusedTable.id}
+            onTableSelect={setFocusedTable}
+          />
 
           {/* --- 오른쪽 상세 설정 --- */}
           <div className="table-detail-container shadow">
@@ -121,20 +275,11 @@ const CreateDummyView: React.FC = () => {
           flex-grow: 1;
           min-height: 0;
          }
-        .table-list-container {
-          width: 280px;
-          flex-shrink: 0;
-          background-color: var(--color-white);
-          border-radius: 10px;
-          padding: 20px;
-          overflow-y: auto;
-        }
         .table-detail-container {
           flex-grow: 1;
           background-color: var(--color-white);
           border-radius: 10px;
           padding: 32px;
-          overflow-y: auto;
         }
       `}</style>
     </>

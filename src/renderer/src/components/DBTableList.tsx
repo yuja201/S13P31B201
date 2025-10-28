@@ -27,6 +27,7 @@ const DBTableList: React.FC<DBTableListProps> = ({ tables, focusedTableId, onTab
 
   return (
     <>
+      <div className="table-list-wrapper"></div>
       <div className="table-list-container">
         {/* --- 테이블 목록 헤더 --- */}
         <div className="list-header">
@@ -62,11 +63,12 @@ const DBTableList: React.FC<DBTableListProps> = ({ tables, focusedTableId, onTab
             </li>
           ))}
         </ul>
-      </div>
-      {/* --- 하단 선택 개수 --- */}
-      <div className="list-footer preRegular14">
-        <span>선택된 테이블</span>
-        <span>{selectedTableIds.size}개</span>
+
+        {/* --- 하단 선택 개수 --- */}
+        <div className="list-footer preRegular14">
+          <span>선택된 테이블</span>
+          <span>{selectedTableIds.size}개</span>
+        </div>
       </div>
 
       {/* --- TableList 전용 스타일 --- */}
@@ -112,8 +114,6 @@ const DBTableList: React.FC<DBTableListProps> = ({ tables, focusedTableId, onTab
           overflow-y: auto; 
           list-style: none; 
           padding: 10px 4px 0 0; 
-          margin-bottom:30px
-           
         }
         .table-list-item {
           display: flex;
@@ -151,10 +151,11 @@ const DBTableList: React.FC<DBTableListProps> = ({ tables, focusedTableId, onTab
           color: var(--color-dark-gray);
         }
         .list-footer {
+          width: 100%;
           display: flex;
           justify-content: space-between;
           color: var(--color-dark-gray);
-          margin-top: 24px;
+          margin-top: 8px;
           padding-top: 16px;
           border-top: 1px solid var(--color-gray-200);
           flex-shrink: 0;

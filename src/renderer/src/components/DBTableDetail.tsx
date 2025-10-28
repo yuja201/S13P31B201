@@ -65,7 +65,6 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
               </td>
               <td>{col.generation}</td>
               <td>
-                {/* [!] 3. <button>을 <Button> 컴포넌트로 교체 */}
                 <Button variant="gray" size="sm">
                   {col.setting} 🖊️
                 </Button>
@@ -107,7 +106,6 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
           border-radius: 6px;
         }
 
-        /* 컬럼 테이블 */
         .column-table {
           width: 100%;
           margin-top: 24px;
@@ -124,7 +122,6 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
           color: var(--color-dark-gray);
         }
 
-        /* 뱃지 스타일 (유지) */
         .constraint-badges {
           display: flex;
           gap: 4px;
