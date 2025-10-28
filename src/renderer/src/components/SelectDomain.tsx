@@ -193,7 +193,7 @@ const SelectDomain: React.FC = () => {
         }
 
         .select-domain__title {
-          font: var(--preMedium16);
+          font: var(--preSemiBold16);
           color: var(--color-black);
         }
 

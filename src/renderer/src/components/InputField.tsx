@@ -37,7 +37,7 @@ const InputField = ({
   const widthValue = typeof width === 'number' ? `${width}px` : width
   const fontWeight = titleBold ? 'var(--fw-semiBold)' : 'var(--fw-regular)'
 
-  const titleFontSize = size === 'sm' ? '16px' : '20px'
+  const titleFontSize = size === 'sm' ? '14px' : '16px'
   const inputHeight = size === 'sm' ? '36px' : '42px'
   const inputFontSize = size === 'sm' ? '14px' : '16px'
 

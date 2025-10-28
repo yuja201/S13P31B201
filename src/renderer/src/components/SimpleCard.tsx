@@ -30,12 +30,10 @@ const SimpleCard: React.FC<SimpleCardProps> = ({
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          gap: 6px;
-          width: 260px;
-          height: 100px;
+          gap: 8px;
           background-color: var(--color-white);
           border: 1.5px solid rgba(0, 0, 0, 0.1);
-          border-radius: 8px;
+          border-radius: 10px;
           box-shadow: var(--shadow);
           cursor: pointer;
           transition: all 0.25s ease;
@@ -58,11 +56,17 @@ const SimpleCard: React.FC<SimpleCardProps> = ({
 
         .simple-card__desc {
           font: var(--preRegular14);
+          color: var(--color-dark-gray);
+        }
+
+        .simple-card--md {
+          width: 280px;
+          height: 110px;
         }
 
         .simple-card--sm {
-          width: 220px;
-          height: 80px;
+          width: 280px;
+          height: 90px;
         }
 
         .simple-card--sm .simple-card__title {
