@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 import { FaDatabase, FaLink, FaChartBar, FaHistory } from 'react-icons/fa'
 import logoIcon from '@renderer/assets/icons/logo.svg'
 import { GrUpdate } from 'react-icons/gr'
@@ -79,25 +79,50 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false }) => {
         </div>
         {/* 메뉴 */}
         <nav className="sidebar-menu">
-          <Link to="/main/dashboard" className="sidebar-link">
+          <NavLink
+            to="/main/dashboard"
+            className={({ isActive }): string =>
+              `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
+            }
+          >
             <RxDashboard size={22} /> 프로젝트 대시보드
-          </Link>
-          <Link to="/main/info" className="sidebar-link">
+          </NavLink>
+          <NavLink
+            to="/main/info"
+            className={({ isActive }): string =>
+              `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
+            }
+          >
             <FaLink size={22} /> 프로젝트 정보
-          </Link>
-          <Link to="/main/dummy" className="sidebar-link">
+          </NavLink>
+          <NavLink
+            to="/main/dummy"
+            className={({ isActive }): string =>
+              `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
+            }
+          >
             <FaDatabase size={22} /> 더미데이터 생성
-          </Link>
-          <Link to="/main/test" className="sidebar-link">
+          </NavLink>
+          <NavLink
+            to="/main/test"
+            className={({ isActive }): string =>
+              `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
+            }
+          >
             <FaChartBar size={22} /> DB 성능 테스트
-          </Link>
-          <Link to="/main/history" className="sidebar-link">
+          </NavLink>
+          <NavLink
+            to="/main/history"
+            className={({ isActive }): string =>
+              `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
+            }
+          >
             <FaHistory size={22} /> 테스트 히스토리
-          </Link>
+          </NavLink>
         </nav>
         {/* footer */}
         <div className={`sidebar-footer ${collapsed ? 'footer-collapsed' : ''}`}>
-          <IoSettingsSharp size={28} />
+          <IoSettingsSharp size={24} />
         </div>
       </aside>
 
@@ -189,7 +214,7 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false }) => {
           width: 100%;
           transition: opacity 0.2s ease-out, max-height 0.3s ease, margin-top 0.3s ease;
           opacity: 1;
-          max-height: 500px; /* (충분히 큰 값) */
+          max-height: 500px; 
           overflow: hidden;
         }
 
@@ -205,7 +230,7 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false }) => {
           align-items: center;
           background-color: var(--color-white);
           color: var(--color-black);
-          padding: 16px 8px;
+          padding: 16px 0;
           border-radius: 10px;
           width: 100%;
         }
@@ -224,9 +249,10 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false }) => {
           margin-top: 56px; 
           transition: opacity 0.2s ease-out, max-height 0.3s ease, margin-top 0.3s ease;
           opacity: 1;
-          max-height: 500px; 
           overflow: hidden;
-          padding
+          font: var(--preSemibold16);
+          gap: 4px;
+          padding: 16px;
         }
 
         .sidebar-link {
@@ -245,6 +271,12 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false }) => {
         .sidebar-link:hover {
           background: var(--color-white);
           color: var(--color-main-blue);
+        }
+
+        .sidebar-link.sidebar-link-active {
+          background: var(--color-white);
+          color: var(--color-main-blue);
+          font: var(--preSemibold16) ;
         }
 
         .sidebar-footer {
@@ -274,7 +306,7 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false }) => {
           opacity: 0;
           max-height: 0;
           margin-top: 0;
-          pointer-events: none; /* (숨겨졌을 때 클릭 방지) */
+          pointer-events: none; 
         }
       `}
       </style>
