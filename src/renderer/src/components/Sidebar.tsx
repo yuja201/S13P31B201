@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 import { FaDatabase, FaLink, FaChartBar, FaHistory } from 'react-icons/fa'
 import logoIcon from '@renderer/assets/icons/logo.svg'
 import { GrUpdate } from 'react-icons/gr'
@@ -79,25 +79,50 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false }) => {
         </div>
         {/* 메뉴 */}
         <nav className="sidebar-menu">
-          <Link to="/main/dashboard" className="sidebar-link">
-            <RxDashboard /> 프로젝트 대시보드
-          </Link>
-          <Link to="/main/info" className="sidebar-link">
-            <FaLink /> 프로젝트 정보
-          </Link>
-          <Link to="/main/dummy" className="sidebar-link">
-            <FaDatabase /> 더미데이터 생성
-          </Link>
-          <Link to="/main/test" className="sidebar-link">
-            <FaChartBar /> DB 성능 테스트
-          </Link>
-          <Link to="/main/history" className="sidebar-link">
-            <FaHistory /> 테스트 히스토리
-          </Link>
+          <NavLink
+            to="/main/dashboard"
+            className={({ isActive }): string =>
+              `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
+            }
+          >
+            <RxDashboard size={22} /> 프로젝트 대시보드
+          </NavLink>
+          <NavLink
+            to="/main/info"
+            className={({ isActive }): string =>
+              `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
+            }
+          >
+            <FaLink size={22} /> 프로젝트 정보
+          </NavLink>
+          <NavLink
+            to="/main/dummy"
+            className={({ isActive }): string =>
+              `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
+            }
+          >
+            <FaDatabase size={22} /> 더미데이터 생성
+          </NavLink>
+          <NavLink
+            to="/main/test"
+            className={({ isActive }): string =>
+              `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
+            }
+          >
+            <FaChartBar size={22} /> DB 성능 테스트
+          </NavLink>
+          <NavLink
+            to="/main/history"
+            className={({ isActive }): string =>
+              `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
+            }
+          >
+            <FaHistory size={22} /> 테스트 히스토리
+          </NavLink>
         </nav>
         {/* footer */}
         <div className={`sidebar-footer ${collapsed ? 'footer-collapsed' : ''}`}>
-          <IoSettingsSharp size={28} />
+          <IoSettingsSharp size={24} />
         </div>
       </aside>
 
@@ -187,10 +212,11 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false }) => {
           gap: 16px;
           margin-top: 56px;
           width: 100%;
-          transition: opacity 0.2s ease-out, max-height 0.3s ease, margin-top 0.3s ease;
+          transition: opacity 0.2s ease 0.2s, max-height 0.2s ease, margin-top 0.2s ease;
           opacity: 1;
-          max-height: 500px; /* (충분히 큰 값) */
+          max-height: 500px; 
           overflow: hidden;
+          white-space: nowrap;
         }
 
         .project-label {
@@ -205,7 +231,7 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false }) => {
           align-items: center;
           background-color: var(--color-white);
           color: var(--color-black);
-          padding: 16px 8px;
+          padding: 16px 0;
           border-radius: 10px;
           width: 100%;
         }
@@ -222,10 +248,12 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false }) => {
           flex-direction: column;
           align-items: center;
           margin-top: 56px; 
-          transition: opacity 0.2s ease-out, max-height 0.3s ease, margin-top 0.3s ease;
+          transition: opacity 0.2s ease 0.2s, max-height 0.3s ease, margin-top 0.3s ease;
           opacity: 1;
-          max-height: 500px; /* (충분히 큰 값) */
           overflow: hidden;
+          gap: 4px;
+          padding: 16px;
+          white-space: nowrap;
         }
 
         .sidebar-link {
@@ -233,17 +261,25 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false }) => {
           height: 48px;
           display: flex;
           align-items: center;
-          gap: 20px;
+          gap: 24px;
           padding: 0 16px;
           border-radius: 8px;
           color: var(--color-white);
           text-decoration: none;
           transition: all 0.2s;
+          font: var(--preRegular16);
         }
 
         .sidebar-link:hover {
           background: var(--color-white);
           color: var(--color-main-blue);
+          font: var(--preRegular16);
+        }
+
+        .sidebar-link.sidebar-link-active {
+          background: var(--color-white);
+          color: var(--color-main-blue);
+          font: var(--preSemibold16) ;
         }
 
         .sidebar-footer {
@@ -273,7 +309,7 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false }) => {
           opacity: 0;
           max-height: 0;
           margin-top: 0;
-          pointer-events: none; /* (숨겨졌을 때 클릭 방지) */
+          pointer-events: none; 
         }
       `}
       </style>
