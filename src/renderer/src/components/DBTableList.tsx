@@ -75,6 +75,11 @@ const DBTableList: React.FC<DBTableListProps> = ({ tables, focusedTableId, onTab
           display: flex;
           flex-direction: column;
           align-items: center;
+          width: 280px;
+          flex-shrink: 0;
+          background-color: var(--color-white);
+          border-radius: 10px;
+          padding: 20px;
         }
         .list-header {
           width: 100%;
@@ -84,6 +89,7 @@ const DBTableList: React.FC<DBTableListProps> = ({ tables, focusedTableId, onTab
           align-items: flex-start;
           margin-bottom: 16px;
           gap: 4px;
+          flex-shrink: 0;
         }
         .list-header span {
           color: var(--color-dark-gray);
@@ -95,12 +101,19 @@ const DBTableList: React.FC<DBTableListProps> = ({ tables, focusedTableId, onTab
           align-items: center;
           border-radius: 6px;
           margin-bottom: 16px;
+          flex-shrink: 0;
         }
         .table-list {
           width: 100%;
           display: flex;
           flex-direction: column;
           gap: 8px;
+          flex-grow: 1; 
+          overflow-y: auto; 
+          list-style: none; 
+          padding: 10px 4px 0 0; 
+          margin-bottom:30px
+           
         }
         .table-list-item {
           display: flex;
@@ -112,12 +125,11 @@ const DBTableList: React.FC<DBTableListProps> = ({ tables, focusedTableId, onTab
           background-color: var(--color-background);
           border: 1.5px solid transparent;
           transition: background 0.3s ease, border-color 0.1s ease;
-      
+          flex-shrink: 0;
         }
 
         .table-list-item:hover {
           background-color: var(--color-light-blue);
-          border: 1.5px solid var(--color-main-blue);
           border-color: var(--color-main-blue);
         }
 
@@ -132,6 +144,8 @@ const DBTableList: React.FC<DBTableListProps> = ({ tables, focusedTableId, onTab
         .table-item-info {
           display: flex;
           flex-direction: column;
+          flex-grow: 1;
+          min-width: 0;
         }
         .table-item-info .preRegular12 {
           color: var(--color-dark-gray);
@@ -143,6 +157,31 @@ const DBTableList: React.FC<DBTableListProps> = ({ tables, focusedTableId, onTab
           margin-top: 24px;
           padding-top: 16px;
           border-top: 1px solid var(--color-gray-200);
+          flex-shrink: 0;
+        }
+
+          /* 스크롤바 전체 영역 */
+        .table-list::-webkit-scrollbar {
+          width: 10px; 
+        }
+
+        /* 스크롤바 트랙 (배경) */
+        .table-list::-webkit-scrollbar-track {
+          background-color: transparent; 
+          border-radius: 20px;
+        }
+
+        /* 스크롤바 핸들 (움직이는 막대) */
+        .table-list::-webkit-scrollbar-thumb {
+          background-color: var(--color-gray-200); 
+          border-radius: 12px; 
+          border: 2px solid transparent; 
+          background-clip: content-box; 
+        }
+
+        /* 핸들에 마우스 올렸을 때 */
+        .table-list::-webkit-scrollbar-thumb:hover {
+          background-color: var(--color-placeholder); 
         }
       `}</style>
     </>
