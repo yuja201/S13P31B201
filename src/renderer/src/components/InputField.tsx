@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import type { ReactElement, CSSProperties } from 'react'
+import type { ReactElement } from 'react'
 
 interface InputFieldProps {
   title: string
@@ -7,8 +7,10 @@ interface InputFieldProps {
   description?: string
   width: number | string
   required?: boolean
+  titleBold?: boolean
   value?: string
   onChange?: (value: string) => void
+  size?: 'md' | 'sm'
 }
 
 const InputField = ({
@@ -17,8 +19,10 @@ const InputField = ({
   description,
   width,
   required = false,
+  titleBold = false,
   value,
-  onChange
+  onChange,
+  size = 'md'
 }: InputFieldProps): ReactElement => {
   const [inputValue, setInputValue] = useState(value || '')
 
@@ -30,61 +34,63 @@ const InputField = ({
     }
   }
 
-  const containerStyle: CSSProperties = {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px',
-    width: typeof width === 'number' ? `${width}px` : width
-  }
+  const widthValue = typeof width === 'number' ? `${width}px` : width
+  const fontWeight = titleBold ? 'var(--fw-semiBold)' : 'var(--fw-regular)'
 
-  const titleStyle: CSSProperties = {
-    fontSize: '20px',
-    fontFamily: 'var(--font-family)',
-    fontWeight: 'var(--fw-semiBold)' as React.CSSProperties['fontWeight'],
-    color: 'var(--color-black)'
-  }
-
-  const requiredStyle: CSSProperties = {
-    color: '#ed3f27',
-    marginLeft: '4px'
-  }
-
-  const inputStyle: CSSProperties = {
-    width: '100%',
-    height: '42px',
-    padding: '0 20px',
-    borderRadius: '10px',
-    border: '1px solid #c9d8eb',
-    backgroundColor: 'var(--color-white)',
-    fontSize: '16px',
-    fontFamily: 'var(--font-family)',
-    fontWeight: 'var(--fw-regular)' as React.CSSProperties['fontWeight'],
-    color: 'var(--color-black)',
-    outline: 'none',
-    boxShadow: 'var(--shadow)'
-  }
-
-  const descriptionStyle: CSSProperties = {
-    fontSize: '12px',
-    fontFamily: 'var(--font-family)',
-    fontWeight: 'var(--fw-regular)' as React.CSSProperties['fontWeight'],
-    color: 'var(--color-dark-gray)'
-  }
+  const titleFontSize = size === 'sm' ? '14px' : '16px'
+  const inputHeight = size === 'sm' ? '36px' : '42px'
+  const inputFontSize = size === 'sm' ? '14px' : '16px'
 
   return (
     <>
       <style>
         {`
+          .input-field-container {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+          }
+
+          .input-field-title {
+            font-family: var(--font-family);
+            color: var(--color-black);
+          }
+
+          .input-field-required {
+            color: #ed3f27;
+            margin-left: 4px;
+          }
+
+          .input-field-input {
+            width: 100%;
+            padding: 0 16px;
+            border-radius: 10px;
+            border: 1px solid #c9d8eb;
+            background-color: var(--color-white);
+            font-family: var(--font-family);
+            font-weight: var(--fw-regular);
+            color: var(--color-black);
+            outline: none;
+            box-shadow: var(--shadow);
+          }
+
           .input-field-input::placeholder {
             color: var(--color-placeholder);
             font-weight: var(--fw-regular);
           }
+
+          .input-field-description {
+            font-size: 12px;
+            font-family: var(--font-family);
+            font-weight: var(--fw-regular);
+            color: var(--color-dark-gray);
+          }
         `}
       </style>
-      <div style={containerStyle}>
-        <div style={titleStyle}>
+      <div className="input-field-container" style={{ width: widthValue }}>
+        <div className="input-field-title" style={{ fontWeight, fontSize: titleFontSize }}>
           {title}
-          {required && <span style={requiredStyle}>*</span>}
+          {required && <span className="input-field-required">*</span>}
         </div>
         <input
           type="text"
@@ -92,9 +98,12 @@ const InputField = ({
           placeholder={placeholder}
           value={inputValue}
           onChange={handleChange}
-          style={inputStyle}
+          style={{
+            height: inputHeight,
+            fontSize: inputFontSize
+          }}
         />
-        {description && <div style={descriptionStyle}>{description}</div>}
+        {description && <div className="input-field-description">{description}</div>}
       </div>
     </>
   )
