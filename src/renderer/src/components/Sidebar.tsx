@@ -1,16 +1,26 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { FaDatabase, FaLink, FaChartBar, FaHistory } from 'react-icons/fa'
 import logoIcon from '@renderer/assets/icons/logo.svg'
-import { LiaExchangeAltSolid } from 'react-icons/lia'
-import { GrUpdate } from "react-icons/gr";
-import { RxDashboard } from "react-icons/rx";
-import { IoSettingsSharp } from "react-icons/io5";
-import { BsLayoutSidebar } from "react-icons/bs";
+import { GrUpdate } from 'react-icons/gr'
+import { RxDashboard } from 'react-icons/rx'
+import { IoSettingsSharp } from 'react-icons/io5'
+import { BsLayoutSidebar } from 'react-icons/bs'
 
-const Sidebar: React.FC = () => {
-  const [collapsed, setCollapsed] = useState(false)
-  const toggleSidebar = () => setCollapsed(!collapsed)
+interface SidebarProps {
+  locked?: boolean
+}
+const Sidebar: React.FC<SidebarProps> = ({ locked = false }) => {
+  const [collapsed, setCollapsed] = useState(locked)
+  const toggleSidebar = (): void => {
+    if (locked) return
+    setCollapsed(!collapsed)
+  }
+
+  // locked prop이 변경될 때
+  useEffect(() => {
+    setCollapsed(locked)
+  }, [locked])
 
   const currentTime = new Date().toLocaleString('ko-KR', {
     year: 'numeric',
@@ -23,18 +33,24 @@ const Sidebar: React.FC = () => {
 
   return (
     <>
-      <aside className={`sidebar ${collapsed ? 'collapsed' : ''}`}>
-
+      <aside className={`sidebar ${collapsed ? 'collapsed' : ''} ${locked ? 'locked' : ''}`}>
+        {' '}
         {/* 헤더 */}
         <div className="sidebar-header">
           <div className="logo-row">
             {/* 로고/아이콘 전환 영역 */}
             <div
               className="logo-hover-wrapper"
-              onClick={collapsed ? toggleSidebar : undefined}
+              // locked가 아닐 때만 toggleSidebar 실행
+              onClick={collapsed && !locked ? toggleSidebar : undefined}
             >
-              <img src={logoIcon} alt="Logo" className={`logo ${collapsed ? 'logo-collapsed' : ''}`} />
-              {collapsed && (
+              <img
+                src={logoIcon}
+                alt="Logo"
+                className={`logo ${collapsed ? 'logo-collapsed' : ''}`}
+              />
+              {/* collapsed이고 locked가 아닐 때만 호버 아이콘 표시 */}
+              {collapsed && !locked && (
                 <div className="sidebar-hover-icon">
                   <BsLayoutSidebar size={22} />
                 </div>
@@ -51,9 +67,7 @@ const Sidebar: React.FC = () => {
 
           {/* 프로젝트 정보 */}
           <div className="sidebar-project">
-            <p className="preRegular16 project-label">
-              현재 프로젝트
-            </p>
+            <p className="preRegular16 project-label">현재 프로젝트</p>
             <div className="project-box shadow">
               <div className="project-name preSemiBold20">FORINGKOR</div>
               <div className="project-db preLight12">PostgreSQL</div>
@@ -62,8 +76,7 @@ const Sidebar: React.FC = () => {
               <GrUpdate /> {currentTime}
             </div>
           </div>
-        </div >
-
+        </div>
         {/* 메뉴 */}
         <nav className="sidebar-menu">
           <Link to="/main/dashboard" className="sidebar-link">
@@ -75,19 +88,18 @@ const Sidebar: React.FC = () => {
           <Link to="/main/dummy" className="sidebar-link">
             <FaDatabase /> 더미데이터 생성
           </Link>
-          <Link to="/main/perf" className="sidebar-link">
+          <Link to="/main/test" className="sidebar-link">
             <FaChartBar /> DB 성능 테스트
           </Link>
           <Link to="/main/history" className="sidebar-link">
             <FaHistory /> 테스트 히스토리
           </Link>
         </nav>
-
         {/* footer */}
         <div className={`sidebar-footer ${collapsed ? 'footer-collapsed' : ''}`}>
           <IoSettingsSharp size={28} />
         </div>
-      </aside >
+      </aside>
 
       <style>
         {`
@@ -242,7 +254,19 @@ const Sidebar: React.FC = () => {
           padding: 15px;
           transition: all 0.3s ease;
         }
+        /* locked 상태일 때 호버 효과 및 커서 변경 */
+        .sidebar.locked .logo-hover-wrapper {
+          cursor: default;
+        }
+
+        .sidebar.locked .sidebar.collapsed .logo-hover-wrapper:hover .logo {
+          opacity: 1; /* locked일 땐 로고가 사라지지 않음 */
+        }
         
+        .sidebar.locked .sidebar.collapsed .logo-hover-wrapper:hover .sidebar-hover-icon {
+          opacity: 0; /* locked일 땐 아이콘이 나타나지 않음 */
+        }
+
         /* --- 접혔을 때 콘텐츠 숨김 처리 --- */
         .sidebar.collapsed .sidebar-project,
         .sidebar.collapsed .sidebar-menu {

@@ -1,11 +1,15 @@
 import React from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useLocation } from 'react-router-dom'
 import Sidebar from '@renderer/components/Sidebar'
 
 const MainLayout: React.FC = () => {
+  const location = useLocation()
+
+  const isLocked = location.pathname === '/'
+
   return (
     <div className="layout">
-      <Sidebar />
+      <Sidebar locked={isLocked} />
       <main className="main-content">
         <div className="content-wrapper">
           <Outlet />
@@ -14,5 +18,4 @@ const MainLayout: React.FC = () => {
     </div>
   )
 }
-
 export default MainLayout

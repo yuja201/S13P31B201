@@ -1,7 +1,7 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 
-const LandingPage: React.FC = () => {
+const LandingView: React.FC = () => {
   const navigate = useNavigate()
 
   return (
@@ -20,4 +20,4 @@ const LandingPage: React.FC = () => {
   )
 }
 
-export default LandingPage
+export default LandingView

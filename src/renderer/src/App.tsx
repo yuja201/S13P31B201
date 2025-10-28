@@ -1,23 +1,37 @@
-// src/renderer/src/App.tsx
 import React from 'react'
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import LandingPage from '@renderer/pages/LandingView'
-import MainPage from '@renderer/pages/MainView'
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
+import LandingView from '@renderer/views/LandingView'
+import MainView from '@renderer/views/MainView'
 import MainLayout from '@renderer/layouts/MainLayout'
+import DashboardView from '@renderer/views/DashboardView'
+import InfoView from '@renderer/views/InfoView'
+import CreateDummyView from '@renderer/views/CreateDummyView'
+import TestView from '@renderer/views/TestView'
+import HistoryView from '@renderer/views/HistoryView'
 
 const App: React.FC = () => {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
-        {/* 첫 진입 화면: 사이드바 없는 랜딩 페이지 */}
-        <Route path="/" element={<LandingPage />} />
+        <Route path="/landing" element={<LandingView />} />
+        <Route path="/" element={<MainLayout />}>
+          {/*  MainView (사이드바 잠김) */}
+          <Route index element={<MainView />} />
 
-        {/* 사이드바 포함된 페이지들 */}
-        <Route path="/main" element={<MainLayout />}>
-          <Route index element={<MainPage />} />
+          {/*  프로젝트 뷰들 (사이드바 활성)*/}
+          <Route path="main">
+            <Route path="dashboard" element={<DashboardView />} />
+            <Route path="info" element={<InfoView />} />
+            <Route path="dummy" element={<CreateDummyView />} />
+            <Route path="test" element={<TestView />} />
+            <Route path="history" element={<HistoryView />} />
+
+            {/* /main 접속 시 대시보드로 자동 이동 */}
+            <Route index element={<Navigate to="dashboard" replace />} />
+          </Route>
         </Route>
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   )
 }
 
