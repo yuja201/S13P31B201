@@ -15,6 +15,25 @@ const MainLayout: React.FC = () => {
           <Outlet />
         </div>
       </main>
+
+      <style>{`
+        .layout {
+          display: flex;
+          height: 100vh;
+          background-color: var(--color-background);
+        }
+        .main-content {
+          flex: 1;
+          padding: 80px;
+          background-color: var(--color-background);
+          overflow-y: auto;
+        }
+        .content-wrapper {
+          flex-grow: 1; 
+          display: flex; 
+          flex-direction: column;
+        }
+      `}</style>
     </div>
   )
 }
