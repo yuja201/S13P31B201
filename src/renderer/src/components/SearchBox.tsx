@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { ReactElement, CSSProperties } from 'react'
+import { FiSearch } from 'react-icons/fi'
 
 interface SearchBarProps {
   placeholder?: string
@@ -86,22 +87,9 @@ const SearchBox = ({
           onChange={handleChange}
           style={inputStyle}
         />
+
         <button onClick={handleSearchClick} type="button" style={iconStyle}>
-          <svg
-            width="1em"
-            height="1em"
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M21 21L16.65 16.65M19 11C19 15.4183 15.4183 19 11 19C6.58172 19 3 15.4183 3 11C3 6.58172 6.58172 3 11 3C15.4183 3 19 6.58172 19 11Z"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <FiSearch size={30} color="#c0c0c0" />
         </button>
       </div>
     </>
