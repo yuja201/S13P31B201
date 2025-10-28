@@ -60,12 +60,12 @@ const SimpleCard: React.FC<SimpleCardProps> = ({
         }
 
         .simple-card--md {
-          width: 280px;
+          width: 290px;
           height: 110px;
         }
 
         .simple-card--sm {
-          width: 280px;
+          width: 260px;
           height: 90px;
         }
 

@@ -20,7 +20,18 @@ const RuleCreationModal: React.FC<RuleCreationModalProps> = ({ isOpen, onClose }
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} width="720px">
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
+      <div
+        style={{
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '28px',
+          width: '100%',
+          alignSelf: 'center',
+          boxSizing: 'border-box',
+          overflowX: 'hidden',
+          padding: '0 14px 14px 0'
+        }}
+      >
         {/* 제목 */}
         <PageTitle
           size="small"
@@ -52,8 +63,8 @@ const RuleCreationModal: React.FC<RuleCreationModalProps> = ({ isOpen, onClose }
             style={{
               display: 'flex',
               gap: '16px',
-              width: '100%',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              flexWrap: 'wrap'
             }}
           >
             <SimpleCard
@@ -72,7 +83,7 @@ const RuleCreationModal: React.FC<RuleCreationModalProps> = ({ isOpen, onClose }
         </div>
 
         {/* 도메인 선택 */}
-        <div>
+        <div style={{ width: '100%', overflow: 'hidden' }}>
           <SelectDomain />
         </div>
 
@@ -100,7 +111,8 @@ const RuleCreationModal: React.FC<RuleCreationModalProps> = ({ isOpen, onClose }
                   fontFamily: 'var(--font-family)',
                   outline: 'none',
                   backgroundColor: 'var(--color-white)',
-                  color: 'var(--color-black)'
+                  color: 'var(--color-black)',
+                  boxSizing: 'border-box'
                 }}
               >
                 <option value="OpenAI GPT-4o">OpenAI GPT-4o</option>
