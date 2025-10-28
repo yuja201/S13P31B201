@@ -160,7 +160,7 @@ DBMS: ${formData.dbType}
 
           .create-project-modal-dbms-section {
             margin-bottom: 14px;
-            font-size: 20px;
+            font-size: 16px;
           }
 
           .create-project-modal-radio-group {
