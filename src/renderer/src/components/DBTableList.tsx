@@ -17,9 +17,9 @@ const DBTableList: React.FC<DBTableListProps> = ({ tables, focusedTableId, onTab
           <h3 className="preSemiBold20">테이블 목록</h3>
           <span className="preRegular14">{tables.length} table</span>
         </div>
-
+        {/* --- 검색창 --- */}
         <div className="search-bar">
-          <MiniSearchBox />
+          <MiniSearchBox placeholder="테이블 검색" />
         </div>
 
         {/* --- 테이블 리스트 --- */}
@@ -79,7 +79,7 @@ const DBTableList: React.FC<DBTableListProps> = ({ tables, focusedTableId, onTab
           margin-bottom: 16px;
         }
         .table-list {
-          list-style: none;
+          width: 100%;
           display: flex;
           flex-direction: column;
           gap: 8px;
@@ -87,19 +87,25 @@ const DBTableList: React.FC<DBTableListProps> = ({ tables, focusedTableId, onTab
         .table-list-item {
           display: flex;
           align-items: center;
-          gap: 12px;
-          padding: 12px;
-          border-radius: 8px;
+          gap: 8px;
+          padding: 16px;
+          border-radius: 10px;
           cursor: pointer;
-          transition: background 0.2s ease;
-        }
-        .table-list-item:hover {
           background-color: var(--color-background);
+          border: 1.5px solid transparent;
+          transition: background 0.3s ease, border-color 0.1s ease;
+      
         }
-        /* [!] 활성화된 아이템 스타일 */
+
+        .table-list-item:hover {
+          background-color: var(--color-light-blue);
+          border: 1.5px solid var(--color-main-blue);
+          border-color: var(--color-main-blue);
+        }
+
         .table-list-item.active {
           background-color: var(--color-light-blue);
-          border: 1px solid var(--color-main-blue);
+          border-color: var(--color-main-blue);
         }
         .table-list-item input[type='checkbox'] {
           width: 16px;
