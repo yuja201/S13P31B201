@@ -6,12 +6,14 @@ import { ArrowLeft } from 'react-feather'
 const SelectMethodView: React.FC = () => {
   const navigate = useNavigate()
   const [isHover, setIsHover] = useState(false)
+  const [selected, setSelected] = useState<'sql' | 'db' | null>(null)
 
   const baseColor = 'var(--color-dark-gray)'
   const hoverColor = 'var(--color-black)'
 
   return (
     <div className="flex flex-col">
+      {/* 상단 타이틀 */}
       <div style={{ marginBottom: '40px' }}>
         <PageTitle
           title="더미데이터 생성"
@@ -22,6 +24,7 @@ const SelectMethodView: React.FC = () => {
         />
       </div>
 
+      {/* 이전으로 */}
       <div
         onClick={() => navigate(-1)}
         onMouseEnter={() => setIsHover(true)}
@@ -35,56 +38,79 @@ const SelectMethodView: React.FC = () => {
           color: isHover ? hoverColor : baseColor,
           textDecoration: isHover ? 'underline' : 'none',
           transition: 'color 0.2s ease, text-decoration 0.2s ease',
-          marginBottom: 40
+          marginBottom: 16
         }}
       >
         <ArrowLeft size={18} color={isHover ? hoverColor : baseColor} />
         <span className="preRegular16">이전으로</span>
       </div>
 
-      <div style={{ display: 'flex', gap: '20px' }}>
+      {/* 카드 선택 영역 */}
+      <div style={{ display: 'flex', gap: 40 }}>
+        {/* INSERT SQL 생성하기 */}
         <div
-          className="shadow flex flex-col justify-center items-start bg-[var(--color-white)] border border-[var(--color-gray-200)] rounded-2xl cursor-pointer transition-all"
+          onClick={() => {
+            setSelected('sql')
+          }}
           style={{
-            width: '500px',
-            height: '200px',
-            padding: '30px 50px'
+            width: 500,
+            height: 160,
+            backgroundColor: 'var(--color-white)',
+            border: '1.5px solid var(--color-gray-200)',
+            borderRadius: 12,
+            boxShadow: 'var(--shadow)',
+            cursor: 'pointer',
+            padding: '30px 40px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            transition: 'all 0.25s ease'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.boxShadow = '0 6px 18px rgba(0,0,0,0.12)'
+            e.currentTarget.style.backgroundColor = 'var(--color-light-blue)'
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.boxShadow = 'var(--shadow)'
+            e.currentTarget.style.backgroundColor = 'var(--color-white)'
           }}
-          onClick={() => navigate('/generate-sql')}
         >
-          <p className="preBold18" style={{ color: 'var(--color-black)' }}>
+          <p className="preSemiBold20" style={{ color: 'var(--color-black)', marginBottom: 8 }}>
             INSERT SQL 생성하기
           </p>
-          <p className="preRegular16" style={{ color: 'var(--color-dark-gray)' }}>
+          <p className="preRegular18" style={{ color: 'var(--color-dark-gray)' }}>
             더미데이터 삽입을 위한 SQL문을 생성할게요.
           </p>
         </div>
 
+        {/* 바로 DB에 삽입하기 */}
         <div
-          className="shadow flex flex-col justify-center items-start bg-[var(--color-white)] border border-[var(--color-gray-200)] rounded-2xl cursor-pointer transition-all"
+          onClick={() => {
+            setSelected('db')
+          }}
           style={{
-            width: '500px',
-            height: '200px',
-            padding: '30px 50px'
+            width: 500,
+            height: 160,
+            backgroundColor: 'var(--color-white)',
+            border: '1.5px solid var(--color-gray-200)',
+            borderRadius: 12,
+            boxShadow: 'var(--shadow)',
+            cursor: 'pointer',
+            padding: '30px 40px',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            transition: 'all 0.25s ease'
           }}
           onMouseEnter={(e) => {
-            e.currentTarget.style.boxShadow = '0 6px 18px rgba(0,0,0,0.12)'
+            e.currentTarget.style.backgroundColor = 'var(--color-light-blue)'
           }}
           onMouseLeave={(e) => {
-            e.currentTarget.style.boxShadow = 'var(--shadow)'
+            e.currentTarget.style.backgroundColor = 'var(--color-white)'
           }}
-          onClick={() => navigate('/insert-db')}
         >
-          <p className="preBold18" style={{ color: 'var(--color-black)' }}>
+          <p className="preSemiBold20" style={{ color: 'var(--color-black)', marginBottom: 8 }}>
             바로 DB에 삽입하기
           </p>
-          <p className="preRegular16" style={{ color: 'var(--color-dark-gray)' }}>
+          <p className="preRegular18" style={{ color: 'var(--color-dark-gray)' }}>
             연결된 DB에 바로 더미데이터를 삽입할게요.
           </p>
         </div>
