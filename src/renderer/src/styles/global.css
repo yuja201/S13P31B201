@@ -3,6 +3,14 @@
    ============================== */
 @font-face {
   font-family: 'Pretendard';
+  src: url('../assets/fonts/Pretendard-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Pretendard';
   src: url('../assets/fonts/Pretendard-Regular.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
@@ -25,6 +33,14 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: 'Pretendard';
+  src: url('../assets/fonts/Pretendard-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* ==============================
      Global Design Tokens
    ============================== */
@@ -41,6 +57,7 @@
   --color-black: #000000;
   --color-header: #fafafa;
   --color-background: #f7f8fa;
+  --color-gray-200: #e5e7eb;
 
   /* Font Family & Weights */
   --font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
