@@ -19,7 +19,6 @@ const SelectDomain: React.FC = () => {
     setSelected(id)
   }
 
-  // ✅ 내부 데이터 하드코딩
   const categories: DomainCategory[] = [
     {
       category: '이름/사람',
