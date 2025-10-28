@@ -1,35 +1,37 @@
-import Versions from './components/Versions'
-import electronLogo from './assets/electron.svg'
-import './styles/global.css'
+import React from 'react'
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
+import LandingView from '@renderer/views/LandingView'
+import MainView from '@renderer/views/MainView'
+import MainLayout from '@renderer/layouts/MainLayout'
+import DashboardView from '@renderer/views/DashboardView'
+import InfoView from '@renderer/views/InfoView'
+import CreateDummyView from '@renderer/views/CreateDummyView'
+import TestView from '@renderer/views/TestView'
+import HistoryView from '@renderer/views/HistoryView'
 
-function App(): React.JSX.Element {
-  const ipcHandle = (): void => window.electron.ipcRenderer.send('ping')
-
+const App: React.FC = () => {
   return (
-    <>
-      <img alt="logo" className="logo" src={electronLogo} />
-      <div className="creator">Powered by electron-vite</div>
-      <div className="text">
-        Build an Electron app with <span className="react">React</span>
-        &nbsp;and <span className="ts">TypeScript</span>
-      </div>
-      <p className="tip">
-        Please try pressing <code>F12</code> to open the devTool
-      </p>
-      <div className="actions">
-        <div className="action">
-          <a href="https://electron-vite.org/" target="_blank" rel="noreferrer">
-            Documentation
-          </a>
-        </div>
-        <div className="action">
-          <a target="_blank" rel="noreferrer" onClick={ipcHandle}>
-            Send IPC
-          </a>
-        </div>
-      </div>
-      <Versions></Versions>
-    </>
+    <HashRouter>
+      <Routes>
+        <Route path="/landing" element={<LandingView />} />
+        <Route path="/" element={<MainLayout />}>
+          {/*  MainView (사이드바 잠김) */}
+          <Route index element={<MainView />} />
+
+          {/*  프로젝트 뷰들 (사이드바 활성)*/}
+          <Route path="main">
+            <Route path="dashboard" element={<DashboardView />} />
+            <Route path="info" element={<InfoView />} />
+            <Route path="dummy" element={<CreateDummyView />} />
+            <Route path="test" element={<TestView />} />
+            <Route path="history" element={<HistoryView />} />
+
+            {/* /main 접속 시 대시보드로 자동 이동 */}
+            <Route index element={<Navigate to="dashboard" replace />} />
+          </Route>
+        </Route>
+      </Routes>
+    </HashRouter>
   )
 }
 

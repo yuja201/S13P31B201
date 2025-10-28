@@ -3,6 +3,14 @@
    ============================== */
 @font-face {
   font-family: 'Pretendard';
+  src: url('../assets/fonts/Pretendard-Light.woff2') format('woff2');
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Pretendard';
   src: url('../assets/fonts/Pretendard-Regular.woff2') format('woff2');
   font-weight: 400;
   font-style: normal;
@@ -25,6 +33,14 @@
   font-display: swap;
 }
 
+@font-face {
+  font-family: 'Pretendard';
+  src: url('../assets/fonts/Pretendard-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 /* ==============================
      Global Design Tokens
    ============================== */
@@ -40,6 +56,8 @@
   --color-white: #ffffff;
   --color-black: #000000;
   --color-header: #fafafa;
+  --color-background: #f7f8fa;
+  --color-gray-200: #e5e7eb;
 
   /* Font Family & Weights */
   --font-family: 'Pretendard', 'Noto Sans KR', sans-serif;
@@ -47,16 +65,50 @@
   --fw-regular: 400;
   --fw-medium: 500;
   --fw-semiBold: 600;
+  --fw-bold: 700;
 
   /* Text Styles */
+  --preLight32: var(--fw-light) 32px/1.3 var(--font-family);
+  --preRegular32: var(--fw-regular) 32px/1.3 var(--font-family);
+  --preMedium32: var(--fw-medium) 32px/1.3 var(--font-family);
   --preSemiBold32: var(--fw-semiBold) 32px/1.3 var(--font-family);
+  --preBold32: var(--fw-bold) 32px/1.3 var(--font-family);
+
+  --preLight24: var(--fw-light) 24px/1.4 var(--font-family);
+  --preRegular24: var(--fw-regular) 24px/1.4 var(--font-family);
+  --preMedium24: var(--fw-medium) 24px/1.4 var(--font-family);
   --preSemiBold24: var(--fw-semiBold) 24px/1.4 var(--font-family);
+  --preBold24: var(--fw-bold) 24px/1.4 var(--font-family);
+
+  --preLight20: var(--fw-light) 20px/1.4 var(--font-family);
+  --preRegular20: var(--fw-regular) 20px/1.4 var(--font-family);
   --preMedium20: var(--fw-medium) 20px/1.4 var(--font-family);
-  --preRegular16: var(--fw-regular) 16px/1.6 var(--font-family);
+  --preSemiBold20: var(--fw-semiBold) 20px/1.4 var(--font-family);
+  --preBold20: var(--fw-bold) 20px/1.4 var(--font-family);
+
   --preLight18: var(--fw-light) 18px/1.6 var(--font-family);
+  --preRegular18: var(--fw-regular) 18px/1.6 var(--font-family);
+  --preMedium18: var(--fw-medium) 18px/1.6 var(--font-family);
+  --preSemiBold18: var(--fw-semiBold) 18px/1.6 var(--font-family);
+  --preBold18: var(--fw-bold) 18px/1.6 var(--font-family);
+
+  --preLight16: var(--fw-light) 16px/1.4 var(--font-family);
+  --preRegular16: var(--fw-regular) 16px/1.6 var(--font-family);
   --preMedium16: var(--fw-medium) 16px/1.4 var(--font-family);
-  --preSemiBold12: var(--fw-semiBold) 12px/1.3 var(--font-family);
+  --preSemiBold16: var(--fw-semiBold) 16px/1.4 var(--font-family);
+  --preBold16: var(--fw-bold) 16px/1.4 var(--font-family);
+
+  --preLight14: var(--fw-light) 14px/1.4 var(--font-family);
+  --preRegular14: var(--fw-regular) 14px/1.5 var(--font-family);
+  --preMedium14: var(--fw-medium) 14px/1.4 var(--font-family);
+  --preSemiBold14: var(--fw-semiBold) 14px/1.3 var(--font-family);
+  --preBold14: var(--fw-bold) 14px/1.3 var(--font-family);
+
   --preLight12: var(--fw-light) 12px/1.3 var(--font-family);
+  --preRegular12: var(--fw-regular) 12px/1.3 var(--font-family);
+  --preMedium12: var(--fw-medium) 12px/1.3 var(--font-family);
+  --preSemiBold12: var(--fw-semiBold) 12px/1.3 var(--font-family);
+  --preBold12: var(--fw-bold) 12px/1.3 var(--font-family);
 
   /* Shadow */
   --shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
@@ -65,17 +117,72 @@
 /* ==============================
     Utility Classes
    ============================== */
+.preLight32 {
+  font: var(--preLight32);
+}
+.preRegular32 {
+  font: var(--preRegular32);
+}
+.preMedium32 {
+  font: var(--preMedium32);
+}
 .preSemiBold32 {
   font: var(--preSemiBold32);
+}
+.preBold32 {
+  font: var(--preBold32);
+}
+
+.preLight24 {
+  font: var(--preLight24);
+}
+.preRegular24 {
+  font: var(--preRegular24);
+}
+.preMedium24 {
+  font: var(--preMedium24);
 }
 .preSemiBold24 {
   font: var(--preSemiBold24);
 }
+.preBold24 {
+  font: var(--preBold24);
+}
+
+.preLight20 {
+  font: var(--preLight20);
+}
+.preRegular20 {
+  font: var(--preRegular20);
+}
 .preMedium20 {
   font: var(--preMedium20);
 }
+.preSemiBold20 {
+  font: var(--preSemiBold20);
+}
+.preBold20 {
+  font: var(--preBold20);
+}
+
 .preLight18 {
   font: var(--preLight18);
+}
+.preRegular18 {
+  font: var(--preRegular18);
+}
+.preMedium18 {
+  font: var(--preMedium18);
+}
+.preSemiBold18 {
+  font: var(--preSemiBold18);
+}
+.preBold18 {
+  font: var(--preBold18);
+}
+
+.preLight16 {
+  font: var(--preLight16);
 }
 .preRegular16 {
   font: var(--preRegular16);
@@ -83,11 +190,43 @@
 .preMedium16 {
   font: var(--preMedium16);
 }
+.preSemiBold16 {
+  font: var(--preSemiBold16);
+}
+.preBold16 {
+  font: var(--preBold16);
+}
+
+.preLight14 {
+  font: var(--preLight14);
+}
+.preRegular14 {
+  font: var(--preRegular14);
+}
+.preMedium14 {
+  font: var(--preMedium14);
+}
+.preSemiBold14 {
+  font: var(--preSemiBold14);
+}
+.preBold14 {
+  font: var(--preBold14);
+}
+
+.preLight12 {
+  font: var(--preLight12);
+}
+.preRegular12 {
+  font: var(--preRegular12);
+}
+.preMedium12 {
+  font: var(--preMedium12);
+}
 .preSemiBold12 {
   font: var(--preSemiBold12);
 }
-.preLight12 {
-  font: var(--preLight12);
+.preBold12 {
+  font: var(--preBold12);
 }
 
 .shadow {
@@ -110,4 +249,16 @@ body {
   background-color: var(--color-white);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+.layout {
+  display: flex;
+  height: 100vh;
+  background-color: var(--color-background);
+}
+
+.main-content {
+  flex: 1;
+  padding: 80px;
+  background-color: var(--color-background);
+  overflow-y: auto;
 }
