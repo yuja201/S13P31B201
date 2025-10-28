@@ -1,7 +1,11 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import Button from '@renderer/components/Button'
+import CreateProjectModal from '@renderer/modals/CreateProjectModal'
 
 const MainView: React.FC = () => {
+  const [isModalOpen, setIsModalOpen] = useState(false)
+
   const navigate = useNavigate()
 
   const goToProject = (): void => {
@@ -42,6 +46,9 @@ const MainView: React.FC = () => {
         메인 페이지
       </h2>
       <p className="preRegular16">여기는 사이드바가 포함된 메인 화면입니다.</p>
+
+      <Button onClick={() => setIsModalOpen(true)}>프로젝트 생성</Button>
+      <CreateProjectModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
     </div>
   )
 }
