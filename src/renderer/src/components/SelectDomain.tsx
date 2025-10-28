@@ -193,7 +193,7 @@ const SelectDomain: React.FC = () => {
         }
 
         .select-domain__title {
-          font: var(--preMedium16);
+          font: var(--preSemiBold16);
           color: var(--color-black);
         }
 
@@ -206,9 +206,11 @@ const SelectDomain: React.FC = () => {
           border: 1px solid rgba(0, 0, 0, 0.1);
           border-radius: 8px;
           background-color: var(--color-white);
-          padding: 16px;
+          padding: 16px 12px 16px 16px;;
           max-height: 400px;
           overflow-y: auto;
+          box-sizing: border-box;
+          scrollbar-gutter: stable both-edges;
         }
 
         .select-domain__group {
@@ -230,17 +232,24 @@ const SelectDomain: React.FC = () => {
           gap: 16px;
         }
 
-        .select-domain__scroll::-webkit-scrollbar {
-          width: 6px;
+        .select-domain::-webkit-scrollbar {
+          width: 12px;
+          height: 12px;
         }
 
-        .select-domain__scroll::-webkit-scrollbar-thumb {
-          background-color: rgba(0, 0, 0, 0.2);
-          border-radius: 4px;
+        .select-domain::-webkit-scrollbar-thumb {
+          background-color: rgba(100, 100, 100, 0.35);
+          border-radius: 10px;
+          border: 3px solid transparent;
+          background-clip: content-box;
         }
 
-        .select-domain__scroll::-webkit-scrollbar-track {
-          background-color: transparent;
+        .select-domain::-webkit-scrollbar-thumb:hover {
+          background-color: rgba(100, 100, 100, 0.5);
+        }
+
+        .select-domain::-webkit-scrollbar-track {
+          background: transparent;
         }
       `}</style>
     </>
