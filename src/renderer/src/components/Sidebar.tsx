@@ -80,19 +80,19 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false }) => {
         {/* 메뉴 */}
         <nav className="sidebar-menu">
           <Link to="/main/dashboard" className="sidebar-link">
-            <RxDashboard /> 프로젝트 대시보드
+            <RxDashboard size={22} /> 프로젝트 대시보드
           </Link>
           <Link to="/main/info" className="sidebar-link">
-            <FaLink /> 프로젝트 정보
+            <FaLink size={22} /> 프로젝트 정보
           </Link>
           <Link to="/main/dummy" className="sidebar-link">
-            <FaDatabase /> 더미데이터 생성
+            <FaDatabase size={22} /> 더미데이터 생성
           </Link>
           <Link to="/main/test" className="sidebar-link">
-            <FaChartBar /> DB 성능 테스트
+            <FaChartBar size={22} /> DB 성능 테스트
           </Link>
           <Link to="/main/history" className="sidebar-link">
-            <FaHistory /> 테스트 히스토리
+            <FaHistory size={22} /> 테스트 히스토리
           </Link>
         </nav>
         {/* footer */}
@@ -224,8 +224,9 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false }) => {
           margin-top: 56px; 
           transition: opacity 0.2s ease-out, max-height 0.3s ease, margin-top 0.3s ease;
           opacity: 1;
-          max-height: 500px; /* (충분히 큰 값) */
+          max-height: 500px; 
           overflow: hidden;
+          padding
         }
 
         .sidebar-link {
@@ -233,7 +234,7 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false }) => {
           height: 48px;
           display: flex;
           align-items: center;
-          gap: 20px;
+          gap: 24px;
           padding: 0 16px;
           border-radius: 8px;
           color: var(--color-white);
