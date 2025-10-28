@@ -212,10 +212,11 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false }) => {
           gap: 16px;
           margin-top: 56px;
           width: 100%;
-          transition: opacity 0.2s ease-out, max-height 0.3s ease, margin-top 0.3s ease;
+          transition: opacity 0.2s ease 0.2s, max-height 0.2s ease, margin-top 0.2s ease;
           opacity: 1;
           max-height: 500px; 
           overflow: hidden;
+          white-space: nowrap;
         }
 
         .project-label {
@@ -247,12 +248,12 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false }) => {
           flex-direction: column;
           align-items: center;
           margin-top: 56px; 
-          transition: opacity 0.2s ease-out, max-height 0.3s ease, margin-top 0.3s ease;
+          transition: opacity 0.2s ease 0.2s, max-height 0.3s ease, margin-top 0.3s ease;
           opacity: 1;
           overflow: hidden;
-          font: var(--preSemibold16);
           gap: 4px;
           padding: 16px;
+          white-space: nowrap;
         }
 
         .sidebar-link {
@@ -266,11 +267,13 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false }) => {
           color: var(--color-white);
           text-decoration: none;
           transition: all 0.2s;
+          font: var(--preRegular16);
         }
 
         .sidebar-link:hover {
           background: var(--color-white);
           color: var(--color-main-blue);
+          font: var(--preRegular16);
         }
 
         .sidebar-link.sidebar-link-active {
