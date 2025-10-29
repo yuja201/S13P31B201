@@ -260,6 +260,7 @@ DBMS: ${formData.dbType}
             required={true}
             value={formData.password}
             onChange={(value) => handleInputChange('password', value)}
+            password={true}
           />
         </div>
         <div className="create-project-modal-button-container">
@@ -282,7 +283,6 @@ DBMS: ${formData.dbType}
             <Toast
               type={toastType}
               title={toastType === 'success' ? '연결 성공' : '입력 오류'}
-              duration={3000}
               onClose={() => setShowToast(false)}
             >
               <div className="toast-text">{toastMessage}</div>
