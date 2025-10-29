@@ -6,7 +6,6 @@ import { ArrowLeft } from 'react-feather'
 const SelectMethodView: React.FC = () => {
   const navigate = useNavigate()
   const [isHover, setIsHover] = useState(false)
-  const [selected, setSelected] = useState<'sql' | 'db' | null>(null)
 
   const baseColor = 'var(--color-dark-gray)'
   const hoverColor = 'var(--color-black)'
@@ -49,9 +48,7 @@ const SelectMethodView: React.FC = () => {
       <div style={{ display: 'flex', gap: 40 }}>
         {/* INSERT SQL 생성하기 */}
         <div
-          onClick={() => {
-            setSelected('sql')
-          }}
+          onClick={() => {}}
           style={{
             width: 500,
             height: 160,
@@ -83,9 +80,7 @@ const SelectMethodView: React.FC = () => {
 
         {/* 바로 DB에 삽입하기 */}
         <div
-          onClick={() => {
-            setSelected('db')
-          }}
+          onClick={() => {}}
           style={{
             width: 500,
             height: 160,

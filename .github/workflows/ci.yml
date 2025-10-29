@@ -1,0 +1,31 @@
+name: Electron + React(Vite) CI
+
+on:
+  push: # push가 발생하면
+    branches: '**'
+  pull_request: # PR이 발생하면
+    branches: '**'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22.21.0
+          cache: 'npm'
+
+      - name: Install root dependencies
+        run: npm ci
+
+      - name: Build Vite frontend
+        working-directory: ./src/renderer
+        run: npm run build
+
+      - name: Done
+        run: echo "Build pipeline finished successfully!"

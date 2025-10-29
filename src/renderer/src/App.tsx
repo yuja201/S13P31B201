@@ -5,6 +5,7 @@ import MainView from '@renderer/views/MainView'
 import MainLayout from '@renderer/layouts/MainLayout'
 import DashboardView from '@renderer/views/DashboardView'
 import InfoView from '@renderer/views/InfoView'
+import SchemaView from '@renderer/views/SchemaView'
 import CreateDummyView from '@renderer/views/CreateDummyView'
 import TestView from '@renderer/views/TestView'
 import HistoryView from '@renderer/views/HistoryView'
@@ -22,6 +23,7 @@ const App: React.FC = () => {
           <Route path="main">
             <Route path="dashboard" element={<DashboardView />} />
             <Route path="info" element={<InfoView />} />
+            <Route path="schema" element={<SchemaView />} />
             <Route path="dummy" element={<CreateDummyView />} />
             <Route path="test" element={<TestView />} />
             <Route path="history" element={<HistoryView />} />

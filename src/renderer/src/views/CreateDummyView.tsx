@@ -7,7 +7,7 @@ import DBTableDetail from '@renderer/components/DBTableDetail'
 export type ColumnDetail = {
   name: string
   type: string
-  constraints: string[]
+  constraints: string[] // This should be an array of strings
   generation: string
   setting: string
 }
@@ -18,18 +18,16 @@ export type TableInfo = {
   name: string
   columns: number
   rows: number
-  columnDetails: ColumnDetail[] // columnDetails를 포함시킵니다.
+  columnDetails: ColumnDetail[]
 }
 
 // Mock 데이터
-const mockTables = [
+const mockTables: TableInfo[] = [
   {
     id: 'users',
     name: 'users',
     columns: 6,
     rows: 15324,
-
-    // 컬럼 데이터
     columnDetails: [
       {
         name: 'id',
@@ -41,16 +39,58 @@ const mockTables = [
       {
         name: 'age',
         type: 'INTEGER',
-        constraints: ['FK', 'ENUM'],
+        constraints: [
+          'FK',
+          'ENUM',
+          'CHECK',
+          'NOT NULL',
+          'PK',
+          'NOT NULL',
+          'UNIQUE',
+          'DEFAULT',
+          'NOT NULL',
+          'CHECK',
+          'DEFAULT',
+          'NOT NULL',
+          'CHECK'
+        ],
         generation: '참조',
         setting: 'user.id(2)'
       },
       {
+        name: 'status',
+        type: 'VARCHAR(10)',
+        constraints: ['DEFAULT', 'NOT NULL', 'CHECK'],
+        generation: '고정값',
+        setting: "'active'"
+      },
+      {
+        name: 'user_level',
+        type: 'INTEGER',
+        constraints: ['DEFAULT', 'CHECK'],
+        generation: 'Sequence',
+        setting: '1~5'
+      },
+      {
+        name: 'serial_number',
+        type: 'BIGINT',
+        constraints: ['AUTO INCREMENT', 'UNIQUE'],
+        generation: 'Auto Increment',
+        setting: '자동 증가'
+      },
+      {
+        name: 'email',
+        type: 'email_domain',
+        constraints: ['DOMAIN', 'UNIQUE'],
+        generation: 'Faker.js',
+        setting: '이메일'
+      },
+      {
         name: 'created_at',
         type: 'DATETIME',
-        constraints: ['NOT NULL'],
-        generation: '-',
-        setting: '-'
+        constraints: ['NOT NULL', 'DEFAULT'],
+        generation: 'Timestamp',
+        setting: '현재 시간'
       }
     ]
   },
@@ -63,170 +103,105 @@ const mockTables = [
       {
         name: 'post_id',
         type: 'INTEGER',
-        constraints: ['PK'],
+        constraints: ['PK', 'AUTO INCREMENT'],
         generation: 'Auto Increment',
         setting: '1부터 시작'
-      }
-      // ... (posts 테이블의 컬럼들)
-    ]
-  },
-  {
-    id: 'name',
-    name: 'name',
-    columns: 6,
-    rows: 15324,
-
-    // 컬럼 데이터
-    columnDetails: [
-      {
-        name: 'id',
-        type: 'VARCHAR(50)',
-        constraints: ['PK', 'NOT NULL', 'UNIQUE'],
-        generation: 'Faker.js',
-        setting: '아이디'
       },
       {
-        name: 'age',
-        type: 'INTEGER',
-        constraints: ['FK', 'ENUM'],
-        generation: '참조',
-        setting: 'user.id(2)'
-      },
-      {
-        name: 'created_at',
-        type: 'DATETIME',
+        name: 'title',
+        type: 'VARCHAR(255)',
         constraints: ['NOT NULL'],
-        generation: '-',
-        setting: '-'
+        generation: 'Faker.js',
+        setting: '제목'
+      },
+      {
+        name: 'content',
+        type: 'TEXT',
+        constraints: [],
+        generation: 'Faker.js',
+        setting: '내용'
+      },
+      {
+        name: 'author_id',
+        type: 'VARCHAR(50)',
+        constraints: ['FK', 'NOT NULL'],
+        generation: '참조',
+        setting: 'users.id'
+      },
+      {
+        name: 'views',
+        type: 'INTEGER',
+        constraints: ['DEFAULT', 'CHECK'],
+        generation: '고정값',
+        setting: '0'
       }
     ]
   },
   {
-    id: 'age',
-    name: 'age',
-    columns: 6,
+    id: 'products',
+    name: 'products',
+    columns: 5,
     rows: 15324,
-
-    // 컬럼 데이터
     columnDetails: [
       {
-        name: 'id',
-        type: 'VARCHAR(50)',
-        constraints: ['PK', 'NOT NULL', 'UNIQUE'],
-        generation: 'Faker.js',
-        setting: '아이디'
+        name: 'product_id',
+        type: 'SERIAL',
+        constraints: ['PK'],
+        generation: 'Auto',
+        setting: '자동'
       },
       {
-        name: 'age',
+        name: 'name',
+        type: 'VARCHAR(100)',
+        constraints: ['NOT NULL', 'UNIQUE'],
+        generation: 'Faker',
+        setting: '상품명'
+      },
+      {
+        name: 'price',
+        type: 'DECIMAL(10,2)',
+        constraints: ['NOT NULL', 'CHECK'],
+        generation: 'Random',
+        setting: '> 0'
+      },
+      {
+        name: 'category_id',
         type: 'INTEGER',
-        constraints: ['FK', 'ENUM'],
-        generation: '참조',
-        setting: 'user.id(2)'
+        constraints: ['FK'],
+        generation: 'Ref',
+        setting: 'categories.id'
       },
       {
-        name: 'created_at',
-        type: 'DATETIME',
-        constraints: ['NOT NULL'],
-        generation: '-',
-        setting: '-'
+        name: 'stock',
+        type: 'INTEGER',
+        constraints: ['DEFAULT'],
+        generation: 'Fixed',
+        setting: '100'
       }
     ]
   },
   {
-    id: 'first-name',
-    name: 'first-name',
-    columns: 6,
+    id: 'categories',
+    name: 'categories',
+    columns: 2,
     rows: 15324,
-
-    // 컬럼 데이터
     columnDetails: [
       {
-        name: 'id',
-        type: 'VARCHAR(50)',
-        constraints: ['PK', 'NOT NULL', 'UNIQUE'],
-        generation: 'Faker.js',
-        setting: '아이디'
-      },
-      {
-        name: 'age',
+        name: 'category_id',
         type: 'INTEGER',
-        constraints: ['FK', 'ENUM'],
-        generation: '참조',
-        setting: 'user.id(2)'
+        constraints: ['PK', 'AUTO INCREMENT'],
+        generation: 'Auto',
+        setting: '자동'
       },
       {
-        name: 'created_at',
-        type: 'DATETIME',
-        constraints: ['NOT NULL'],
-        generation: '-',
-        setting: '-'
-      }
-    ]
-  },
-  {
-    id: 'address',
-    name: 'address',
-    columns: 6,
-    rows: 15324,
-
-    // 컬럼 데이터
-    columnDetails: [
-      {
-        name: 'id',
+        name: 'category_name',
         type: 'VARCHAR(50)',
-        constraints: ['PK', 'NOT NULL', 'UNIQUE'],
-        generation: 'Faker.js',
-        setting: '아이디'
-      },
-      {
-        name: 'age',
-        type: 'INTEGER',
-        constraints: ['FK', 'ENUM'],
-        generation: '참조',
-        setting: 'user.id(2)'
-      },
-      {
-        name: 'created_at',
-        type: 'DATETIME',
-        constraints: ['NOT NULL'],
-        generation: '-',
-        setting: '-'
-      }
-    ]
-  },
-  {
-    id: 'nickname',
-    name: 'nickname',
-    columns: 6,
-    rows: 15324,
-
-    // 컬럼 데이터
-    columnDetails: [
-      {
-        name: 'id',
-        type: 'VARCHAR(50)',
-        constraints: ['PK', 'NOT NULL', 'UNIQUE'],
-        generation: 'Faker.js',
-        setting: '아이디'
-      },
-      {
-        name: 'age',
-        type: 'INTEGER',
-        constraints: ['FK', 'ENUM'],
-        generation: '참조',
-        setting: 'user.id(2)'
-      },
-      {
-        name: 'created_at',
-        type: 'DATETIME',
-        constraints: ['NOT NULL'],
-        generation: '-',
-        setting: '-'
+        constraints: ['UNIQUE', 'NOT NULL'],
+        generation: 'Faker',
+        setting: '카테고리명'
       }
     ]
   }
-
-  // ... (product, reviews 등 나머지 테이블)
 ]
 
 const CreateDummyView: React.FC = () => {
@@ -235,51 +210,37 @@ const CreateDummyView: React.FC = () => {
     '테이블을 선택하고 컬럼별 데이터 생성 방식을 설정하세요.\nAI, Faker.js, 파일 업로드, 직접 입력 중 원하는 방식으로 데이터를 생성하세요.'
 
   // 첫 번째 테이블을 기본값으로 설정
-  const [focusedTable, setFocusedTable] = useState(mockTables[0])
+  const [focusedTable, setFocusedTable] = useState<TableInfo>(mockTables[0])
 
   return (
     <>
       <div className="dummy-view-container">
         <PageTitle title={title} description={description} />
-
-        {/* --- 메인 컨텐츠 (2단 레이아웃) --- */}
         <div className="dummy-content-wrapper">
-          {/* ---  왼쪽 테이블 목록 --- */}
           <DBTableList
             tables={mockTables}
             focusedTableId={focusedTable.id}
             onTableSelect={setFocusedTable}
           />
-
-          {/* --- 오른쪽 상세 설정 --- */}
-          <div className="table-detail-container shadow">
-            {/* focusedTable이 있을 때만 상세 정보를 렌더링 */}
-            {focusedTable && <DBTableDetail table={focusedTable} />}
-          </div>
+          {focusedTable && <DBTableDetail table={focusedTable} />}
         </div>
       </div>
 
-      {/* --- 페이지 전체 스타일 --- */}
       <style>{`
         .dummy-view-container{
-          display: flex;  
+          display: flex;
           flex-direction: column;
-          height: 100%
+          height: 100%;
         }
         .dummy-content-wrapper {
           display: flex;
           flex-direction: row;
+          /* gap 제거 (DBTableList가 margin-right 가짐) */
           width: 100%;
           margin-top: 32px;
           flex-grow: 1;
           min-height: 0;
          }
-        .table-detail-container {
-          flex-grow: 1;
-          background-color: var(--color-white);
-          border-radius: 10px;
-          padding: 32px;
-        }
       `}</style>
     </>
   )
