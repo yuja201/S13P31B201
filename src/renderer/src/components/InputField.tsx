@@ -11,6 +11,7 @@ interface InputFieldProps {
   value?: string
   onChange?: (value: string) => void
   size?: 'md' | 'sm'
+  password?: boolean
 }
 
 const InputField = ({
@@ -22,7 +23,8 @@ const InputField = ({
   titleBold = false,
   value,
   onChange,
-  size = 'md'
+  size = 'md',
+  password = false
 }: InputFieldProps): ReactElement => {
   const [inputValue, setInputValue] = useState(value || '')
 
@@ -93,7 +95,7 @@ const InputField = ({
           {required && <span className="input-field-required">*</span>}
         </div>
         <input
-          type="text"
+          type={password ? 'password' : 'text'}
           className="input-field-input"
           placeholder={placeholder}
           value={inputValue}
