@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { Button } from '@renderer/components/Button'
+import React, { useState, useEffect, useCallback } from 'react'
+import Button from '@renderer/components/Button'
 import successIcon from '@renderer/assets/imgs/success.svg'
 import errorIcon from '@renderer/assets/imgs/failure.svg'
 import warningIcon from '@renderer/assets/imgs/warning.svg'
@@ -11,9 +11,16 @@ interface ToastProps {
   title?: string
   children?: React.ReactNode
   duration?: number
+  onClose?: () => void
 }
 
-const Toast: React.FC<ToastProps> = ({ type = 'success', title, children, duration = 0 }) => {
+const Toast: React.FC<ToastProps> = ({
+  type = 'success',
+  title,
+  children,
+  duration = 0,
+  onClose
+}) => {
   const [visible, setVisible] = useState(true)
 
   const getIcon = (): string => {
@@ -29,16 +36,18 @@ const Toast: React.FC<ToastProps> = ({ type = 'success', title, children, durati
     }
   }
 
-  const closeToast = (): void => {
+  const closeToast = useCallback((): void => {
     setVisible(false)
-  }
+    if (onClose) onClose()
+  }, [onClose])
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (duration > 0) {
-      const timer = setTimeout(() => setVisible(false), duration)
+      const timer = setTimeout(() => closeToast(), duration)
       return () => clearTimeout(timer)
     }
-  }, [duration])
+    return undefined
+  }, [duration, closeToast])
 
   if (!visible) return null
 
