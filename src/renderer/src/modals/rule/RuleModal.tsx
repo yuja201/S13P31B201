@@ -1,8 +1,7 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Modal from '@renderer/components/Modal'
 import RuleSelectContent from '@renderer/modals/rule/RuleSelectContent'
-import RuleCreationContent from '@renderer/modals/rule/RuleCreationContent'
-import { RuleCreationData } from '@renderer/modals/rule/RuleCreationContent'
+import RuleCreationContent, { RuleCreationData } from '@renderer/modals/rule/RuleCreationContent'
 
 interface RuleManagerModalProps {
   isOpen: boolean
@@ -27,8 +26,14 @@ const RuleManagerModal: React.FC<RuleManagerModalProps> = ({ isOpen, onClose }) 
 
   const handleCreateSubmit = (data: RuleCreationData): void => {
     console.log('새 규칙 생성 완료:', data)
-    setMode('select')
+    onClose()
   }
+
+  useEffect(() => {
+    if (!isOpen) {
+      setMode('select')
+    }
+  }, [isOpen])
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} width="720px">
