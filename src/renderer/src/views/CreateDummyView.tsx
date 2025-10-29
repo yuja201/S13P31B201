@@ -51,6 +51,27 @@ const mockTables = [
         constraints: ['NOT NULL'],
         generation: '-',
         setting: '-'
+      },
+      {
+        name: 'created_at',
+        type: 'DATETIME',
+        constraints: ['NOT NULL'],
+        generation: '-',
+        setting: '-'
+      },
+      {
+        name: 'created_at',
+        type: 'DATETIME',
+        constraints: ['NOT NULL'],
+        generation: '-',
+        setting: '-'
+      },
+      {
+        name: 'created_at',
+        type: 'DATETIME',
+        constraints: ['NOT NULL'],
+        generation: '-',
+        setting: '-'
       }
     ]
   },

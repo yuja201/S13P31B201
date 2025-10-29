@@ -79,7 +79,11 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
             </table>
           </div>
 
-          <Button variant="blue" size="lg" className="generate-data-button preSemiBold16">
+          <Button
+            variant="blue"
+            size="md"
+            style={{ width: '100%', marginTop: '24px', padding: '12px' }}
+          >
             데이터 생성
           </Button>
         </div>
@@ -168,16 +172,8 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
         .badge-unique { background-color: #F0FDF4; color: #15803D; }
         .badge-enum { background-color: #F5F3FF; color: #5B21B6; }
         
-        .generate-data-button {
-           width: 100%; 
-           margin-top: 32px; 
-           flex-shrink: 0; 
-           background-color:var(--color-main-blue);
-           padding: 12px;
-           border-radius: 10px ;
-           color: var(--color-white);
+        
 
-        }
       `}</style>
     </>
   )
