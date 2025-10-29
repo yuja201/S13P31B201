@@ -112,7 +112,7 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false, projectName, dbType, 
             <FaLink size={22} /> 프로젝트 정보
           </NavLink>
           <NavLink
-            to={projectId ? `/main/dummy/${projectId}` : '#'} // [!] 여기 수정
+            to={projectId ? `/main/dummy/${projectId}` : '#'}
             className={({ isActive }): string =>
               `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
             }
@@ -120,7 +120,7 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false, projectName, dbType, 
             <FaDatabase size={22} /> 더미데이터 생성
           </NavLink>
           <NavLink
-            to={projectId ? `/main/test/${projectId}` : '#'} // [!] 여기 수정
+            to={projectId ? `/main/test/${projectId}` : '#'}
             className={({ isActive }): string =>
               `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
             }
@@ -128,7 +128,7 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false, projectName, dbType, 
             <FaChartBar size={22} /> DB 성능 테스트
           </NavLink>
           <NavLink
-            to={projectId ? `/main/history/${projectId}` : '#'} // [!] 여기 수정
+            to={projectId ? `/main/history/${projectId}` : '#'}
             className={({ isActive }): string =>
               `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
             }
