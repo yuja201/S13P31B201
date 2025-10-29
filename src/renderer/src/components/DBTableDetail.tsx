@@ -34,7 +34,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
                 step="100"
               />
             </div>
-            <Button variant="blue" size="sm">
+            <Button variant="blue" size="sm" style={{ whiteSpace: 'nowrap' }}>
               파일로 추가
             </Button>
           </div>
@@ -69,7 +69,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
                     </td>
                     <td>{col.generation}</td>
                     <td>
-                      <Button variant="gray" size="sm">
+                      <Button variant="gray" size="sm" style={{ whiteSpace: 'nowrap' }}>
                         {col.setting} 🖊️
                       </Button>
                     </td>
@@ -159,19 +159,24 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
         .constraint-badges {
           display: flex;
           gap: 4px;
+          flex-wrap: wrap;
         }
         .badge {
           padding: 4px 8px;
           border-radius: 4px;
           font-size: 12px;
           font-weight: 600;
+
         }
         .badge-pk { background-color: #FFFBEB; color: #B45309; }
         .badge-fk { background-color: #EFF6FF; color: #1D4ED8; }
         .badge-not { background-color: #FEF2F2; color: #B91C1C; }
         .badge-unique { background-color: #F0FDF4; color: #15803D; }
         .badge-enum { background-color: #F5F3FF; color: #5B21B6; }
-        
+        .badge-check { background-color: #FEFBF1; color: #D97706; } 
+        .badge-auto { background-color: #F0FDFA; color: #0F766E; } 
+        .badge-default { background-color: #F3F4F6; color: #4B5563; }
+        .badge-domain { background-color: #FFF7ED; color: #EA580C; } 
         
 
       `}</style>
