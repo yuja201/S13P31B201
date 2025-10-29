@@ -11,7 +11,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
 
   return (
     <>
-      <div className="table-detail-container">
+      <div className="table-detail-container shadow">
         {/* --- 상세 헤더 --- */}
         <div className="detail-header shadow">
           <h2 className="preBold24">{table.name}</h2>
@@ -19,7 +19,8 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
             {table.columns} columns · {table.rows} row
           </span>
         </div>
-        <div className="detail-content shadow">
+        {/* --- 콘텐츠 영역  --- */}
+        <div className="detail-content ">
           {/* --- 생성 옵션 --- */}
           <div className="options-row">
             <div className="input-group">
@@ -33,50 +34,52 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
                 step="100"
               />
             </div>
-            <Button variant="blue" size="md">
+            <Button variant="blue" size="sm">
               파일로 추가
             </Button>
           </div>
 
           {/* --- 컬럼 설정 테이블 --- */}
-          <table className="column-table">
-            {/* 테이블 헤더 */}
-            <thead className="preRegular14">
-              <tr>
-                <th>컬럼명</th>
-                <th>타입</th>
-                <th>제약조건</th>
-                <th>생성 방식</th>
-                <th>설정</th>
-              </tr>
-            </thead>
-            {/* 테이블 바디 (컬럼 목록) */}
-            <tbody className="preRegular14">
-              {table.columnDetails.map((col) => (
-                <tr key={col.name}>
-                  <td className="preMedium14">{col.name}</td>
-                  <td>{col.type}</td>
-                  <td>
-                    <div className="constraint-badges">
-                      {col.constraints.map((c) => (
-                        <span key={c} className={`badge badge-${c.toLowerCase()}`}>
-                          {c}
-                        </span>
-                      ))}
-                    </div>
-                  </td>
-                  <td>{col.generation}</td>
-                  <td>
-                    <Button variant="gray" size="sm">
-                      {col.setting} 🖊️
-                    </Button>
-                  </td>
+          <div className="table-scroll-wrapper">
+            <table className="column-table">
+              {/* 테이블 헤더 */}
+              <thead className="preRegular14">
+                <tr>
+                  <th>컬럼명</th>
+                  <th>타입</th>
+                  <th>제약조건</th>
+                  <th>생성 방식</th>
+                  <th>설정</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              {/* 테이블 바디 (컬럼 목록) */}
+              <tbody className="preRegular14">
+                {table.columnDetails.map((col) => (
+                  <tr key={col.name}>
+                    <td className="preMedium14">{col.name}</td>
+                    <td>{col.type}</td>
+                    <td>
+                      <div className="constraint-badges">
+                        {col.constraints.map((c) => (
+                          <span key={c} className={`badge badge-${c.toLowerCase()}`}>
+                            {c}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td>{col.generation}</td>
+                    <td>
+                      <Button variant="gray" size="sm">
+                        {col.setting} 🖊️
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
-          <Button variant="blue" size="lg" style={{ width: '100%', marginTop: '32px' }}>
+          <Button variant="blue" size="lg" className="generate-data-button preSemiBold16">
             데이터 생성
           </Button>
         </div>
@@ -86,6 +89,10 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
           flex-grow: 1;
           background-color: var(--color-white);
           border-radius: 10px;
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          overflow: hidden;
         }
         .detail-header {
           display: flex;
@@ -94,18 +101,25 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
           border-top-left-radius: 10px;
           border-top-right-radius: 10px;
           padding: 20px 24px ;
+          flex-shrink: 0;
         }
         .detail-header span {
           color: var(--color-dark-gray);
         }
         .detail-content{
+          display: flex;
+          flex-direction: column;
           padding: 32px;
-          height: 100%
+          flex-grow: 1;
+          min-height: 0;
         }
         .options-row {
           display: flex;
           justify-content: space-between;
           align-items: flex-end;
+          flex-wrap: nowrap;
+          flex-shrink: 0; 
+          margin-bottom: 16px; 
         }
         .input-group {
           display: flex;
@@ -118,12 +132,13 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
           border: 1px solid var(--color-gray-200);
           border-radius: 6px;
         }
-        .oprions-row button{
-          flex-wrap: nowrap;
+        .table-scroll-wrapper {
+          flex-grow: 1; 
+          overflow-y: auto; 
+          min-height: 0; 
         }
         .column-table {
           width: 100%;
-          margin-top: 16px;
           border-collapse: collapse;
           border-top: 1px solid var(--color-gray-200);
         }
@@ -152,6 +167,17 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
         .badge-not { background-color: #FEF2F2; color: #B91C1C; }
         .badge-unique { background-color: #F0FDF4; color: #15803D; }
         .badge-enum { background-color: #F5F3FF; color: #5B21B6; }
+        
+        .generate-data-button {
+           width: 100%; 
+           margin-top: 32px; 
+           flex-shrink: 0; 
+           background-color:var(--color-main-blue);
+           padding: 12px;
+           border-radius: 10px ;
+           color: var(--color-white);
+
+        }
       `}</style>
     </>
   )
