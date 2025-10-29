@@ -1,7 +1,7 @@
 import React from 'react'
-import databaseIcon from '@renderer/assets/icons/database.png'
-import personIcon from '@renderer/assets/icons/person.png'
-import clockIcon from '@renderer/assets/icons/clock.png'
+import { BsDatabase } from 'react-icons/bs'
+import { IoPersonOutline } from 'react-icons/io5'
+import { IoTimeOutline } from 'react-icons/io5'
 
 interface CardProps {
   name: string
@@ -122,17 +122,17 @@ const Card: React.FC<CardProps> = ({
         <div className="card-info">
           <div className="info-group">
             <div className="card-row">
-              <img src={databaseIcon} alt="database" className="card-icon" />
+              <BsDatabase />
               <span className="preLight14">{`${host}:${port}`}</span>
             </div>
             <div className="card-row">
-              <img src={personIcon} alt="user" className="card-icon" />
+              <IoPersonOutline />
               <span className="preLight14">{username}</span>
             </div>
           </div>
 
           <div className="card-row">
-            <img src={clockIcon} alt="clock" className="clock-icon" />
+            <IoTimeOutline size={20} />
             <span className="preLight16">{lastUpdated}</span>
           </div>
         </div>
