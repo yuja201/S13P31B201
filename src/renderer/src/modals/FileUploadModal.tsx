@@ -2,7 +2,8 @@ import React, { useState, useCallback } from 'react'
 import Modal from '@renderer/components/Modal'
 import { CgSoftwareDownload } from 'react-icons/cg'
 import PageTitle from '@renderer/components/PageTitle'
-// import FilePreviewModal from '@renderer/modals/FilePreviewModal'
+import FilePreviewModal from '@renderer/modals/FilePreviewModal'
+import Toast from '@renderer/components/Toast'
 
 interface FileUploadModalProps {
   isOpen: boolean
@@ -14,6 +15,38 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({ isOpen, onClose, tabl
   const [isDragging, setIsDragging] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
   const [isPreviewOpen, setIsPreviewOpen] = useState(false)
+
+  const [showToast, setShowToast] = useState(false)
+  const [toastType, setToastType] = useState<'warning' | 'success'>('warning')
+  const [toastMessage, setToastMessage] = useState('')
+
+  const showErrorToast = useCallback((msg: string): void => {
+    setToastType('warning')
+    setToastMessage(msg)
+    setShowToast(true)
+  }, [])
+
+  const validateFile = useCallback(
+    (file: File): boolean => {
+      const validExtensions = ['csv', 'json', 'txt']
+      const ext = file.name.split('.').pop()?.toLowerCase()
+
+      if (!ext || !validExtensions.includes(ext)) {
+        showErrorToast('지원하지 않는 파일 형식입니다. (csv, json, txt만 가능)')
+        return false
+      }
+      if (file.size === 0) {
+        showErrorToast('파일이 비어 있습니다.')
+        return false
+      }
+      if (file.size > 5 * 1024 * 1024) {
+        showErrorToast('파일 크기는 최대 5MB까지만 허용됩니다.')
+        return false
+      }
+      return true
+    },
+    [showErrorToast]
+  )
 
   const handleDragOver = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     e.preventDefault()
@@ -27,26 +60,29 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({ isOpen, onClose, tabl
     setIsDragging(false)
   }, [])
 
-  const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setIsDragging(false)
-    const file = e.dataTransfer.files?.[0]
-    if (file) {
-      setSelectedFile(file)
-      setIsPreviewOpen(true)
-    }
-  }, [])
+  const handleDrop = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setIsDragging(false)
+      const file = e.dataTransfer.files?.[0]
+      if (file && validateFile(file)) {
+        setSelectedFile(file)
+        setIsPreviewOpen(true)
+      }
+    },
+    [validateFile]
+  )
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const file = e.target.files?.[0]
-    if (file) {
+    if (file && validateFile(file)) {
       setSelectedFile(file)
       setIsPreviewOpen(true)
     }
   }
 
-  const handlePreviewClose = () => {
+  const handlePreviewClose = (): void => {
     setIsPreviewOpen(false)
     setSelectedFile(null)
   }
@@ -84,6 +120,28 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({ isOpen, onClose, tabl
             />
           </div>
         </div>
+
+        {/* 파일 유효성 검사 Toast */}
+        {showToast && (
+          <div
+            style={{
+              position: 'fixed',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              zIndex: 9999
+            }}
+          >
+            <Toast
+              type={toastType}
+              title="파일 오류"
+              duration={3000}
+              onClose={() => setShowToast(false)}
+            >
+              <div>{toastMessage}</div>
+            </Toast>
+          </div>
+        )}
 
         <style>{`
           .main-content {
@@ -133,9 +191,14 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({ isOpen, onClose, tabl
         `}</style>
       </Modal>
 
-      {/* {selectedFile && (
-        <FilePreviewModal isOpen={isPreviewOpen} onClose={handlePreviewClose} file={selectedFile} />
-      )} */}
+      {selectedFile && (
+        <FilePreviewModal
+          isOpen={isPreviewOpen}
+          onClose={handlePreviewClose}
+          file={selectedFile}
+          tableName={tableName}
+        />
+      )}
     </>
   )
 }

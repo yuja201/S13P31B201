@@ -9,7 +9,7 @@ type InsertMode = 'sql' | 'db'
 
 const DummyInsertView: React.FC = () => {
   // 방식
-  const [mode, setMode] = useState<InsertMode>('sql')
+  const [mode] = useState<InsertMode>('sql')
 
   // 진행 상태
   const [progress, setProgress] = useState<number>(0)
@@ -20,11 +20,11 @@ const DummyInsertView: React.FC = () => {
   const [insertedCount, setInsertedCount] = useState<number>(0)
 
   // 로그 데이터
-  const [logs, setLogs] = useState<string[]>([
+  const [logs] = useState<string[]>([
     '데이터 생성 완료: users 테이블 — 100%',
     '데이터 생성 완료: categories 테이블 — 100%'
   ])
-  const [errors, setErrors] = useState<string[]>([])
+  const [errors] = useState<string[]>([])
 
   const logEndRef = useRef<HTMLDivElement>(null)
   useEffect(() => {

@@ -31,7 +31,7 @@ const MiniSearchBox = ({
 
   const containerStyle: CSSProperties = {
     position: 'relative',
-    width: '228px',
+    width: '100%',
     height: '36px',
     display: 'flex',
     alignItems: 'center'

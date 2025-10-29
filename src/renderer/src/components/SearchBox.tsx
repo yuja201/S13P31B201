@@ -6,14 +6,38 @@ interface SearchBarProps {
   placeholder?: string
   onSearch?: (value: string) => void
   onSearchClick?: () => void
+  width?: string | number
+  height?: string | number
 }
 
 const SearchBox = ({
   placeholder = '프로젝트 검색',
   onSearch,
-  onSearchClick
+  onSearchClick,
+  width = 675,
+  height = 60
 }: SearchBarProps): ReactElement => {
   const [searchValue, setSearchValue] = useState('')
+
+  const getPixelValue = (value: string | number): string => {
+    return typeof value === 'number' ? `${value}px` : value
+  }
+
+  const getNumericHeight = (): number => {
+    if (typeof height === 'number') return height
+    const match = height.match(/(\d+)/)
+    return match ? parseInt(match[1]) : 60
+  }
+
+  const numericHeight = getNumericHeight()
+
+  const fontSize = Math.round(numericHeight * 0.4)
+  const paddingVertical = 0
+  const paddingHorizontal = Math.round(numericHeight * 0.53)
+  const paddingRight = Math.round(numericHeight * 1.07)
+  const borderRadius = Math.round(numericHeight * 0.33)
+  const iconSize = Math.round(numericHeight * 0.5)
+  const iconRight = paddingHorizontal
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const value = e.target.value
@@ -31,8 +55,8 @@ const SearchBox = ({
 
   const containerStyle: CSSProperties = {
     position: 'relative',
-    width: '675px',
-    height: '60px',
+    width: getPixelValue(width),
+    height: getPixelValue(height),
     display: 'flex',
     alignItems: 'center'
   }
@@ -41,9 +65,9 @@ const SearchBox = ({
     width: '100%',
     height: '100%',
     border: '1px solid #e8e8e8',
-    borderRadius: '20px',
-    padding: '0 64px 0 32px',
-    fontSize: '24px',
+    borderRadius: `${borderRadius}px`,
+    padding: `${paddingVertical}px ${paddingRight}px ${paddingVertical}px ${paddingHorizontal}px`,
+    fontSize: `${fontSize}px`,
     fontFamily: 'var(--font-family)',
     fontWeight: 'var(--fw-regular)' as React.CSSProperties['fontWeight'],
     color: 'var(--color-dark-gray)',
@@ -55,7 +79,7 @@ const SearchBox = ({
 
   const iconStyle: CSSProperties = {
     position: 'absolute',
-    right: '32px',
+    right: `${iconRight}px`,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -65,7 +89,7 @@ const SearchBox = ({
     padding: 0,
     cursor: 'pointer',
     transition: 'color 0.2s ease',
-    fontSize: '30px'
+    fontSize: `${iconSize}px`
   }
 
   return (
@@ -89,7 +113,7 @@ const SearchBox = ({
         />
 
         <button onClick={handleSearchClick} type="button" style={iconStyle}>
-          <FiSearch size={30} color="#c0c0c0" />
+          <FiSearch size={iconSize} color="#c0c0c0" />
         </button>
       </div>
     </>
