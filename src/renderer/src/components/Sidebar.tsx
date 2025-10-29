@@ -9,8 +9,10 @@ import { BsLayoutSidebar } from 'react-icons/bs'
 
 interface SidebarProps {
   locked?: boolean
+  projectName?: string
+  dbType?: string
 }
-const Sidebar: React.FC<SidebarProps> = ({ locked = false }) => {
+const Sidebar: React.FC<SidebarProps> = ({ locked = false, projectName, dbType }) => {
   const [collapsed, setCollapsed] = useState(locked)
   const toggleSidebar = (): void => {
     if (locked) return
@@ -69,8 +71,8 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false }) => {
           <div className="sidebar-project">
             <p className="preRegular16 project-label">현재 프로젝트</p>
             <div className="project-box shadow">
-              <div className="project-name preSemiBold20">FORINGKOR</div>
-              <div className="project-db preLight12">PostgreSQL</div>
+              <div className="project-name preSemiBold20">{projectName || '선택 안됨'}</div>
+              <div className="project-db preLight12">{dbType || '-'}</div>
             </div>
             <div className="preLight12 project-time">
               <GrUpdate /> {currentTime}
