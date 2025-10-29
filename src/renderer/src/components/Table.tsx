@@ -91,7 +91,7 @@ const Table: React.FC<TableProps> = ({
         .custom-table th {
           font: var(--preSemiBold14);
           color: var(--color-black);
-          text-align: left;
+          text-align: center;
           padding: 16px 18px;
           background-color: var(--color-header);
           position: sticky;
@@ -103,6 +103,7 @@ const Table: React.FC<TableProps> = ({
         .custom-table td {
           font: var(--preRegular14);
           color: var(--color-black);
+          text-align: left;
           padding: 12px 18px;
           border-bottom: 1px solid var(--color-background);
           vertical-align: middle;
