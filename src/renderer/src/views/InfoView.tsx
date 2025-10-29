@@ -39,35 +39,30 @@ const InfoView: React.FC = () => {
       setToastType('warning')
       setToastMessage('프로젝트명을 입력해주세요.')
       setShowToast(true)
-      setTimeout(() => setShowToast(false), 3000)
       return false
     }
     if (!formData.host.trim()) {
       setToastType('warning')
       setToastMessage('호스트를 입력해주세요.')
       setShowToast(true)
-      setTimeout(() => setShowToast(false), 3000)
       return false
     }
     if (!formData.port.trim()) {
       setToastType('warning')
       setToastMessage('포트를 입력해주세요.')
       setShowToast(true)
-      setTimeout(() => setShowToast(false), 3000)
       return false
     }
     if (!formData.username.trim()) {
       setToastType('warning')
       setToastMessage('사용자명을 입력해주세요.')
       setShowToast(true)
-      setTimeout(() => setShowToast(false), 3000)
       return false
     }
     if (!formData.password.trim()) {
       setToastType('warning')
       setToastMessage('비밀번호를 입력해주세요.')
       setShowToast(true)
-      setTimeout(() => setShowToast(false), 3000)
       return false
     }
     return true
@@ -81,9 +76,6 @@ const InfoView: React.FC = () => {
     setToastType('success')
     setToastMessage('데이터베이스 연결에 성공했습니다.')
     setShowToast(true)
-    setTimeout(() => {
-      setShowToast(false)
-    }, 3000)
   }
 
   const handleInputChange = (field: keyof ProjectInfo, value: string): void => {
@@ -223,6 +215,7 @@ const InfoView: React.FC = () => {
             required={true}
             value={formData.password}
             onChange={(value) => handleInputChange('password', value)}
+            password={true}
           />
         </div>
         <div className="info-view-button-container">
@@ -245,7 +238,7 @@ const InfoView: React.FC = () => {
             <Toast
               type={toastType}
               title={toastType === 'success' ? '연결 성공' : '입력 오류'}
-              duration={3000}
+              onClose={() => setShowToast(false)}
             >
               <div className="toast-text">{toastMessage}</div>
             </Toast>
