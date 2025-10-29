@@ -146,16 +146,20 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
           border-collapse: collapse;
           border-top: 1px solid var(--color-gray-200);
         }
-        .column-table th, .column-table td {
+
+        .column-table th {
+          color: var(--color-dark-gray);
+          background-color: #FAFAFA;
+          text-align: center;
           padding: 16px 8px;
-          text-align: left;
+        }
+        .column-table td {
+          padding: 16px;
+          text-align: center;
           vertical-align: middle;
           border-bottom: 1px solid var(--color-gray-200);
         }
-        .column-table th {
-          color: var(--color-dark-gray);
-        }
-
+    
         .constraint-badges {
           display: flex;
           gap: 4px;
