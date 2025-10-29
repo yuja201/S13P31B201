@@ -15,14 +15,14 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ tableName, onNext
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
 
-  /** ✅ Toast 자동 닫기 */
+  /** Toast 자동 닫기 */
   const showError = useCallback((msg: string): void => {
     setToastMessage(msg)
     setShowToast(true)
     setTimeout(() => setShowToast(false), 2500)
   }, [])
 
-  /** ✅ CSV 파싱 */
+  /** CSV 파싱 */
   const parseCSV = (text: string): [Column[], Row[]] => {
     const lines = text.trim().split('\n')
     if (!lines.length) return [[], []]
@@ -37,7 +37,7 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ tableName, onNext
     return [cols, rows]
   }
 
-  /** ✅ JSON 파싱 */
+  /** JSON 파싱 */
   const parseJSON = (text: string): [Column[], Row[]] => {
     try {
       const data = JSON.parse(text)
@@ -51,7 +51,7 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ tableName, onNext
     }
   }
 
-  /** ✅ TXT 파싱 (탭 기준) */
+  /** TXT 파싱 (탭 기준) */
   const parseTXT = (text: string): [Column[], Row[]] => {
     const lines = text.trim().split('\n')
     if (!lines.length) return [[], []]
@@ -66,7 +66,7 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ tableName, onNext
     return [cols, rows]
   }
 
-  /** ✅ 파일 파싱 + 유효성 검사 */
+  /** 파일 파싱 + 유효성 검사 */
   const handleFile = async (file: File): Promise<void> => {
     if (!file) return
 
@@ -102,7 +102,7 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ tableName, onNext
     onNext(file, cols, rows)
   }
 
-  /** ✅ 드래그 드롭 */
+  /** 드래그 드롭 */
   const handleDrop = (e: React.DragEvent<HTMLDivElement>): void => {
     e.preventDefault()
     setIsDragging(false)
