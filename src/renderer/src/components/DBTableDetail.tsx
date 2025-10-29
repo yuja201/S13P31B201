@@ -163,7 +163,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
         }
         .badge {
           padding: 4px 8px;
-          border-radius: 4px;
+          border-radius: 5px;
           font-size: 12px;
           font-weight: 600;
 
@@ -178,7 +178,6 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
         .badge-default { background-color: #F3F4F6; color: #4B5563; }
         .badge-domain { background-color: #FFF7ED; color: #EA580C; } 
         
-
       `}</style>
     </>
   )

@@ -41,18 +41,14 @@ const mockTables: TableInfo[] = [
         type: 'INTEGER',
         constraints: [
           'FK',
-          'ENUM',
-          'CHECK',
-          'NOT NULL',
           'PK',
+          'CHECK',
           'NOT NULL',
           'UNIQUE',
           'DEFAULT',
-          'NOT NULL',
-          'CHECK',
-          'DEFAULT',
-          'NOT NULL',
-          'CHECK'
+          'AUTO INCREMENT',
+          'DOMAIN',
+          'ENUM'
         ],
         generation: '참조',
         setting: 'user.id(2)'
