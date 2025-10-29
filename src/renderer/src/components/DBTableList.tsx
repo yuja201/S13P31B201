@@ -45,7 +45,7 @@ const DBTableList: React.FC<DBTableListProps> = ({ tables, focusedTableId, onTab
               key={table.id}
               // 현재 포커스된 테이블인지 확인하고 'active' 클래스 부여
               className={`table-list-item ${table.id === focusedTableId ? 'active' : ''}`}
-              onClick={() => onTableSelect(table)} // 클릭 시 부모의 상태 변경 함수 호출
+              onClick={() => onTableSelect(table)}
             >
               <input
                 type="checkbox"
