@@ -78,90 +78,35 @@ const MainView: React.FC = () => {
   }
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        padding: '40px 64px',
-        height: 'auto',
-        overflow: 'visible',
-        boxSizing: 'border-box'
-      }}
-    >
+    <div className="main-view-container">
       {/* 타이틀 */}
-      <div style={{ textAlign: 'center', marginBottom: 20 }}>
-        <h2 className="preBold32" style={{ color: 'var(--color-main-blue)' }}>
-          프로젝트를 선택하세요
-        </h2>
-        <p className="preLight20" style={{ color: 'var(--color-dark-gray)' }}>
+      <div className="title-section">
+        <h2 className="title-heading preBold32">프로젝트를 선택하세요</h2>
+        <p className="title-description preLight20">
           작업할 데이터베이스 프로젝트를 선택하거나 새로 만드세요
         </p>
       </div>
 
       {/* 검색창 */}
-      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 20 }}>
+      <div className="search-section">
         <SearchBox placeholder="프로젝트 검색" height={'50px'} />
       </div>
 
       {/* 필터 + 카드 컨테이너 */}
-      <div
-        style={{
-          width: '100%',
-          margin: '0 auto',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          boxSizing: 'border-box'
-        }}
-      >
+      <div className="content-container">
         {/* 필터 버튼 */}
-        <div
-          style={{
-            width: '100%',
-            display: 'flex',
-            justifyContent: 'flex-end',
-            marginBottom: '16px',
-            maxWidth: '1232px'
-          }}
-        >
-          <div style={{ position: 'relative', width: '130px' }}>
+        <div className="filter-section">
+          <div className="dropdown-wrapper">
             <button
+              className="filter-button preRegular14"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              onMouseOver={(e) => (e.currentTarget.style.transform = 'scale(1.03)')}
-              onMouseOut={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                backgroundColor: 'var(--color-white)',
-                border: 'none',
-                borderRadius: '12px',
-                boxShadow: 'var(--shadow)',
-                padding: '10px 16px',
-                cursor: 'pointer',
-                color: 'var(--color-dark-gray)',
-                transition: 'all 0.2s ease'
-              }}
             >
               <IoFilterOutline size={18} style={{ marginRight: '6px' }} />
               <span>{getSortLabel()}</span>
             </button>
 
             {isDropdownOpen && (
-              <div
-                style={{
-                  position: 'absolute',
-                  top: '48px',
-                  left: 0,
-                  width: '100%',
-                  backgroundColor: 'var(--color-white)',
-                  borderRadius: '12px',
-                  boxShadow: 'var(--shadow)',
-                  padding: '8px 0',
-                  zIndex: 10
-                }}
-              >
+              <div className="dropdown-menu shadow">
                 {[
                   { key: 'modified', label: '수정일순' },
                   { key: 'created', label: '생성일순' },
@@ -169,25 +114,10 @@ const MainView: React.FC = () => {
                 ].map((option) => (
                   <div
                     key={option.key}
+                    className={`dropdown-item preRegular14 ${
+                      sortOption === option.key ? 'active' : ''
+                    }`}
                     onClick={() => handleSortChange(option.key as 'modified' | 'created' | 'name')}
-                    onMouseEnter={(e) =>
-                      (e.currentTarget.style.backgroundColor = 'rgba(0, 0, 0, 0.05)')
-                    }
-                    onMouseLeave={(e) =>
-                      (e.currentTarget.style.backgroundColor =
-                        sortOption === option.key ? 'rgba(0, 0, 0, 0.05)' : 'transparent')
-                    }
-                    style={{
-                      padding: '10px 16px',
-                      cursor: 'pointer',
-                      backgroundColor:
-                        sortOption === option.key ? 'rgba(0, 0, 0, 0.05)' : 'transparent',
-                      color:
-                        sortOption === option.key
-                          ? 'var(--color-main-blue)'
-                          : 'var(--color-dark-gray)',
-                      transition: 'background 0.15s ease'
-                    }}
                   >
                     {option.label}
                   </div>
@@ -198,17 +128,7 @@ const MainView: React.FC = () => {
         </div>
 
         {/* 카드 리스트 */}
-        <div
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(auto-fill, 400px)',
-            justifyContent: 'center',
-            gap: '16px',
-            width: '100%',
-            boxSizing: 'border-box',
-            paddingBottom: '80px'
-          }}
-        >
+        <div className="card-list-grid">
           {projects.map((project) => (
             <Card key={project.id} {...project} onClick={() => goToProject(project.id)} />
           ))}
@@ -216,41 +136,142 @@ const MainView: React.FC = () => {
       </div>
 
       {/* 플로팅 + 버튼 */}
-      <button
-        onClick={() => setIsModalOpen(true)}
-        onMouseOver={(e) => (e.currentTarget.style.transform = 'scale(1.08)')}
-        onMouseOut={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-        style={{
-          position: 'fixed',
-          bottom: 40,
-          right: 40,
-          width: 64,
-          height: 64,
-          borderRadius: '50%',
-          border: 'none',
-          backgroundColor: 'var(--color-orange)',
-          color: '#fff',
-          fontSize: 32,
-          boxShadow: 'var(--shadow)',
-          cursor: 'pointer',
-          transition: 'all 0.2s ease'
-        }}
-      >
+      <button className="floating-add-button shadow" onClick={() => setIsModalOpen(true)}>
         +
       </button>
 
       <CreateProjectModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
 
-      {/* 스크롤바 스타일 */}
-      <style>
-        {`
-          html, body { overflow-y: auto; }
-          ::-webkit-scrollbar { width: 10px; }
-          ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 999px; }
-          ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.3); }
-          ::-webkit-scrollbar-track { background: transparent; }
-        `}
-      </style>
+      <style>{`
+        .main-view-container {
+          display: flex;
+          flex-direction: column;
+          padding: 40px 64px;
+          height: auto;
+          overflow: visible;
+          box-sizing: border-box;
+          width: 100%;
+        }
+
+        .title-section {
+          text-align: center;
+          margin-bottom: 20px;
+        }
+        .title-heading {
+          color: var(--color-main-blue);
+        }
+        .title-description {
+          color: var(--color-dark-gray);
+        }
+
+        .search-section {
+          display: flex;
+          justify-content: center;
+          margin-bottom: 20px;
+        }
+
+        .content-container {
+          width: 100%;
+          margin: 0 auto;
+          display: flex;
+          flex-direction: column;
+          box-sizing: border-box;
+          align-items: center;
+        }
+
+        .filter-section {
+          width: 100%;
+          display: flex;
+          justify-content: flex-end;
+          margin-bottom: 16px;
+          max-width: 1232px; 
+        }
+
+        .dropdown-wrapper {
+          position: relative;
+        }
+
+        .filter-button {
+          display: flex;
+          align-items: center;
+          background-color: var(--color-white);
+          border: none;
+          border-radius: 12px;
+          box-shadow: var(--shadow);
+          padding: 10px 16px;
+          cursor: pointer;
+          color: var(--color-dark-gray);
+          transition: transform 0.2s ease, box-shadow 0.2s ease; 
+        }
+        .filter-button:hover {
+          transform: scale(1.03);
+          box-shadow: 2px 2px 6px rgba(0, 0, 0, 0.15);
+        }
+
+        .dropdown-menu {
+          position: absolute;
+          top: 48px; 
+          left: 0;
+          width: 100%;
+          background-color: var(--color-white);
+          border-radius: 12px;
+          padding: 8px 0;
+          z-index: 10;
+        }
+
+        .dropdown-item {
+          padding: 10px 16px;
+          cursor: pointer;
+          background-color: transparent;
+          color: var(--color-dark-gray);
+          transition: background-color 0.15s ease, color 0.15s ease;
+        }
+        .dropdown-item:hover {
+          background-color: rgba(0, 0, 0, 0.05);
+        }
+        .dropdown-item.active {
+          background-color: rgba(0, 0, 0, 0.05);
+          color: var(--color-main-blue);
+        }
+
+        .card-list-grid {
+          display: grid;
+          grid-template-columns: repeat(3, 1fr);
+          justify-content: center; 
+          gap: 16px;
+          width: 100%;
+          box-sizing: border-box;
+          padding-bottom: 80px; 
+          width: 100%;
+          max-width: 1232px;
+        }
+
+        .floating-add-button {
+          position: fixed;
+          bottom: 40px;
+          right: 40px;
+          width: 64px;
+          height: 64px;
+          border-radius: 50%;
+          border: none;
+          background-color: var(--color-orange);
+          color: #fff;
+          font-size: 32px;
+          cursor: pointer;
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .floating-add-button:hover {
+          transform: scale(1.08);
+          box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* 스크롤바 스타일 */
+        html, body { overflow-y: auto; }
+        ::-webkit-scrollbar { width: 10px; }
+        ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 999px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.3); }
+        ::-webkit-scrollbar-track { background: transparent; }
+      `}</style>
     </div>
   )
 }
