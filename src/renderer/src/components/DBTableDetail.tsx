@@ -29,7 +29,8 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
                 value={rows}
                 onChange={(e) => setRows(Number(e.target.value))}
                 placeholder="e.g., 1,000"
-                className="preRegular16"
+                className="preMedium16 shadow"
+                step="100"
               />
             </div>
             <Button variant="blue" size="md">
@@ -89,7 +90,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
         .detail-header {
           display: flex;
           align-items: baseline;
-          gap: 12px;
+          gap:16px;
           border-top-left-radius: 10px;
           border-top-right-radius: 10px;
           padding: 20px 24px ;
@@ -105,7 +106,6 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
           display: flex;
           justify-content: space-between;
           align-items: flex-end;
-          margin-top: 24px;
         }
         .input-group {
           display: flex;
@@ -113,15 +113,17 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
           gap: 8px;
         }
         .input-group input {
-          width: 300px;
+          width: 200px;
           padding: 8px 12px;
           border: 1px solid var(--color-gray-200);
           border-radius: 6px;
         }
-
+        .oprions-row button{
+          flex-wrap: nowrap;
+        }
         .column-table {
           width: 100%;
-          margin-top: 24px;
+          margin-top: 16px;
           border-collapse: collapse;
           border-top: 1px solid var(--color-gray-200);
         }
