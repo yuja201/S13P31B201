@@ -12,8 +12,9 @@ interface SidebarProps {
   locked?: boolean
   projectName?: string
   dbType?: string
+  projectId?: string
 }
-const Sidebar: React.FC<SidebarProps> = ({ locked = false, projectName, dbType }) => {
+const Sidebar: React.FC<SidebarProps> = ({ locked = false, projectName, dbType, projectId }) => {
   const [collapsed, setCollapsed] = useState(locked)
   const navigate = useNavigate()
 
@@ -94,7 +95,8 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false, projectName, dbType }
         {/* 메뉴 */}
         <nav className="sidebar-menu">
           <NavLink
-            to="/main/dashboard"
+            // [!] projectId가 있을 때만 경로에 포함
+            to={projectId ? `/main/dashboard/${projectId}` : '#'}
             className={({ isActive }): string =>
               `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
             }
@@ -102,7 +104,7 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false, projectName, dbType }
             <RxDashboard size={22} /> 프로젝트 대시보드
           </NavLink>
           <NavLink
-            to="/main/info"
+            to={projectId ? `/main/info/${projectId}` : '#'}
             className={({ isActive }): string =>
               `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
             }
@@ -110,7 +112,7 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false, projectName, dbType }
             <FaLink size={22} /> 프로젝트 정보
           </NavLink>
           <NavLink
-            to="/main/dummy"
+            to={projectId ? `/main/dummy/${projectId}` : '#'} // [!] 여기 수정
             className={({ isActive }): string =>
               `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
             }
@@ -118,7 +120,7 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false, projectName, dbType }
             <FaDatabase size={22} /> 더미데이터 생성
           </NavLink>
           <NavLink
-            to="/main/test"
+            to={projectId ? `/main/test/${projectId}` : '#'} // [!] 여기 수정
             className={({ isActive }): string =>
               `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
             }
@@ -126,7 +128,7 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false, projectName, dbType }
             <FaChartBar size={22} /> DB 성능 테스트
           </NavLink>
           <NavLink
-            to="/main/history"
+            to={projectId ? `/main/history/${projectId}` : '#'} // [!] 여기 수정
             className={({ isActive }): string =>
               `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
             }

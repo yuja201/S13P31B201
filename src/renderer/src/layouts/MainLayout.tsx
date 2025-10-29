@@ -13,16 +13,15 @@ const projectsData = [
 
 const MainLayout: React.FC = () => {
   const location = useLocation()
-  const params = useParams<{ projectId: string }>()
+  const { projectId } = useParams<{ projectId: string }>()
   const [currentProject, setCurrentProject] = useState<{ name: string; dbType: string } | null>(
     null
   )
   const isLocked = location.pathname === '/'
 
   useEffect(() => {
-    if (params.projectId) {
-      // projectId에 해당하는 프로젝트 정보 찾기
-      const foundProject = projectsData.find((p) => p.id === params.projectId)
+    if (projectId) {
+      const foundProject = projectsData.find((p) => p.id === projectId)
       if (foundProject) {
         setCurrentProject({ name: foundProject.name, dbType: foundProject.dbType })
       } else {
@@ -31,7 +30,7 @@ const MainLayout: React.FC = () => {
     } else {
       setCurrentProject(null)
     }
-  }, [params.projectId])
+  }, [projectId])
 
   return (
     <div className="layout">
@@ -39,6 +38,7 @@ const MainLayout: React.FC = () => {
         locked={isLocked}
         projectName={currentProject?.name}
         dbType={currentProject?.dbType}
+        projectId={projectId}
       />
       <main className="main-content">
         <div className="content-wrapper">
