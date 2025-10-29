@@ -100,7 +100,6 @@ const MainView: React.FC = () => {
             <button
               className="filter-button preRegular14"
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              // onMouseOver/Out 제거
             >
               <IoFilterOutline size={18} style={{ marginRight: '6px' }} />
               <span>{getSortLabel()}</span>
@@ -119,7 +118,6 @@ const MainView: React.FC = () => {
                       sortOption === option.key ? 'active' : ''
                     }`}
                     onClick={() => handleSortChange(option.key as 'modified' | 'created' | 'name')}
-                    // onMouseEnter/Leave 제거
                   >
                     {option.label}
                   </div>
@@ -144,7 +142,6 @@ const MainView: React.FC = () => {
 
       <CreateProjectModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
 
-      {/* 스크롤바 스타일 포함 전체 스타일 */}
       <style>{`
         .main-view-container {
           display: flex;
