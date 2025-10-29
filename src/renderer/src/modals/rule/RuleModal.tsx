@@ -3,12 +3,12 @@ import Modal from '@renderer/components/Modal'
 import RuleSelectContent from '@renderer/modals/rule/RuleSelectContent'
 import RuleCreationContent, { RuleCreationData } from '@renderer/modals/rule/RuleCreationContent'
 
-interface RuleManagerModalProps {
+interface RuleModalProps {
   isOpen: boolean
   onClose: () => void
 }
 
-const RuleManagerModal: React.FC<RuleManagerModalProps> = ({ isOpen, onClose }) => {
+const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose }) => {
   const [mode, setMode] = useState<'select' | 'create'>('select')
 
   const handleCreateNew = (): void => {
@@ -37,7 +37,7 @@ const RuleManagerModal: React.FC<RuleManagerModalProps> = ({ isOpen, onClose }) 
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} width="720px">
-      <div className="rule-manager">
+      <div className="rule-modal">
         {mode === 'select' ? (
           <RuleSelectContent
             typeName="INTEGER"
@@ -55,7 +55,7 @@ const RuleManagerModal: React.FC<RuleManagerModalProps> = ({ isOpen, onClose }) 
       </div>
 
       <style>{`
-        .rule-manager {
+        .rule-modal {
           width: 100%;
           height: 100%;
           transition: all 0.25s ease-in-out;
@@ -77,4 +77,4 @@ const RuleManagerModal: React.FC<RuleManagerModalProps> = ({ isOpen, onClose }) 
   )
 }
 
-export default RuleManagerModal
+export default RuleModal
