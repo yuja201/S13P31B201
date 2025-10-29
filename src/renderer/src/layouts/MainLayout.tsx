@@ -36,6 +36,7 @@ const MainLayout: React.FC = () => {
           flex-direction: column;
           flex-grow: 1;
           justify-content: center; 
+          align-items: center;
 
         }
       `}</style>

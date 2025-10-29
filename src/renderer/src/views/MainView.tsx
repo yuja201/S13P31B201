@@ -178,8 +178,8 @@ const MainView: React.FC = () => {
           margin: 0 auto;
           display: flex;
           flex-direction: column;
-          align-items: center;
           box-sizing: border-box;
+          align-items: center;
         }
 
         .filter-section {
@@ -192,14 +192,11 @@ const MainView: React.FC = () => {
 
         .dropdown-wrapper {
           position: relative;
-          width: 130px;
         }
 
         .filter-button {
-          width: 100%;
           display: flex;
           align-items: center;
-          justify-content: space-between;
           background-color: var(--color-white);
           border: none;
           border-radius: 12px;
