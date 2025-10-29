@@ -13,7 +13,7 @@ interface Column {
 
 interface Row {
   id: number | string
-  [key: string]: unknown
+  [key: string]: React.ReactNode
 }
 
 interface TableProps {
