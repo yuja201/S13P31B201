@@ -3,7 +3,7 @@ import PageTitle from '@renderer/components/PageTitle'
 import successIcon from '@renderer/assets/imgs/success.svg'
 import warningIcon from '@renderer/assets/imgs/warning.svg'
 import failureIcon from '@renderer/assets/imgs/failure.svg'
-import { Button } from '@renderer/components/Button'
+import Button from '@renderer/components/Button'
 
 type InsertMode = 'sql' | 'db'
 
