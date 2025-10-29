@@ -69,7 +69,17 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
                     </td>
                     <td>{col.generation}</td>
                     <td>
-                      <Button variant="gray" size="sm" style={{ whiteSpace: 'nowrap' }}>
+                      <Button
+                        variant="gray"
+                        size="sm"
+                        style={{
+                          whiteSpace: 'nowrap',
+                          backgroundColor: 'var(--color-light-blue)',
+                          color: 'var(--color-main-blue)',
+                          borderRadius: '10px',
+                          padding: '4px 12px'
+                        }}
+                      >
                         {col.setting} 🖊️
                       </Button>
                     </td>
@@ -97,6 +107,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
           flex-direction: column;
           height: 100%;
           overflow: hidden;
+          max-width: 1000px;
         }
         .detail-header {
           display: flex;
