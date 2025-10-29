@@ -269,7 +269,6 @@ const CreateDummyView: React.FC = () => {
         .dummy-content-wrapper {
           display: flex;
           flex-direction: row;
-          gap: 24px;
           width: 100%;
           margin-top: 32px;
           flex-grow: 1;

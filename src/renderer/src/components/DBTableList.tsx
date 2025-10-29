@@ -82,6 +82,7 @@ const DBTableList: React.FC<DBTableListProps> = ({ tables, focusedTableId, onTab
           background-color: var(--color-white);
           border-radius: 10px;
           padding: 20px;
+          margin-right: 24px;
         }
         .list-header {
           width: 100%;
