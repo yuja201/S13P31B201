@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import Modal from '@renderer/components/Modal'
 import PageTitle from '@renderer/components/PageTitle'
 import Table, { Column, Row } from '@renderer/components/Table'
 import Checkbox from '@renderer/components/Checkbox'
 import Toast from '@renderer/components/Toast'
-import InputField from '@renderer/components/InputField'
 
 interface FilePreviewModalProps {
   isOpen: boolean
@@ -26,18 +25,130 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
   const [toastMessage, setToastMessage] = useState<string>('')
   const [showToast, setShowToast] = useState<boolean>(false)
 
-  // ✅ TXT 전용 상태
+  // TXT 전용 상태
   const [lineSeparator, setLineSeparator] = useState<string>('\\n')
   const [columnSeparator, setColumnSeparator] = useState<string>('\t')
 
   /** Toast 표시 */
-  const showToastMessage = (msg: string): void => {
+  const showToastMessage = useCallback((msg: string): void => {
     setToastMessage(msg)
     setShowToast(true)
-    setTimeout(() => setShowToast(false), 2500)
-  }
+    const t = setTimeout(() => setShowToast(false), 2500)
+    clearTimeout(t)
+  }, [])
 
-  /** 파일 파싱 */
+  /** CSV 파싱 */
+  const parseCSV = useCallback(
+    (text: string): void => {
+      const lines = text.trim().split('\n')
+      if (lines.length === 0) {
+        setColumns([])
+        setRows([])
+        return
+      }
+
+      let headers: string[]
+      let dataLines: string[]
+
+      if (useHeaderAsTitle) {
+        headers = lines[0].split(',').map((h) => h.trim())
+        dataLines = lines.slice(1)
+      } else {
+        const firstLineCount = lines[0].split(',').length
+        headers = Array.from({ length: firstLineCount }, (_, i) => `col${i + 1}`)
+        dataLines = lines
+      }
+
+      const parsedRows = dataLines.map((line, index) => {
+        const values = line.split(',').map((v) => v.trim())
+        const row: Row = { id: index + 1 }
+        headers.forEach((key, i) => {
+          row[key] = values[i] ?? ''
+        })
+        return row
+      })
+
+      const tableCols: Column[] = headers.map((key) => ({ key, title: key, type: 'text' }))
+      setColumns(tableCols)
+      setRows(parsedRows)
+      setError('')
+    },
+    [useHeaderAsTitle]
+  )
+
+  /** JSON 파싱 */
+  const parseJSON = useCallback(
+    (text: string): void => {
+      try {
+        const data = JSON.parse(text)
+        if (Array.isArray(data) && data.length > 0 && typeof data[0] === 'object') {
+          const keys = Object.keys(data[0] as Record<string, unknown>)
+          const tableCols: Column[] = keys.map((key) => ({ key, title: key, type: 'text' }))
+          const parsedRows: Row[] = (data as Array<Record<string, unknown>>).map((item, idx) => ({
+            id: (item as { id?: number | string }).id ?? idx + 1,
+            ...item
+          }))
+          setColumns(tableCols)
+          setRows(parsedRows)
+          setError('')
+        } else {
+          throw new Error('JSON이 배열(Object[]) 형식이 아님')
+        }
+      } catch {
+        showToastMessage('❌ JSON 파일 형식이 올바르지 않습니다.')
+        setError('JSON 파싱 실패')
+        setColumns([])
+        setRows([])
+      }
+    },
+    [showToastMessage]
+  )
+
+  /** TXT 파싱 */
+  const parseTXT = useCallback(
+    (text: string): void => {
+      const lineSep = lineSeparator === '\\n' ? '\n' : lineSeparator
+      const colSep = columnSeparator === '\\t' ? '\t' : columnSeparator
+
+      const lines = text.trim().split(lineSep)
+      if (lines.length === 0) {
+        setColumns([])
+        setRows([])
+        return
+      }
+
+      let headers: string[]
+      let dataLines: string[]
+
+      if (useHeaderAsTitle) {
+        headers = lines[0].split(colSep).map((h) => (h.trim() ? h.trim() : ''))
+        // 빈 헤더는 colN으로 치환
+        headers = headers.map((h, i) => (h ? h : `col${i + 1}`))
+        dataLines = lines.slice(1)
+      } else {
+        const firstLineCount = lines[0].split(colSep).length
+        headers = Array.from({ length: firstLineCount }, (_, i) => `col${i + 1}`)
+        dataLines = lines
+      }
+
+      const parsedRows: Row[] = dataLines.map((line, idx) => {
+        const values = line.split(colSep)
+        const row: Row = { id: idx + 1 }
+        headers.forEach((key, i) => {
+          row[key] = values[i] ?? ''
+        })
+        return row
+      })
+
+      const tableCols: Column[] = headers.map((key) => ({ key, title: key, type: 'text' }))
+      setColumns(tableCols)
+      setRows(parsedRows)
+      setError('')
+    },
+    [lineSeparator, columnSeparator, useHeaderAsTitle]
+  )
+
+  /** 파일 파싱 트리거 */
   useEffect(() => {
     const parseFile = async (): Promise<void> => {
       if (!file) return
@@ -46,13 +157,17 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
         if (!['csv', 'json', 'txt'].includes(ext || '')) {
           showToastMessage('⚠️ 지원하지 않는 파일 형식입니다. (csv, json, txt만 가능)')
           setError('지원하지 않는 파일 형식입니다.')
+          setColumns([])
+          setRows([])
           return
         }
 
-        const maxSize = 5 * 1024 * 1024
+        const maxSize = 5 * 1024 * 1024 // 5MB
         if (file.size > maxSize) {
           showToastMessage('⚠️ 파일 크기가 너무 큽니다. (최대 5MB까지 허용)')
           setError('파일 크기 초과')
+          setColumns([])
+          setRows([])
           return
         }
 
@@ -60,6 +175,8 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
         if (!text.trim()) {
           showToastMessage('⚠️ 파일에 데이터가 없습니다.')
           setError('빈 파일')
+          setColumns([])
+          setRows([])
           return
         }
 
@@ -70,89 +187,22 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
         console.error('파일 읽기 실패:', err)
         showToastMessage('❌ 파일을 읽는 중 오류가 발생했습니다.')
         setError('파일 읽기 실패')
+        setColumns([])
+        setRows([])
       }
     }
 
     parseFile()
-  }, [file, useHeaderAsTitle, lineSeparator, columnSeparator])
-
-  /** CSV 파싱 */
-  const parseCSV = (text: string): void => {
-    const lines = text.trim().split('\n')
-    if (lines.length === 0) return
-
-    let headers: string[]
-    let dataLines: string[]
-
-    if (useHeaderAsTitle) {
-      headers = lines[0].split(',').map((h) => h.trim())
-      dataLines = lines.slice(1)
-    } else {
-      const firstLineCount = lines[0].split(',').length
-      headers = Array.from({ length: firstLineCount }, (_, i) => `col${i + 1}`)
-      dataLines = lines
-    }
-
-    const dataRows = dataLines.map((line, index) => {
-      const values = line.split(',').map((v) => v.trim())
-      const row: Row = { id: index + 1 }
-      headers.forEach((key, i) => (row[key] = values[i] || ''))
-      return row
-    })
-
-    const tableCols: Column[] = headers.map((key) => ({ key, title: key, type: 'text' }))
-    setColumns(tableCols)
-    setRows(dataRows)
-  }
-
-  /** JSON 파싱 */
-  const parseJSON = (text: string): void => {
-    try {
-      const data = JSON.parse(text)
-      if (Array.isArray(data) && data.length > 0) {
-        const keys = Object.keys(data[0])
-        const tableCols: Column[] = keys.map((key) => ({ key, title: key, type: 'text' }))
-        const dataRows: Row[] = data.map((item, idx) => ({ id: item.id || idx + 1, ...item }))
-        setColumns(tableCols)
-        setRows(dataRows)
-      } else throw new Error('JSON이 배열 형식이 아닙니다.')
-    } catch {
-      showToastMessage('❌ JSON 파일 형식이 올바르지 않습니다.')
-      setError('JSON 파싱 실패')
-    }
-  }
-
-  /** TXT 파싱 */
-  const parseTXT = (text: string): void => {
-    const lineSep = lineSeparator === '\\n' ? '\n' : lineSeparator
-    const colSep = columnSeparator === '\\t' ? '\t' : columnSeparator
-
-    const lines = text.trim().split(lineSep)
-    if (lines.length === 0) return
-
-    let headers: string[]
-    let dataLines: string[]
-
-    if (useHeaderAsTitle) {
-      headers = lines[0].split(colSep).map((h) => h.trim() || `col${h}`)
-      dataLines = lines.slice(1)
-    } else {
-      const firstLineCount = lines[0].split(colSep).length
-      headers = Array.from({ length: firstLineCount }, (_, i) => `col${i + 1}`)
-      dataLines = lines
-    }
-
-    const dataRows: Row[] = dataLines.map((line, idx) => {
-      const values = line.split(colSep)
-      const row: Row = { id: idx + 1 }
-      headers.forEach((key, i) => (row[key] = values[i] || ''))
-      return row
-    })
-
-    const tableCols: Column[] = headers.map((key) => ({ key, title: key, type: 'text' }))
-    setColumns(tableCols)
-    setRows(dataRows)
-  }
+  }, [
+    file,
+    useHeaderAsTitle,
+    lineSeparator,
+    columnSeparator,
+    parseCSV,
+    parseJSON,
+    parseTXT,
+    showToastMessage
+  ])
 
   const fileExt = file.name.split('.').pop()?.toLowerCase()
 
@@ -180,7 +230,7 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
             </p>
           </div>
 
-          {/* ✅ TXT 구분자 입력 (Inline InputField 스타일 적용) */}
+          {/* TXT 구분자 입력 (inline) */}
           {fileExt === 'txt' && (
             <div className="inline-inputs">
               <div className="inline-input">
@@ -260,7 +310,7 @@ const FilePreviewModal: React.FC<FilePreviewModalProps> = ({
             color: var(--color-dark-gray);
           }
 
-          /* ✅ 인라인 InputField 스타일 */
+          /* 인라인 입력 */
           .inline-inputs {
             display: flex;
             align-items: center;
