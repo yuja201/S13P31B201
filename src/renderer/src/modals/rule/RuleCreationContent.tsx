@@ -183,10 +183,10 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({ onCancel, onS
         }}
       >
         <Button variant="gray" onClick={onCancel}>
-          취소
+          이전
         </Button>
         <Button variant="orange" onClick={handleSubmit}>
-          생성
+          확인
         </Button>
       </div>
     </div>
