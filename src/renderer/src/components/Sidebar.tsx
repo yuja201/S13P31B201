@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
+import { LiaExchangeAltSolid } from 'react-icons/lia'
 import { FaDatabase, FaLink, FaChartBar, FaHistory } from 'react-icons/fa'
 import logoIcon from '@renderer/assets/icons/logo.svg'
 import { GrUpdate } from 'react-icons/gr'
@@ -14,9 +15,16 @@ interface SidebarProps {
 }
 const Sidebar: React.FC<SidebarProps> = ({ locked = false, projectName, dbType }) => {
   const [collapsed, setCollapsed] = useState(locked)
+  const navigate = useNavigate()
+
   const toggleSidebar = (): void => {
     if (locked) return
     setCollapsed(!collapsed)
+  }
+
+  // --- MainView로 이동하는 함수 ---
+  const goToMainView = (): void => {
+    navigate('/')
   }
 
   // locked prop이 변경될 때
@@ -69,7 +77,11 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false, projectName, dbType }
 
           {/* 프로젝트 정보 */}
           <div className="sidebar-project">
-            <p className="preRegular16 project-label">현재 프로젝트</p>
+            <div className="project-label-wrapper" onClick={goToMainView}>
+              <p className="preRegular16 project-label">
+                프로젝트 변경 <LiaExchangeAltSolid size={18} />
+              </p>
+            </div>
             <div className="project-box shadow">
               <div className="project-name preSemiBold20">{projectName || '선택 안됨'}</div>
               <div className="project-db preLight12">{dbType || '-'}</div>
@@ -220,13 +232,31 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false, projectName, dbType }
           overflow: hidden;
           white-space: nowrap;
         }
-
+        .project-label-wrapper {
+          display: flex; 
+          justify-content: center; 
+          width: 100%; 
+          cursor: pointer; 
+          padding: 4px 0; 
+          border-radius: 4px; 
+          transition: background-color 0.2s ease;
+        }
+        .project-label-wrapper:hover {
+        }
         .project-label {
           display: flex;
           align-items: center;
           gap: 8px;
         }
 
+        .project-label svg {
+          transition: transform 0.3s ease-in-out; 
+        }
+
+        .project-label-wrapper:hover .project-label svg {
+          transform: rotate(180deg); 
+        }
+          
         .project-box {
           display: flex;
           flex-direction: column;
