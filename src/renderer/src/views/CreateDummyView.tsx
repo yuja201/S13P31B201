@@ -133,8 +133,8 @@ const mockTables = [
     ]
   },
   {
-    id: 'age',
-    name: 'age',
+    id: 'first-name',
+    name: 'first-name',
     columns: 6,
     rows: 15324,
 
@@ -164,8 +164,8 @@ const mockTables = [
     ]
   },
   {
-    id: 'age',
-    name: 'age',
+    id: 'address',
+    name: 'address',
     columns: 6,
     rows: 15324,
 
@@ -195,8 +195,8 @@ const mockTables = [
     ]
   },
   {
-    id: 'age',
-    name: 'age',
+    id: 'nickname',
+    name: 'nickname',
     columns: 6,
     rows: 15324,
 

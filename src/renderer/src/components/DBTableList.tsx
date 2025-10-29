@@ -27,8 +27,7 @@ const DBTableList: React.FC<DBTableListProps> = ({ tables, focusedTableId, onTab
 
   return (
     <>
-      <div className="table-list-wrapper"></div>
-      <div className="table-list-container">
+      <div className="table-list-container shadow">
         {/* --- 테이블 목록 헤더 --- */}
         <div className="list-header">
           <h3 className="preSemiBold20">테이블 목록</h3>
@@ -81,7 +80,7 @@ const DBTableList: React.FC<DBTableListProps> = ({ tables, focusedTableId, onTab
           flex-shrink: 0;
           background-color: var(--color-white);
           border-radius: 10px;
-          padding: 20px;
+          padding: 20px 20px 10px 20px;
           margin-right: 24px;
         }
         .list-header {
@@ -153,13 +152,15 @@ const DBTableList: React.FC<DBTableListProps> = ({ tables, focusedTableId, onTab
         }
         .list-footer {
           width: 100%;
+          height: 50px;
           display: flex;
           justify-content: space-between;
           color: var(--color-dark-gray);
           margin-top: 8px;
-          padding-top: 16px;
           border-top: 1px solid var(--color-gray-200);
           flex-shrink: 0;
+          align-items: center;
+          padding: 0 8px;
         }
 
           /* 스크롤바 전체 영역 */
