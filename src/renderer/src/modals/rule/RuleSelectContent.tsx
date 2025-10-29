@@ -13,12 +13,14 @@ export interface RuleCreationData {
 }
 
 interface RuleSelectContentProps {
+  typeName: string
   onCancel: () => void
   onConfirm?: (value: string) => void
   onCreateNew?: () => void
 }
 
 const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
+  typeName,
   onCancel,
   onConfirm,
   onCreateNew
@@ -31,6 +33,9 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
 
   return (
     <div className="rule-select">
+      {/* 상단 타입 표시 */}
+      <div className="rule-select__type">{typeName.toUpperCase()}</div>
+
       {/* 제목 */}
       <div className="rule-select__header">
         <PageTitle
@@ -38,6 +43,8 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
           description="고정값을 입력하거나 생성한 규칙을 적용해보세요."
           size="small"
         />
+        <br />
+        <hr className="rule-select__divider" />
       </div>
 
       {/* 고정값 입력 */}
@@ -99,18 +106,32 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
         .rule-select {
           display: flex;
           flex-direction: column;
-          gap: 35px;
+          gap: 25px;
           padding: 0 14px 14px 0;
+        }
+
+        .rule-select__type {
+          font-family: var(--font-family);
+          font-size: 20px;
+          font-weight: var(--fw-regular);
+          color: var(--color-black);
         }
 
         .rule-select__header {
           margin-bottom: 4px;
         }
 
+        .rule-select__divider {
+          border: none;
+          border-top: 1px solid rgba(0, 0, 0, 0.15);
+          margin-top: 12px;
+        }
+
         .rule-select__section {
           display: flex;
           flex-direction: column;
-          gap: 12px;
+          margin-top: 10px;
+          gap: 15px;
         }
 
         .rule-select__section-header {
@@ -129,17 +150,17 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
         .rule-select__rules {
           display: flex;
           flex-direction: column;
-          gap: 10px;
+          gap: 12px;
         }
 
         .rule-select__rule {
           background-color: var(--color-white);
           border: 1.5px solid rgba(0, 0, 0, 0.08);
           border-radius: 10px;
-          padding: 18px 20px;
+          padding: 22px 20px;
           display: flex;
           flex-direction: column;
-          gap: 4px;
+          gap: 5px;
           transition: all 0.2s ease-in-out;
         }
 
@@ -156,16 +177,16 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
         .rule-select__rule-title {
           font-family: var(--font-family);
           font-weight: var(--fw-medium);
-          font-size: 14px;
+          font-size: 16px;
           color: var(--color-black);
         }
 
         .rule-select__rule-desc {
           font-family: var(--font-family);
           font-weight: var(--fw-regular);
-          font-size: 12px;
+          font-size: 14px;
           color: var(--color-dark-gray);
-          line-height: 1.4;
+          line-height: 1.5;
           white-space: pre-line;
         }
 

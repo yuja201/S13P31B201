@@ -35,6 +35,7 @@ const RuleManagerModal: React.FC<RuleManagerModalProps> = ({ isOpen, onClose }) 
       <div className="rule-manager">
         {mode === 'select' ? (
           <RuleSelectContent
+            typeName="INTEGER"
             onCancel={onClose}
             onConfirm={handleConfirmSelect}
             onCreateNew={handleCreateNew}
