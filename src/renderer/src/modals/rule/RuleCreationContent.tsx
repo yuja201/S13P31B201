@@ -5,6 +5,14 @@ import PageTitle from '@renderer/components/PageTitle'
 import SelectDomain from '@renderer/components/SelectDomain'
 import Button from '@renderer/components/Button'
 
+export interface RuleCreationData {
+  source: 'faker' | 'ai'
+  settingName: string
+  apiToken?: string
+  prompt?: string
+  model?: string
+}
+
 interface RuleCreationContentProps {
   onCancel: () => void
   onSubmit?: (data: {

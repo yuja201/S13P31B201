@@ -4,6 +4,14 @@ import InputField from '@renderer/components/InputField'
 import PageTitle from '@renderer/components/PageTitle'
 import Label from '@renderer/components/Label'
 
+export interface RuleCreationData {
+  source: 'faker' | 'ai'
+  settingName: string
+  apiToken?: string
+  prompt?: string
+  model?: string
+}
+
 interface RuleSelectContentProps {
   onCancel: () => void
   onConfirm?: (value: string) => void
