@@ -23,10 +23,13 @@ const MainLayout: React.FC = () => {
           background-color: var(--color-background);
         }
         .main-content {
+          display: flex;
           flex: 1;
           padding: 80px;
           background-color: var(--color-background);
           overflow-y: auto;
+          justify-content: center; 
+          align-items: center;
         }
         .content-wrapper {
           display: flex; 

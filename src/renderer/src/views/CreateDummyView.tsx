@@ -227,11 +227,13 @@ const CreateDummyView: React.FC = () => {
           display: flex;
           flex-direction: column;
           height: 100%;
+          justify-content:center;
+
+
         }
         .dummy-content-wrapper {
           display: flex;
           flex-direction: row;
-          /* gap 제거 (DBTableList가 margin-right 가짐) */
           width: 100%;
           margin-top: 32px;
           flex-grow: 1;

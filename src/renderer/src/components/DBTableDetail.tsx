@@ -43,7 +43,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
           <div className="table-scroll-wrapper">
             <table className="column-table">
               {/* 테이블 헤더 */}
-              <thead className="preRegular14">
+              <thead>
                 <tr>
                   <th>컬럼명</th>
                   <th>타입</th>
@@ -67,7 +67,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
                         ))}
                       </div>
                     </td>
-                    <td>{col.generation}</td>
+                    <td className="generation-method-cell">{col.generation}</td>
                     <td>
                       <Button
                         variant="gray"
@@ -107,7 +107,8 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
           flex-direction: column;
           height: 100%;
           overflow: hidden;
-          max-width: 1000px;
+          width:760px;
+          height: 760px;
         }
         .detail-header {
           display: flex;
@@ -163,12 +164,17 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
           background-color: #FAFAFA;
           text-align: center;
           padding: 16px 8px;
-        }
+-        }
         .column-table td {
           padding: 16px;
           text-align: center;
           vertical-align: middle;
           border-bottom: 1px solid var(--color-gray-200);
+        }
+
+        .generation-method-cell {
+          color: var(--color-main-blue); 
+          font: var(--preBold14); 
         }
     
         .constraint-badges {
