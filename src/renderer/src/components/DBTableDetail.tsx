@@ -43,7 +43,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
           <div className="table-scroll-wrapper">
             <table className="column-table">
               {/* 테이블 헤더 */}
-              <thead className="preRegular14">
+              <thead>
                 <tr>
                   <th>컬럼명</th>
                   <th>타입</th>
@@ -67,9 +67,19 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
                         ))}
                       </div>
                     </td>
-                    <td>{col.generation}</td>
+                    <td className="generation-method-cell">{col.generation}</td>
                     <td>
-                      <Button variant="gray" size="sm" style={{ whiteSpace: 'nowrap' }}>
+                      <Button
+                        variant="gray"
+                        size="sm"
+                        style={{
+                          whiteSpace: 'nowrap',
+                          backgroundColor: 'var(--color-light-blue)',
+                          color: 'var(--color-main-blue)',
+                          borderRadius: '10px',
+                          padding: '4px 12px'
+                        }}
+                      >
                         {col.setting} 🖊️
                       </Button>
                     </td>
@@ -97,6 +107,8 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
           flex-direction: column;
           height: 100%;
           overflow: hidden;
+          width:760px;
+          height: 760px;
         }
         .detail-header {
           display: flex;
@@ -146,16 +158,25 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
           border-collapse: collapse;
           border-top: 1px solid var(--color-gray-200);
         }
-        .column-table th, .column-table td {
+
+        .column-table th {
+          color: var(--color-dark-gray);
+          background-color: #FAFAFA;
+          text-align: center;
           padding: 16px 8px;
-          text-align: left;
+-        }
+        .column-table td {
+          padding: 16px;
+          text-align: center;
           vertical-align: middle;
           border-bottom: 1px solid var(--color-gray-200);
         }
-        .column-table th {
-          color: var(--color-dark-gray);
-        }
 
+        .generation-method-cell {
+          color: var(--color-main-blue); 
+          font: var(--preBold14); 
+        }
+    
         .constraint-badges {
           display: flex;
           gap: 4px;
@@ -163,7 +184,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
         }
         .badge {
           padding: 4px 8px;
-          border-radius: 4px;
+          border-radius: 5px;
           font-size: 12px;
           font-weight: 600;
 
@@ -178,7 +199,6 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
         .badge-default { background-color: #F3F4F6; color: #4B5563; }
         .badge-domain { background-color: #FFF7ED; color: #EA580C; } 
         
-
       `}</style>
     </>
   )

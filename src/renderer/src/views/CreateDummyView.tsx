@@ -41,18 +41,14 @@ const mockTables: TableInfo[] = [
         type: 'INTEGER',
         constraints: [
           'FK',
-          'ENUM',
-          'CHECK',
-          'NOT NULL',
           'PK',
+          'CHECK',
           'NOT NULL',
           'UNIQUE',
           'DEFAULT',
-          'NOT NULL',
-          'CHECK',
-          'DEFAULT',
-          'NOT NULL',
-          'CHECK'
+          'AUTO INCREMENT',
+          'DOMAIN',
+          'ENUM'
         ],
         generation: '참조',
         setting: 'user.id(2)'
@@ -231,11 +227,13 @@ const CreateDummyView: React.FC = () => {
           display: flex;
           flex-direction: column;
           height: 100%;
+          justify-content:center;
+
+
         }
         .dummy-content-wrapper {
           display: flex;
           flex-direction: row;
-          /* gap 제거 (DBTableList가 margin-right 가짐) */
           width: 100%;
           margin-top: 32px;
           flex-grow: 1;
