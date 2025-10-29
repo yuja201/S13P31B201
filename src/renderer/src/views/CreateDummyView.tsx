@@ -226,7 +226,7 @@ const mockTables = [
     ]
   }
 
-  // ... (product, reviews 등 나머지 테이블)
+  // ... (나머지 테이블)
 ]
 
 const CreateDummyView: React.FC = () => {
@@ -251,15 +251,12 @@ const CreateDummyView: React.FC = () => {
             onTableSelect={setFocusedTable}
           />
 
-          {/* --- 오른쪽 상세 설정 --- */}
-          <div className="table-detail-container shadow">
-            {/* focusedTable이 있을 때만 상세 정보를 렌더링 */}
-            {focusedTable && <DBTableDetail table={focusedTable} />}
-          </div>
+          {/* --- 오른쪽 테이블 상세 설정 --- */}
+          {/* focusedTable이 있을 때만 상세 정보를 렌더링 */}
+          {focusedTable && <DBTableDetail table={focusedTable} />}
         </div>
       </div>
 
-      {/* --- 페이지 전체 스타일 --- */}
       <style>{`
         .dummy-view-container{
           display: flex;  
@@ -274,12 +271,6 @@ const CreateDummyView: React.FC = () => {
           flex-grow: 1;
           min-height: 0;
          }
-        .table-detail-container {
-          flex-grow: 1;
-          background-color: var(--color-white);
-          border-radius: 10px;
-          padding: 32px;
-        }
       `}</style>
     </>
   )
