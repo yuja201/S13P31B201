@@ -64,7 +64,7 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
       <div className="rule-select__section">
         <div className="rule-select__section-header">
           <span className="rule-select__section-title">이전 설정</span>
-          <Button variant="blue" size="sm" onClick={onCreateNew}>
+          <Button variant="blue" onClick={onCreateNew}>
             + 새로 만들기
           </Button>
         </div>

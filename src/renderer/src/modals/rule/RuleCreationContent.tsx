@@ -14,6 +14,7 @@ export interface RuleCreationData {
 }
 
 interface RuleCreationContentProps {
+  typeName: string
   onCancel: () => void
   onSubmit?: (data: {
     source: 'faker' | 'ai'
@@ -24,7 +25,11 @@ interface RuleCreationContentProps {
   }) => void
 }
 
-const RuleCreationContent: React.FC<RuleCreationContentProps> = ({ onCancel, onSubmit }) => {
+const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
+  typeName,
+  onCancel,
+  onSubmit
+}) => {
   const [selectedSource, setSelectedSource] = useState<'faker' | 'ai'>('faker')
   const [settingName, setSettingName] = useState('')
   const [apiToken, setApiToken] = useState('')
@@ -47,24 +52,20 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({ onCancel, onS
   }
 
   return (
-    <div
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        gap: '28px',
-        width: '100%',
-        alignSelf: 'center',
-        boxSizing: 'border-box',
-        overflowX: 'hidden',
-        padding: '0 14px 14px 0'
-      }}
-    >
+    <div className="rule-create">
+      {/* 상단 타입 표시 */}
+      <div className="rule-create__type">{typeName.toUpperCase()}</div>
+
       {/* 제목 */}
-      <PageTitle
-        size="small"
-        title="새 규칙 만들기"
-        description="데이터 생성 방식을 선택하고, 관련 정보를 입력하세요."
-      />
+      <div className="rule-create__header">
+        <PageTitle
+          size="small"
+          title="새 규칙 만들기"
+          description="데이터 생성 방식을 선택하고, 관련 정보를 입력하세요."
+        />
+        <br />
+        <hr className="rule-create__divider" />
+      </div>
 
       {/* 설정 이름 */}
       <InputField
@@ -79,7 +80,7 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({ onCancel, onS
       />
 
       {/* 데이터 소스 선택 */}
-      <div>
+      <div className="rule-create__section">
         <div
           className="preSemiBold16"
           style={{ marginBottom: '12px', color: 'var(--color-black)' }}
@@ -118,7 +119,7 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({ onCancel, onS
       {selectedSource === 'ai' && (
         <>
           {/* 모델 선택 */}
-          <div>
+          <div className="rule-create__section">
             <div
               className="preSemiBold14"
               style={{ marginBottom: '12px', color: 'var(--color-black)' }}
@@ -174,14 +175,7 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({ onCancel, onS
       )}
 
       {/* 하단 버튼 */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'flex-end',
-          gap: '12px',
-          marginTop: '12px'
-        }}
-      >
+      <div className="rule-create__footer">
         <Button variant="gray" onClick={onCancel}>
           이전
         </Button>
@@ -189,6 +183,51 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({ onCancel, onS
           확인
         </Button>
       </div>
+
+      <style>{`
+        .rule-create {
+          display: flex;
+          flex-direction: column;
+          gap: 28px;
+          width: 100%;
+          align-self: center;
+          box-sizing: border-box;
+          overflow-x: hidden;
+          padding: 0 14px 14px 0;
+        }
+
+        /* 상단 타입 */
+        .rule-create__type {
+          font-family: var(--font-family);
+          font-size: 20px;
+          font-weight: var(--fw-regular);
+          color: var(--color-black);
+        }
+
+        .rule-create__header {
+          margin-bottom: 4px;
+        }
+
+        .rule-create__divider {
+          border: none;
+          border-top: 1px solid rgba(0, 0, 0, 0.15);
+          margin-top: 12px;
+        }
+
+        .rule-create__section {
+          display: flex;
+          flex-direction: column;
+          margin-top: 10px;
+          gap: 15px;
+        }
+
+        .rule-create__footer {
+          display: flex;
+          justify-content: flex-end;
+          gap: 12px;
+          margin-top: 12px;
+        }
+      `}</style>
     </div>
   )
 }

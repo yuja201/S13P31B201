@@ -41,7 +41,11 @@ const RuleManagerModal: React.FC<RuleManagerModalProps> = ({ isOpen, onClose }) 
             onCreateNew={handleCreateNew}
           />
         ) : (
-          <RuleCreationContent onCancel={handleBack} onSubmit={handleCreateSubmit} />
+          <RuleCreationContent
+            typeName="INTEGER"
+            onCancel={handleBack}
+            onSubmit={handleCreateSubmit}
+          />
         )}
       </div>
 
