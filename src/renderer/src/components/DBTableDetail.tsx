@@ -19,6 +19,10 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
     setIsFileUploadModalOpen(false)
   }
 
+  const handleSelectGenerationClick = (columnName: string): void => {
+    alert(`${columnName} 컬럼의 생성 방식을 선택하세요! (기능 구현 필요)`)
+  }
+
   return (
     <>
       <div className="table-detail-container shadow">
@@ -82,7 +86,19 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
                         ))}
                       </div>
                     </td>
-                    <td className="generation-method-cell">{col.generation}</td>
+                    {/* --- 생성 방식 셀 --- */}
+                    <td className="generation-method-cell preSemiBold16">
+                      {!col.generation || col.generation === '-' ? (
+                        <button
+                          className="select-generation-link "
+                          onClick={() => handleSelectGenerationClick(col.name)}
+                        >
+                          생성방식 선택
+                        </button>
+                      ) : (
+                        col.generation
+                      )}
+                    </td>
                     <td>
                       <Button
                         variant="gray"
@@ -180,21 +196,31 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
         }
 
         .column-table th {
-          color: var(--color-dark-gray);
           background-color: #FAFAFA;
           text-align: center;
           padding: 16px 8px;
--        }
+          font: var(--preMedium14);
+        }
         .column-table td {
           padding: 16px;
           text-align: center;
           vertical-align: middle;
           border-bottom: 1px solid var(--color-gray-200);
         }
-
         .generation-method-cell {
           color: var(--color-main-blue); 
-          font: var(--preBold14); 
+        }
+        .select-generation-link {
+          background: none; 
+          border: none; 
+          padding: 0; 
+          color: var(--color-dark-gray); 
+          text-decoration: underline; 
+          cursor: pointer; 
+          font: preRegular14; 
+        }
+        .select-generation-link:hover {
+           color: var(--color-main-blue);
         }
     
         .constraint-badges {

@@ -33,7 +33,7 @@ const mockTables: TableInfo[] = [
         name: 'id',
         type: 'VARCHAR(50)',
         constraints: ['PK', 'NOT NULL', 'UNIQUE'],
-        generation: 'Faker.js',
+        generation: '',
         setting: '아이디'
       },
       {
