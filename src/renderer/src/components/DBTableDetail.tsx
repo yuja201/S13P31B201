@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { TableInfo } from '@renderer/views/CreateDummyView'
 import Button from '@renderer/components/Button'
+import FileUploadModal from '@renderer/modals/FileUploadModal'
 
 type DBTableDetailProps = {
   table: TableInfo
@@ -8,6 +9,15 @@ type DBTableDetailProps = {
 
 const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
   const [rows, setRows] = useState(1000)
+  const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false)
+
+  const openFileUploadModal = (): void => {
+    setIsFileUploadModalOpen(true)
+  }
+
+  const closeFileUploadModal = (): void => {
+    setIsFileUploadModalOpen(false)
+  }
 
   return (
     <>
@@ -34,7 +44,12 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
                 step="100"
               />
             </div>
-            <Button variant="blue" size="sm" style={{ whiteSpace: 'nowrap' }}>
+            <Button
+              variant="blue"
+              size="sm"
+              style={{ whiteSpace: 'nowrap' }}
+              onClick={openFileUploadModal}
+            >
               파일로 추가
             </Button>
           </div>
@@ -98,6 +113,11 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
           </Button>
         </div>
       </div>
+      <FileUploadModal
+        isOpen={isFileUploadModalOpen}
+        onClose={closeFileUploadModal}
+        tableName={table.name}
+      />
       <style>{`
         .table-detail-container{
           flex-grow: 1;
