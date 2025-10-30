@@ -11,19 +11,20 @@ export interface RuleCreationData {
   prompt?: string
   model?: string
   columnName?: string
+  columnType?: string
 }
 
 interface RuleSelectContentProps {
-  typeName: string
   columnName: string
+  columnType: string
   onCancel: () => void
   onConfirm?: (value: string) => void
   onCreateNew?: () => void
 }
 
 const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
-  typeName,
   columnName,
+  columnType,
   onCancel,
   onConfirm,
   onCreateNew
@@ -37,7 +38,7 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
   return (
     <div className="rule-select">
       {/* 상단 타입 표시 */}
-      <div className="rule-select__type">{typeName.toUpperCase()}</div>
+      <div className="rule-select__type">{columnType.toUpperCase()}</div>
 
       {/* 제목 */}
       <div className="rule-select__header">

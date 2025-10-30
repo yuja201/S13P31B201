@@ -11,8 +11,9 @@ type DBTableDetailProps = {
 const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
   const [rows, setRows] = useState(1000)
   const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false)
-  const [isRuleModalOpen, SetIsRuleModalOpen] = useState(false)
+  const [isRuleModalOpen, setIsRuleModalOpen] = useState(false)
   const [selectedColumnName, setSelectedColumnName] = useState<string>('')
+  const [selectedColumnType, setSelectedColumnType] = useState<string>('')
 
   // FileUploadModal
   const openFileUploadModal = (): void => {
@@ -23,14 +24,20 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
     setIsFileUploadModalOpen(false)
   }
 
-  // RuleModal
+  // 생성방식 선택 버튼
   const handleSelectGenerationClick = (columnName: string): void => {
-    setSelectedColumnName(columnName)
-    SetIsRuleModalOpen(true)
+    const selectedColumn = table.columnDetails.find((col) => col.name === columnName)
+    if (selectedColumn) {
+      setSelectedColumnName(columnName)
+      setSelectedColumnType(selectedColumn.type)
+      setIsRuleModalOpen(true)
+    }
   }
-
+  // RuleModal
   const closeRuleModal = (): void => {
-    SetIsRuleModalOpen(false)
+    setIsRuleModalOpen(false)
+    setSelectedColumnName('')
+    setSelectedColumnType('')
   }
 
   return (
@@ -154,6 +161,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
           isOpen={isRuleModalOpen}
           onClose={closeRuleModal}
           columnName={selectedColumnName}
+          columnType={selectedColumnType}
         />
       )}
       <style>{`
