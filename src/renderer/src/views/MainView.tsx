@@ -122,41 +122,42 @@ const MainView: React.FC = () => {
 
       {/* 필터 + 카드 컨테이너 */}
       <div className="content-container">
-        {/* 필터 버튼 */}
-        <div className="filter-section">
-          <div className="dropdown-wrapper">
-            <button
-              className="filter-button preRegular14"
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-            >
-              <IoFilterOutline size={18} style={{ marginRight: '6px' }} />
-              <span>{getSortLabel()}</span>
-            </button>
-
-            {isDropdownOpen && (
-              <div className="dropdown-menu shadow">
-                {[
-                  { key: 'modified', label: '수정일순' },
-                  { key: 'created', label: '생성일순' },
-                  { key: 'name', label: '이름순' }
-                ].map((option) => (
-                  <div
-                    key={option.key}
-                    className={`dropdown-item preRegular14 ${
-                      sortOption === option.key ? 'active' : ''
-                    }`}
-                    onClick={() => handleSortChange(option.key as 'modified' | 'created' | 'name')}
-                  >
-                    {option.label}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
         {/* 카드 리스트 */}
         <div className="card-list-grid">
+          {/* 필터 버튼 */}
+          <div className="filter-section">
+            <div className="dropdown-wrapper">
+              <button
+                className="filter-button preRegular14"
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+              >
+                <IoFilterOutline size={18} style={{ marginRight: '6px' }} />
+                <span>{getSortLabel()}</span>
+              </button>
+
+              {isDropdownOpen && (
+                <div className="dropdown-menu shadow">
+                  {[
+                    { key: 'modified', label: '수정일순' },
+                    { key: 'created', label: '생성일순' },
+                    { key: 'name', label: '이름순' }
+                  ].map((option) => (
+                    <div
+                      key={option.key}
+                      className={`dropdown-item preRegular14 ${
+                        sortOption === option.key ? 'active' : ''
+                      }`}
+                      onClick={() =>
+                        handleSortChange(option.key as 'modified' | 'created' | 'name')
+                      }
+                    >
+                      {option.label}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
           {loading ? (
             <div className="empty-state">
               <p className="empty-state-title">로딩 중...</p>
@@ -225,19 +226,17 @@ const MainView: React.FC = () => {
 
         .content-container {
           width: 100%;
-          margin: 0 auto;
           display: flex;
           flex-direction: column;
           box-sizing: border-box;
-          align-items: center;
         }
 
         .filter-section {
+          grid-column: 1 / -1;
           width: 100%;
           display: flex;
           justify-content: flex-end;
           margin-bottom: 16px;
-          max-width: 1232px; 
         }
 
         .dropdown-wrapper {

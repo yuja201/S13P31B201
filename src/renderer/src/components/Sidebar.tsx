@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { LiaExchangeAltSolid } from 'react-icons/lia'
 import { FaDatabase, FaLink, FaChartBar, FaHistory } from 'react-icons/fa'
 import logoIcon from '@renderer/assets/icons/logo.svg'
@@ -32,6 +32,8 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false, projectName, dbType, 
   useEffect(() => {
     setCollapsed(locked)
   }, [locked])
+
+  const location = useLocation()
 
   const currentTime = new Date().toLocaleString('ko-KR', {
     year: 'numeric',
@@ -95,7 +97,6 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false, projectName, dbType, 
         {/* 메뉴 */}
         <nav className="sidebar-menu">
           <NavLink
-            // [!] projectId가 있을 때만 경로에 포함
             to={projectId ? `/main/dashboard/${projectId}` : '#'}
             className={({ isActive }): string =>
               `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
@@ -113,9 +114,12 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false, projectName, dbType, 
           </NavLink>
           <NavLink
             to={projectId ? `/main/dummy/${projectId}` : '#'}
-            className={({ isActive }): string =>
-              `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
-            }
+            className={(): string => {
+              const isDummyRelated =
+                location.pathname.startsWith(`/main/dummy/${projectId}`) ||
+                location.pathname.startsWith(`/main/select-method/${projectId}`)
+              return `sidebar-link ${isDummyRelated ? 'sidebar-link-active' : ''}`
+            }}
           >
             <FaDatabase size={22} /> 더미데이터 생성
           </NavLink>

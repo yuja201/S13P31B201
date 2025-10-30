@@ -11,10 +11,11 @@ export interface RuleCreationData {
   apiToken?: string
   prompt?: string
   model?: string
+  columnType?: string
 }
 
 interface RuleCreationContentProps {
-  typeName: string
+  columnType?: string
   onCancel: () => void
   onSubmit?: (data: {
     source: 'faker' | 'ai'
@@ -22,11 +23,12 @@ interface RuleCreationContentProps {
     apiToken?: string
     prompt?: string
     model?: string
+    columnType?: string
   }) => void
 }
 
 const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
-  typeName,
+  columnType = '',
   onCancel,
   onSubmit
 }) => {
@@ -47,14 +49,15 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
       settingName,
       apiToken,
       prompt,
-      model: selectedModel
+      model: selectedModel,
+      columnType
     })
   }
 
   return (
     <div className="rule-create">
       {/* 상단 타입 표시 */}
-      <div className="rule-create__type">{typeName.toUpperCase()}</div>
+      {columnType && <div className="rule-create__type">{columnType.toUpperCase()}</div>}
 
       {/* 제목 */}
       <div className="rule-create__header">

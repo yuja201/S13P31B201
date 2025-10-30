@@ -33,7 +33,7 @@ const mockTables: TableInfo[] = [
         name: 'id',
         type: 'VARCHAR(50)',
         constraints: ['PK', 'NOT NULL', 'UNIQUE'],
-        generation: 'Faker.js',
+        generation: '',
         setting: '아이디'
       },
       {
@@ -228,8 +228,6 @@ const CreateDummyView: React.FC = () => {
           flex-direction: column;
           height: 100%;
           justify-content:center;
-
-
         }
         .dummy-content-wrapper {
           display: flex;

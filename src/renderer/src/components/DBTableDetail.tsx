@@ -1,14 +1,52 @@
 import React, { useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { TableInfo } from '@renderer/views/CreateDummyView'
 import Button from '@renderer/components/Button'
+import FileUploadModal from '@renderer/modals/FileUploadModal'
+import RuleModal from '@renderer/modals/rule/RuleModal'
 
 type DBTableDetailProps = {
   table: TableInfo
 }
 
 const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
-  const [rows, setRows] = useState(1000)
+  const navigate = useNavigate()
+  const { projectId } = useParams<{ projectId: string }>()
 
+  const [rows, setRows] = useState(1000)
+  const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false)
+  const [isRuleModalOpen, setIsRuleModalOpen] = useState(false)
+  const [selectedColumnName, setSelectedColumnName] = useState<string>('')
+  const [selectedColumnType, setSelectedColumnType] = useState<string>('')
+
+  // FileUploadModal
+  const openFileUploadModal = (): void => {
+    setIsFileUploadModalOpen(true)
+  }
+
+  const closeFileUploadModal = (): void => {
+    setIsFileUploadModalOpen(false)
+  }
+
+  // 생성방식 선택 버튼
+  const handleSelectGenerationClick = (columnName: string): void => {
+    const selectedColumn = table.columnDetails.find((col) => col.name === columnName)
+    if (selectedColumn) {
+      setSelectedColumnName(columnName)
+      setSelectedColumnType(selectedColumn.type)
+      setIsRuleModalOpen(true)
+    }
+  }
+  // RuleModal
+  const closeRuleModal = (): void => {
+    setIsRuleModalOpen(false)
+    setSelectedColumnName('')
+    setSelectedColumnType('')
+  }
+
+  const handleGenerateData = (): void => {
+    navigate(`/main/select-method/${projectId}/${table.id}`)
+  }
   return (
     <>
       <div className="table-detail-container shadow">
@@ -34,7 +72,12 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
                 step="100"
               />
             </div>
-            <Button variant="blue" size="sm" style={{ whiteSpace: 'nowrap' }}>
+            <Button
+              variant="blue"
+              size="sm"
+              style={{ whiteSpace: 'nowrap' }}
+              onClick={openFileUploadModal}
+            >
               파일로 추가
             </Button>
           </div>
@@ -55,7 +98,12 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
               {/* 테이블 바디 (컬럼 목록) */}
               <tbody className="preRegular14">
                 {table.columnDetails.map((col) => (
-                  <tr key={col.name}>
+                  <tr
+                    key={col.name}
+                    className={
+                      col.generation && col.generation !== '-' ? 'has-generation-method' : ''
+                    }
+                  >
                     <td className="preMedium14">{col.name}</td>
                     <td>{col.type}</td>
                     <td>
@@ -67,14 +115,26 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
                         ))}
                       </div>
                     </td>
-                    <td className="generation-method-cell">{col.generation}</td>
+                    {/* --- 생성 방식 셀 --- */}
+                    <td className="generation-method-cell preSemiBold14">
+                      {!col.generation || col.generation === '-' ? (
+                        <button
+                          className="select-generation-link "
+                          onClick={() => handleSelectGenerationClick(col.name)}
+                        >
+                          생성방식 선택
+                        </button>
+                      ) : (
+                        col.generation
+                      )}
+                    </td>
                     <td>
                       <Button
                         variant="gray"
                         size="sm"
                         style={{
                           whiteSpace: 'nowrap',
-                          backgroundColor: 'var(--color-light-blue)',
+                          backgroundColor: 'var(--color-sky-blue)',
                           color: 'var(--color-main-blue)',
                           borderRadius: '10px',
                           padding: '4px 12px'
@@ -93,11 +153,25 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
             variant="blue"
             size="md"
             style={{ width: '100%', marginTop: '24px', padding: '12px' }}
+            onClick={handleGenerateData}
           >
             데이터 생성
           </Button>
         </div>
       </div>
+      <FileUploadModal
+        isOpen={isFileUploadModalOpen}
+        onClose={closeFileUploadModal}
+        tableName={table.name}
+      />
+      {selectedColumnName && (
+        <RuleModal
+          isOpen={isRuleModalOpen}
+          onClose={closeRuleModal}
+          columnName={selectedColumnName}
+          columnType={selectedColumnType}
+        />
+      )}
       <style>{`
         .table-detail-container{
           flex-grow: 1;
@@ -107,7 +181,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
           flex-direction: column;
           height: 100%;
           overflow: hidden;
-          width:760px;
+          width:780px;
           height: 760px;
         }
         .detail-header {
@@ -160,21 +234,37 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
         }
 
         .column-table th {
-          color: var(--color-dark-gray);
           background-color: #FAFAFA;
           text-align: center;
           padding: 16px 8px;
--        }
+          font: var(--preMedium14);
+        }
         .column-table td {
           padding: 16px;
           text-align: center;
           vertical-align: middle;
           border-bottom: 1px solid var(--color-gray-200);
+          background-color: var(--color-white); 
+          transition: background-color 0.2s ease;
+        }
+        .column-table tr.has-generation-method td {
+          background-color: var(--color-light-blue); 
         }
 
         .generation-method-cell {
           color: var(--color-main-blue); 
-          font: var(--preBold14); 
+          min-width: 116px; 
+        }
+        .select-generation-link {
+          background: none; 
+          border: none; 
+          padding: 0; 
+          text-decoration: underline; 
+          cursor: pointer; 
+          font: preRegular14; 
+        }
+        .select-generation-link:hover {
+           color: var(--color-main-blue);
         }
     
         .constraint-badges {

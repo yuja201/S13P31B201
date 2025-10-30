@@ -10,17 +10,21 @@ export interface RuleCreationData {
   apiToken?: string
   prompt?: string
   model?: string
+  columnName?: string
+  columnType?: string
 }
 
 interface RuleSelectContentProps {
-  typeName: string
+  columnName: string
+  columnType: string
   onCancel: () => void
   onConfirm?: (value: string) => void
   onCreateNew?: () => void
 }
 
 const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
-  typeName,
+  columnName,
+  columnType,
   onCancel,
   onConfirm,
   onCreateNew
@@ -34,12 +38,12 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
   return (
     <div className="rule-select">
       {/* 상단 타입 표시 */}
-      <div className="rule-select__type">{typeName.toUpperCase()}</div>
+      <div className="rule-select__type">{columnType.toUpperCase()}</div>
 
       {/* 제목 */}
       <div className="rule-select__header">
         <PageTitle
-          title="생성 규칙 선택 - username"
+          title={`생성 규칙 선택 - ${columnName}`}
           description="고정값을 입력하거나 생성한 규칙을 적용해보세요."
           size="small"
         />
