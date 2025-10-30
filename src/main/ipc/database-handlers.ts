@@ -3,6 +3,11 @@ import * as dbmsOps from '../database/dbms'
 import * as projectOps from '../database/projects'
 import * as databaseOps from '../database/databases'
 import * as ruleOps from '../database/rules'
+import { testDatabaseConnection, ConnectionConfig } from '../utils/db-connection-test'
+
+/**
+ * SQLite Database
+ */
 
 // DBMS operations
 ipcMain.handle('db:dbms:getAll', () => {
@@ -98,4 +103,13 @@ ipcMain.handle('db:rule:update', (_, data) => {
 
 ipcMain.handle('db:rule:delete', (_, id: number) => {
   return ruleOps.deleteRule(id)
+})
+
+/**
+ * MySQL/PostgreSQL Database
+ */
+
+// Database connection test
+ipcMain.handle('db:connection:test', async (_, config: ConnectionConfig) => {
+  return await testDatabaseConnection(config)
 })

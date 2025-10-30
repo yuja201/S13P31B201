@@ -46,6 +46,21 @@ interface API {
     update: (data: RuleUpdate) => Promise<Rule | undefined>
     delete: (id: number) => Promise<boolean>
   }
+  testConnection: (config: {
+    dbType: 'MySQL' | 'PostgreSQL'
+    host: string
+    port: number
+    username: string
+    password: string
+    database?: string
+  }) => Promise<{
+    success: boolean
+    message: string
+    details?: {
+      serverVersion?: string
+      connectionTime?: number
+    }
+  }>
 }
 
 declare global {
