@@ -2,7 +2,7 @@ import React, { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { TableInfo } from '@renderer/views/CreateDummyView'
 import Button from '@renderer/components/Button'
-import FileUploadModal from '@renderer/modals/FileUploadModal'
+import FileModal from '@renderer/modals/file/FileModal'
 import RuleModal from '@renderer/modals/rule/RuleModal'
 
 type DBTableDetailProps = {
@@ -159,7 +159,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
           </Button>
         </div>
       </div>
-      <FileUploadModal
+      <FileModal
         isOpen={isFileUploadModalOpen}
         onClose={closeFileUploadModal}
         tableName={table.name}
