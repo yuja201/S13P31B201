@@ -5,6 +5,8 @@ import Card from '@renderer/components/Card'
 import CreateProjectModal from '@renderer/modals/CreateProjectModal'
 import { IoFilterOutline } from 'react-icons/io5'
 import { formatRelativeTime } from '@renderer/utils/timeFormat'
+import { useProjectStore } from '@renderer/stores/projectStore'
+import type { ProjectWithDetails } from '@renderer/stores/projectStore'
 
 interface ProjectInfo {
   id: number
@@ -27,6 +29,7 @@ const MainView: React.FC = () => {
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const navigate = useNavigate()
+  const setSelectedProject = useProjectStore((state) => state.setSelectedProject)
 
   // 프로젝트 목록 로드
   const loadProjects = useCallback(async (): Promise<void> => {
@@ -88,8 +91,31 @@ const MainView: React.FC = () => {
       }
     })
 
-  const goToProject = (projectId: number): void => {
-    navigate(`/main/dashboard/${projectId}`)
+  const goToProject = async (projectId: number): Promise<void> => {
+    try {
+      const project = await window.api.project.getById(projectId)
+      if (!project) return
+
+      const databases = await window.api.database.getByProjectId(projectId)
+      const database = databases[0]
+
+      let dbms
+      if (database) {
+        dbms = await window.api.dbms.getById(database.dbms_id)
+      }
+
+      const projectWithDetails: ProjectWithDetails = {
+        ...project,
+        database,
+        dbms
+      }
+
+      setSelectedProject(projectWithDetails)
+
+      navigate(`/main/dashboard/${projectId}`)
+    } catch (error) {
+      console.error('프로젝트 선택 중 오류:', error)
+    }
   }
 
   const handleSearch = (value: string): void => {

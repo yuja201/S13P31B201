@@ -1,7 +1,7 @@
 /**
- * Unix timestamp를 상대 시간 형식으로 변환합니다.
+ * Unix timestamp를 상대 시간 형식으로 변환
  * @param timestamp Unix timestamp (초 단위)
- * @returns 상대 시간 문자열 (예: "방금 전", "5분 전", "3시간 전", "2일 전", "5개월 전", "2년 전")
+ * @returns 상대 시간 문자열
  */
 export const formatRelativeTime = (timestamp: number): string => {
   const now = Math.floor(Date.now() / 1000)
