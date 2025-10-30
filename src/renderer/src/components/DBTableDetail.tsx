@@ -74,7 +74,12 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
               {/* 테이블 바디 (컬럼 목록) */}
               <tbody className="preRegular14">
                 {table.columnDetails.map((col) => (
-                  <tr key={col.name}>
+                  <tr
+                    key={col.name}
+                    className={
+                      col.generation && col.generation !== '-' ? 'has-generation-method' : ''
+                    }
+                  >
                     <td className="preMedium14">{col.name}</td>
                     <td>{col.type}</td>
                     <td>
@@ -105,7 +110,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
                         size="sm"
                         style={{
                           whiteSpace: 'nowrap',
-                          backgroundColor: 'var(--color-light-blue)',
+                          backgroundColor: 'var(--color-sky-blue)',
                           color: 'var(--color-main-blue)',
                           borderRadius: '10px',
                           padding: '4px 12px'
@@ -206,7 +211,13 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
           text-align: center;
           vertical-align: middle;
           border-bottom: 1px solid var(--color-gray-200);
+          background-color: var(--color-white); 
+          transition: background-color 0.2s ease;
         }
+        .column-table tr.has-generation-method td {
+          background-color: var(--color-light-blue); 
+        }
+
         .generation-method-cell {
           color: var(--color-main-blue); 
         }
