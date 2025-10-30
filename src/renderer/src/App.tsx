@@ -23,12 +23,12 @@ const App: React.FC = () => {
           {/*  프로젝트 뷰들 (사이드바 활성)*/}
           <Route path="main">
             <Route path="dashboard/:projectId" element={<DashboardView />} />
-            <Route path="info/:projectId" element={<InfoView />} />{' '}
-            <Route path="schema/:projectId" element={<SchemaView />} />{' '}
-            <Route path="dummy/:projectId" element={<CreateDummyView />} />{' '}
-            <Route path="test/:projectId" element={<TestView />} />{' '}
-            <Route path="history/:projectId" element={<HistoryView />} />{' '}
-            <Route path="select-method/:tableId" element={<SelectMethodView />} />
+            <Route path="info/:projectId" element={<InfoView />} />
+            <Route path="schema/:projectId" element={<SchemaView />} />
+            <Route path="dummy/:projectId" element={<CreateDummyView />} />
+            <Route path="test/:projectId" element={<TestView />} />
+            <Route path="history/:projectId" element={<HistoryView />} />
+            <Route path="select-method/:projectId/:tableId" element={<SelectMethodView />} />
             <Route index element={<Navigate to="dashboard/:projectId" replace />} />
           </Route>
         </Route>

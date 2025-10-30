@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import { TableInfo } from '@renderer/views/CreateDummyView'
 import Button from '@renderer/components/Button'
 import FileUploadModal from '@renderer/modals/FileUploadModal'
@@ -11,6 +11,8 @@ type DBTableDetailProps = {
 
 const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
   const navigate = useNavigate()
+  const { projectId } = useParams<{ projectId: string }>()
+
   const [rows, setRows] = useState(1000)
   const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false)
   const [isRuleModalOpen, setIsRuleModalOpen] = useState(false)
@@ -43,7 +45,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
   }
 
   const handleGenerateData = (): void => {
-    navigate(`/main/select-method/${table.id}`)
+    navigate(`/main/select-method/${projectId}/${table.id}`)
   }
   return (
     <>
