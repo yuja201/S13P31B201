@@ -1,71 +1,99 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import SearchBox from '@renderer/components/SearchBox'
 import Card from '@renderer/components/Card'
 import CreateProjectModal from '@renderer/modals/CreateProjectModal'
 import { IoFilterOutline } from 'react-icons/io5'
+import { formatRelativeTime } from '@renderer/utils/timeFormat'
+
+interface ProjectInfo {
+  id: number
+  name: string
+  dbType: string
+  description: string
+  host: string
+  port: number
+  username: string
+  lastUpdated: string
+  created_at: number
+  updated_at: number
+}
 
 const MainView: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [sortOption, setSortOption] = useState<'modified' | 'created' | 'name'>('modified')
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
+  const [projects, setProjects] = useState<ProjectInfo[]>([])
+  const [loading, setLoading] = useState(true)
+  const [searchQuery, setSearchQuery] = useState('')
   const navigate = useNavigate()
 
-  const projects = [
-    {
-      id: 1,
-      name: 'FORINGKOR',
-      dbType: 'PostgreSQL',
-      description: '온라인 쇼핑몰 메일 데이터베이스 성능 테스트 프로젝트',
-      host: '127.0.0.1',
-      port: 3306,
-      username: 'root',
-      lastUpdated: '12시간 전'
-    },
-    {
-      id: 2,
-      name: 'TripOn',
-      dbType: 'MySQL',
-      description: '여행 계획 및 후기 공유 서비스',
-      host: 'localhost',
-      port: 3307,
-      username: 'admin',
-      lastUpdated: '3시간 전'
-    },
-    {
-      id: 3,
-      name: 'Dolfin',
-      dbType: 'MariaDB',
-      description: 'AI 저축 코치 플랫폼',
-      host: '192.168.0.10',
-      port: 3306,
-      username: 'ssafy',
-      lastUpdated: '1일 전'
-    },
-    {
-      id: 4,
-      name: 'MiniChoco',
-      dbType: 'PostgreSQL',
-      description: '미니멀리즘 재판 서비스',
-      host: '127.0.0.1',
-      port: 3306,
-      username: 'root',
-      lastUpdated: '2일 전'
-    },
-    {
-      id: 5,
-      name: 'HereIsDummy',
-      dbType: 'SQLite',
-      description: '더미데이터 생성 및 DB 성능 테스트 도구',
-      host: '127.0.0.1',
-      port: 3306,
-      username: 'dummy',
-      lastUpdated: '5시간 전'
+  // 프로젝트 목록 로드
+  const loadProjects = useCallback(async (): Promise<void> => {
+    try {
+      setLoading(true)
+      const projectList = await window.api.project.getAll()
+      const dbmsList = await window.api.dbms.getAll()
+
+      const projectsWithDB = await Promise.all(
+        projectList.map(async (project) => {
+          const databases = await window.api.database.getByProjectId(project.id)
+          const database = databases[0] // 첫 번째 DB 연결 정보 사용
+          const dbms = dbmsList.find((d) => d.id === database.dbms_id)
+          const [host, port] = database.url.split(':')
+
+          return {
+            id: project.id,
+            name: project.name,
+            dbType: dbms?.name || '정보없음',
+            description: project.description,
+            host: host,
+            port: parseInt(port) || 0,
+            username: database.username,
+            lastUpdated: formatRelativeTime(project.updated_at),
+            created_at: project.created_at,
+            updated_at: project.updated_at
+          }
+        })
+      )
+
+      setProjects(projectsWithDB)
+    } catch (error) {
+      console.error('프로젝트 로드 중 오류:', error)
+    } finally {
+      setLoading(false)
     }
-  ]
+  }, [])
+
+  // 컴포넌트 마운트 시 프로젝트 로드
+  useEffect(() => {
+    loadProjects()
+  }, [loadProjects])
+
+  // 필터링된 프로젝트 목록
+  const filteredProjects = projects
+    .filter((project) => {
+      if (!searchQuery) return true
+      return project.name.toLowerCase().includes(searchQuery.toLowerCase())
+    })
+    .sort((a, b) => {
+      switch (sortOption) {
+        case 'created':
+          return b.created_at - a.created_at
+        case 'name':
+          return a.name.localeCompare(b.name)
+        case 'modified':
+        default:
+          return b.updated_at - a.updated_at
+      }
+    })
 
   const goToProject = (projectId: number): void => {
     navigate(`/main/dashboard/${projectId}`)
+  }
+
+  const handleSearch = (value: string): void => {
+    setSearchQuery(value)
   }
 
   const handleSortChange = (option: 'modified' | 'created' | 'name'): void => {
@@ -89,7 +117,7 @@ const MainView: React.FC = () => {
 
       {/* 검색창 */}
       <div className="search-section">
-        <SearchBox placeholder="프로젝트 검색" height={'50px'} />
+        <SearchBox placeholder="프로젝트 검색" height={'50px'} onSearch={handleSearch} />
       </div>
 
       {/* 필터 + 카드 컨테이너 */}
@@ -129,9 +157,28 @@ const MainView: React.FC = () => {
 
         {/* 카드 리스트 */}
         <div className="card-list-grid">
-          {projects.map((project) => (
-            <Card key={project.id} {...project} onClick={() => goToProject(project.id)} />
-          ))}
+          {loading ? (
+            <div className="empty-state">
+              <p className="empty-state-title">로딩 중...</p>
+            </div>
+          ) : filteredProjects.length === 0 ? (
+            <div className="empty-state">
+              <p className="empty-state-title">
+                {searchQuery
+                  ? `"${searchQuery}"에 대한 검색 결과가 없습니다.`
+                  : '아직 생성된 프로젝트가 없습니다.'}
+              </p>
+              {!searchQuery && (
+                <p className="empty-state-description">
+                  우측 하단의 + 버튼을 눌러 프로젝트를 생성하세요.
+                </p>
+              )}
+            </div>
+          ) : (
+            filteredProjects.map((project) => (
+              <Card key={project.id} {...project} onClick={() => goToProject(project.id)} />
+            ))
+          )}
         </div>
       </div>
 
@@ -140,7 +187,13 @@ const MainView: React.FC = () => {
         +
       </button>
 
-      <CreateProjectModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} />
+      <CreateProjectModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSubmit={() => {
+          loadProjects()
+        }}
+      />
 
       <style>{`
         .main-view-container {
@@ -244,6 +297,20 @@ const MainView: React.FC = () => {
           padding-bottom: 80px; 
           width: 100%;
           max-width: 1232px;
+        }
+
+        .empty-state {
+          grid-column: 1 / -1;
+          text-align: center;
+          padding: 60px;
+          color: var(--color-dark-gray);
+        }
+        .empty-state-title {
+          font-size: 18px;
+          margin-bottom: 12px;
+        }
+        .empty-state-description {
+          font-size: 14px;
         }
 
         .floating-add-button {
