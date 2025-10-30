@@ -1,10 +1,11 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import Button from '@renderer/components/Button'
 import InputField from '@renderer/components/InputField'
 import PageTitle from '@renderer/components/PageTitle'
 import RadioButton from '@renderer/components/RadioButton'
 import Toast from '@renderer/components/Toast'
+import { useProjectStore } from '@renderer/stores/projectStore'
 
 interface ProjectInfo {
   projectName: string
@@ -18,6 +19,8 @@ interface ProjectInfo {
 
 const InfoView: React.FC = () => {
   const navigate = useNavigate()
+  const selectedProject = useProjectStore((state) => state.selectedProject)
+  const setSelectedProject = useProjectStore((state) => state.setSelectedProject)
 
   const [formData, setFormData] = useState<ProjectInfo>({
     projectName: '',
@@ -31,8 +34,29 @@ const InfoView: React.FC = () => {
 
   const [selected, setSelected] = useState('MySQL')
   const [showToast, setShowToast] = useState(false)
-  const [toastType, setToastType] = useState<'success' | 'warning'>('success')
+  const [toastType, setToastType] = useState<'success' | 'warning' | 'error'>('success')
   const [toastMessage, setToastMessage] = useState('')
+  const [isConnectionTested, setIsConnectionTested] = useState(false)
+  const [isTestingConnection, setIsTestingConnection] = useState(false)
+
+  useEffect(() => {
+    if (selectedProject && selectedProject.database) {
+      const [host, port] = selectedProject.database.url.split(':')
+      const dbType = selectedProject.dbms?.name === 'PostgreSQL' ? 'PostgreSQL' : 'MySQL'
+
+      setFormData({
+        projectName: selectedProject.name,
+        description: selectedProject.description,
+        dbType: dbType,
+        host: host,
+        port: port,
+        username: selectedProject.database.username,
+        password: selectedProject.database.password
+      })
+
+      setSelected(dbType)
+    }
+  }, [selectedProject])
 
   const validateRequiredFields = (): boolean => {
     if (!formData.projectName.trim()) {
@@ -68,31 +92,120 @@ const InfoView: React.FC = () => {
     return true
   }
 
-  const handleConnectionTest = (): void => {
+  const handleConnectionTest = async (): Promise<void> => {
     if (!validateRequiredFields()) {
       return
     }
 
-    setToastType('success')
-    setToastMessage('데이터베이스 연결에 성공했습니다.')
-    setShowToast(true)
+    setIsTestingConnection(true)
+
+    try {
+      // 연결 테스트
+      const result = await window.api.testConnection({
+        dbType: formData.dbType,
+        host: formData.host,
+        port: parseInt(formData.port),
+        username: formData.username,
+        password: formData.password
+      })
+
+      if (result.success) {
+        setToastType('success')
+        setToastMessage('데이터베이스 연결에 성공했습니다.')
+        setIsConnectionTested(true)
+      } else {
+        setToastType('error')
+        setToastMessage(result.message)
+        setIsConnectionTested(false)
+      }
+      setShowToast(true)
+    } catch (error) {
+      console.error('연결 테스트 중 오류:', error)
+      setToastType('warning')
+      setToastMessage('연결 테스트 중 오류가 발생했습니다.')
+      setIsConnectionTested(false)
+      setShowToast(true)
+    } finally {
+      setIsTestingConnection(false)
+    }
   }
 
   const handleInputChange = (field: keyof ProjectInfo, value: string): void => {
+    // DB 정보 변경 시 연결 테스트 상태 초기화
+    if (field !== 'projectName' && field !== 'description') {
+      setIsConnectionTested(false)
+    }
+
     setFormData((prev) => ({
       ...prev,
       [field]: value
     }))
   }
 
-  const handleSubmit = (): void => {
+  const handleSubmit = async (): Promise<void> => {
     if (!validateRequiredFields()) {
       return
     }
 
-    // TODO: 프로젝트 정보 저장 로직
-    // 저장 후 SchemaView로 이동
-    navigate('/main/schema')
+    if (!isConnectionTested) {
+      setToastType('error')
+      setToastMessage('연결 테스트를 먼저 진행해주세요.')
+      setShowToast(true)
+      return
+    }
+
+    if (!selectedProject) {
+      setToastType('error')
+      setToastMessage('프로젝트 정보를 찾을 수 없습니다.')
+      setShowToast(true)
+      return
+    }
+
+    try {
+      // 프로젝트 정보 업데이트
+      const updatedProject = await window.api.project.update({
+        id: selectedProject.id,
+        name: formData.projectName,
+        description: formData.description
+      })
+
+      // 데이터베이스 연결 정보 업데이트
+      let updatedDatabase = selectedProject.database
+      if (selectedProject.database) {
+        const dbmsId = formData.dbType === 'MySQL' ? 1 : 2
+
+        updatedDatabase = await window.api.database.update({
+          id: selectedProject.database.id,
+          dbms_id: dbmsId,
+          url: `${formData.host}:${formData.port}`,
+          username: formData.username,
+          password: formData.password
+        })
+      }
+
+      // DBMS 정보 가져오기
+      let updatedDbms = selectedProject.dbms
+      if (updatedDatabase) {
+        updatedDbms = await window.api.dbms.getById(updatedDatabase.dbms_id)
+      }
+
+      // Zustand Store 업데이트
+      if (updatedProject) {
+        setSelectedProject({
+          ...updatedProject,
+          database: updatedDatabase,
+          dbms: updatedDbms
+        })
+      }
+
+      // SchemaView로 이동
+      navigate(`/main/schema/${selectedProject.id}`)
+    } catch (error) {
+      console.error('프로젝트 정보 저장 중 오류 발생:', error)
+      setToastType('error')
+      setToastMessage('프로젝트 정보 저장에 실패했습니다.')
+      setShowToast(true)
+    }
   }
 
   return (
@@ -135,8 +248,8 @@ const InfoView: React.FC = () => {
       <div>
         <div className="info-view-header">
           <PageTitle
-            title="프로젝트 생성"
-            description="새로운 데이터베이스 프로젝트의 정보를 입력해주세요."
+            title="프로젝트 정보"
+            description="데이터베이스 프로젝트의 정보를 확인하고 수정하세요."
           />
         </div>
         <div className="info-view-form-container">
@@ -167,7 +280,13 @@ const InfoView: React.FC = () => {
                 checked={selected === 'MySQL'}
                 onChange={(e) => {
                   setSelected(e.target.value)
-                  handleInputChange('dbType', e.target.value as 'MySQL' | 'PostgreSQL')
+                  setFormData((prev) => ({
+                    ...prev,
+                    dbType: 'MySQL',
+                    port: '3306',
+                    username: 'root'
+                  }))
+                  setIsConnectionTested(false)
                 }}
               />
               <RadioButton
@@ -177,7 +296,13 @@ const InfoView: React.FC = () => {
                 checked={selected === 'PostgreSQL'}
                 onChange={(e) => {
                   setSelected(e.target.value)
-                  handleInputChange('dbType', e.target.value as 'MySQL' | 'PostgreSQL')
+                  setFormData((prev) => ({
+                    ...prev,
+                    dbType: 'PostgreSQL',
+                    port: '5432',
+                    username: 'postgres'
+                  }))
+                  setIsConnectionTested(false)
                 }}
               />
             </div>
@@ -219,10 +344,12 @@ const InfoView: React.FC = () => {
           />
         </div>
         <div className="info-view-button-container">
-          <Button variant="gray" onClick={handleConnectionTest}>
+          <Button variant="gray" onClick={handleConnectionTest} isLoading={isTestingConnection}>
             연결테스트
           </Button>
-          <Button onClick={handleSubmit}>생성</Button>
+          <Button onClick={handleSubmit} disabled={!isConnectionTested}>
+            다음
+          </Button>
         </div>
 
         {showToast && (
@@ -237,7 +364,13 @@ const InfoView: React.FC = () => {
           >
             <Toast
               type={toastType}
-              title={toastType === 'success' ? '연결 성공' : '입력 오류'}
+              title={
+                toastType === 'success'
+                  ? '연결 성공'
+                  : toastType === 'warning'
+                    ? '입력 오류'
+                    : '연결 실패'
+              }
               onClose={() => setShowToast(false)}
             >
               <div className="toast-text">{toastMessage}</div>
