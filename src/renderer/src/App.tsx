@@ -9,6 +9,7 @@ import SchemaView from '@renderer/views/SchemaView'
 import CreateDummyView from '@renderer/views/CreateDummyView'
 import TestView from '@renderer/views/TestView'
 import HistoryView from '@renderer/views/HistoryView'
+import SelectMethodView from './views/SelectMethodView'
 
 const App: React.FC = () => {
   return (
@@ -27,6 +28,7 @@ const App: React.FC = () => {
             <Route path="dummy/:projectId" element={<CreateDummyView />} />{' '}
             <Route path="test/:projectId" element={<TestView />} />{' '}
             <Route path="history/:projectId" element={<HistoryView />} />{' '}
+            <Route path="select-method/:tableId" element={<SelectMethodView />} />
             <Route index element={<Navigate to="dashboard/:projectId" replace />} />
           </Route>
         </Route>

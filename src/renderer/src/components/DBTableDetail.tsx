@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { TableInfo } from '@renderer/views/CreateDummyView'
 import Button from '@renderer/components/Button'
 import FileUploadModal from '@renderer/modals/FileUploadModal'
@@ -9,6 +10,7 @@ type DBTableDetailProps = {
 }
 
 const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
+  const navigate = useNavigate()
   const [rows, setRows] = useState(1000)
   const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false)
   const [isRuleModalOpen, setIsRuleModalOpen] = useState(false)
@@ -40,6 +42,9 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
     setSelectedColumnType('')
   }
 
+  const handleGenerateData = (): void => {
+    navigate(`/main/select-method/${table.id}`)
+  }
   return (
     <>
       <div className="table-detail-container shadow">
@@ -146,6 +151,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
             variant="blue"
             size="md"
             style={{ width: '100%', marginTop: '24px', padding: '12px' }}
+            onClick={handleGenerateData}
           >
             데이터 생성
           </Button>
