@@ -37,6 +37,8 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
   const [showToast, setShowToast] = useState(false)
   const [toastType, setToastType] = useState<'success' | 'warning' | 'error'>('success')
   const [toastMessage, setToastMessage] = useState('')
+  const [isConnectionTested, setIsConnectionTested] = useState(false)
+  const [isTestingConnection, setIsTestingConnection] = useState(false)
 
   const validateRequiredFields = (): boolean => {
     if (!formData.projectName.trim()) {
@@ -77,6 +79,8 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
       return
     }
 
+    setIsTestingConnection(true)
+
     try {
       // 연결 테스트
       const result = await window.api.testConnection({
@@ -90,20 +94,30 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
       if (result.success) {
         setToastType('success')
         setToastMessage('데이터베이스 연결에 성공했습니다.')
+        setIsConnectionTested(true)
       } else {
         setToastType('error')
         setToastMessage(result.message)
+        setIsConnectionTested(false)
       }
       setShowToast(true)
     } catch (error) {
       console.error('연결 테스트 중 오류:', error)
       setToastType('warning')
       setToastMessage('연결 테스트 중 오류가 발생했습니다.')
+      setIsConnectionTested(false)
       setShowToast(true)
+    } finally {
+      setIsTestingConnection(false)
     }
   }
 
   const handleInputChange = (field: keyof ProjectFormData, value: string): void => {
+    // DB 정보 변경 시 연결 테스트 상태 초기화
+    if (field !== 'projectName' && field !== 'description') {
+      setIsConnectionTested(false)
+    }
+
     setFormData((prev) => ({
       ...prev,
       [field]: value
@@ -112,6 +126,13 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
 
   const handleSubmit = async (): Promise<void> => {
     if (!validateRequiredFields()) {
+      return
+    }
+
+    if (!isConnectionTested) {
+      setToastType('error')
+      setToastMessage('연결 테스트를 먼저 진행해주세요.')
+      setShowToast(true)
       return
     }
 
@@ -147,6 +168,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
         password: ''
       })
       setSelected('MySQL')
+      setIsConnectionTested(false)
       onClose()
     } catch (error) {
       console.error('프로젝트 생성 중 오류 발생:', error)
@@ -244,7 +266,13 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
                 checked={selected === 'MySQL'}
                 onChange={(e) => {
                   setSelected(e.target.value)
-                  handleInputChange('dbType', e.target.value as 'MySQL' | 'PostgreSQL')
+                  setFormData((prev) => ({
+                    ...prev,
+                    dbType: 'MySQL',
+                    port: '3306',
+                    username: 'root'
+                  }))
+                  setIsConnectionTested(false)
                 }}
               />
               <RadioButton
@@ -254,7 +282,13 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
                 checked={selected === 'PostgreSQL'}
                 onChange={(e) => {
                   setSelected(e.target.value)
-                  handleInputChange('dbType', e.target.value as 'MySQL' | 'PostgreSQL')
+                  setFormData((prev) => ({
+                    ...prev,
+                    dbType: 'PostgreSQL',
+                    port: '5432',
+                    username: 'postgres'
+                  }))
+                  setIsConnectionTested(false)
                 }}
               />
             </div>
@@ -296,10 +330,12 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
           />
         </div>
         <div className="create-project-modal-button-container">
-          <Button variant="gray" onClick={handleConnectionTest}>
+          <Button variant="gray" onClick={handleConnectionTest} isLoading={isTestingConnection}>
             연결테스트
           </Button>
-          <Button onClick={handleSubmit}>생성</Button>
+          <Button onClick={handleSubmit} disabled={!isConnectionTested}>
+            생성
+          </Button>
         </div>
 
         {showToast && (
