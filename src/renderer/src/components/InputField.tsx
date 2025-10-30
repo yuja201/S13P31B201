@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { ReactElement } from 'react'
 
 interface InputFieldProps {
@@ -27,6 +27,10 @@ const InputField = ({
   password = false
 }: InputFieldProps): ReactElement => {
   const [inputValue, setInputValue] = useState(value || '')
+
+  useEffect(() => {
+    setInputValue(value || '')
+  }, [value])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const newValue = e.target.value
