@@ -97,7 +97,6 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false, projectName, dbType, 
         {/* 메뉴 */}
         <nav className="sidebar-menu">
           <NavLink
-            // [!] projectId가 있을 때만 경로에 포함
             to={projectId ? `/main/dashboard/${projectId}` : '#'}
             className={({ isActive }): string =>
               `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`

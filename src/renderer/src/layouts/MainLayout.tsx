@@ -53,21 +53,27 @@ const MainLayout: React.FC = () => {
           background-color: var(--color-background);
         }
         .main-content {
-          display: flex;
+          display: flex; 
+          flex-direction: column;
           flex: 1;
           padding: 80px;
           background-color: var(--color-background);
           overflow-y: auto;
-          justify-content: center; 
-          align-items: center;
         }
         .content-wrapper {
           display: flex; 
           flex-direction: column;
-          flex-grow: 1;
-          justify-content: center; 
-          align-items: center;
+          flex-grow: 1; 
+          width: 100%; 
+          max-width: 1040px; 
+          height: 865px;
+          margin: auto;
+        }
 
+       @media (min-width: 1441px) {
+          .main-content  {
+            margin: auto;
+          }
         }
       `}</style>
     </div>
