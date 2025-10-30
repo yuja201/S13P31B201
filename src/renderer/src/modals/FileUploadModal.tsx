@@ -100,17 +100,17 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({ isOpen, onClose, tabl
 
         <div className="main-content">
           <div
-            className={`upload-zone ${isDragging ? 'dragging' : ''}`}
+            className={`upload-zone ${isDragging ? 'dragging' : ''} shadow`}
             onDragOver={handleDragOver}
             onDragLeave={handleDragLeave}
             onDrop={handleDrop}
           >
             <div className="upload-icon">
-              <CgSoftwareDownload size={150} />
+              <CgSoftwareDownload size={100} />
             </div>
 
-            <p className="upload-text preSemiBold24">파일을 드래그 하거나 파일을 선택하세요.</p>
-            <p className="upload-subtext preSemiBold24">지원 확장자 : csv, json, txt</p>
+            <p className="upload-text preSemiBold18">파일을 드래그 하거나 파일을 선택하세요.</p>
+            <p className="upload-subtext preSemiBold18">지원 확장자 : csv, json, txt</p>
 
             <input
               type="file"
@@ -155,7 +155,7 @@ const FileUploadModal: React.FC<FileUploadModalProps> = ({ isOpen, onClose, tabl
 
           .upload-zone {
             position: relative;
-            border: 2px solid var(--color-gray-200);
+            border: 1px solid var(--color-gray-200);
             width: 500px;
             height: 350px;
             border-radius: 12px;
