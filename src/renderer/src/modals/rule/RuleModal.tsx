@@ -50,7 +50,7 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, columnName, colu
           />
         ) : (
           <RuleCreationContent
-            typeName="INTEGER"
+            columnType={columnType}
             onCancel={handleBack}
             onSubmit={handleCreateSubmit}
           />
