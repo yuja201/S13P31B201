@@ -1,5 +1,6 @@
 import { getDatabase } from './index'
 import type { Database as DatabaseType, DatabaseInput, DatabaseUpdate } from './types'
+import { encrypt, decrypt } from '../utils/encryption'
 
 /**
  * 전체 데이터베이스 조회
@@ -7,7 +8,13 @@ import type { Database as DatabaseType, DatabaseInput, DatabaseUpdate } from './
 export function getAllDatabases(): DatabaseType[] {
   const db = getDatabase()
   const stmt = db.prepare('SELECT * FROM databases ORDER BY created_at DESC')
-  return stmt.all() as DatabaseType[]
+  const databases = stmt.all() as DatabaseType[]
+
+  // 비밀번호 복호화
+  return databases.map((database) => ({
+    ...database,
+    password: decrypt(database.password)
+  }))
 }
 
 /**
@@ -16,7 +23,16 @@ export function getAllDatabases(): DatabaseType[] {
 export function getDatabaseById(id: number): DatabaseType | undefined {
   const db = getDatabase()
   const stmt = db.prepare('SELECT * FROM databases WHERE id = ?')
-  return stmt.get(id) as DatabaseType | undefined
+  const database = stmt.get(id) as DatabaseType | undefined
+
+  // 비밀번호 복호화
+  if (database) {
+    return {
+      ...database,
+      password: decrypt(database.password)
+    }
+  }
+  return undefined
 }
 
 /**
@@ -25,7 +41,13 @@ export function getDatabaseById(id: number): DatabaseType | undefined {
 export function getDatabasesByProjectId(projectId: number): DatabaseType[] {
   const db = getDatabase()
   const stmt = db.prepare('SELECT * FROM databases WHERE project_id = ? ORDER BY created_at DESC')
-  return stmt.all(projectId) as DatabaseType[]
+  const databases = stmt.all(projectId) as DatabaseType[]
+
+  // 비밀번호 복호화
+  return databases.map((database) => ({
+    ...database,
+    password: decrypt(database.password)
+  }))
 }
 
 /**
@@ -34,6 +56,9 @@ export function getDatabasesByProjectId(projectId: number): DatabaseType[] {
 export function createDatabase(data: DatabaseInput): DatabaseType {
   const db = getDatabase()
   const now = Math.floor(Date.now() / 1000)
+
+  // 비밀번호 암호화
+  const encryptedPassword = encrypt(data.password)
 
   const stmt = db.prepare(`
     INSERT INTO databases (project_id, dbms_id, url, username, password, created_at, updated_at, connected_at)
@@ -45,7 +70,7 @@ export function createDatabase(data: DatabaseInput): DatabaseType {
     data.dbms_id,
     data.url,
     data.username,
-    data.password,
+    encryptedPassword,
     now,
     now,
     now
@@ -86,7 +111,8 @@ export function updateDatabase(data: DatabaseUpdate): DatabaseType | undefined {
 
   if (data.password !== undefined) {
     updates.push('password = ?')
-    values.push(data.password)
+    // 비밀번호 암호화
+    values.push(encrypt(data.password))
   }
 
   if (data.connected_at !== undefined) {
