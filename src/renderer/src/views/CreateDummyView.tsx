@@ -228,8 +228,6 @@ const CreateDummyView: React.FC = () => {
           flex-direction: column;
           height: 100%;
           justify-content:center;
-
-
         }
         .dummy-content-wrapper {
           display: flex;
