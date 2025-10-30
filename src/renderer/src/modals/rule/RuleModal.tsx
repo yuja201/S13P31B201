@@ -6,9 +6,10 @@ import RuleCreationContent, { RuleCreationData } from '@renderer/modals/rule/Rul
 interface RuleModalProps {
   isOpen: boolean
   onClose: () => void
+  columnName: string
 }
 
-const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose }) => {
+const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, columnName }) => {
   const [mode, setMode] = useState<'select' | 'create'>('select')
 
   const handleCreateNew = (): void => {
@@ -41,6 +42,7 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose }) => {
         {mode === 'select' ? (
           <RuleSelectContent
             typeName="INTEGER"
+            columnName={columnName}
             onCancel={onClose}
             onConfirm={handleConfirmSelect}
             onCreateNew={handleCreateNew}

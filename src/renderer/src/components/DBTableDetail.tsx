@@ -2,6 +2,7 @@ import React, { useState } from 'react'
 import { TableInfo } from '@renderer/views/CreateDummyView'
 import Button from '@renderer/components/Button'
 import FileUploadModal from '@renderer/modals/FileUploadModal'
+import RuleModal from '@renderer/modals/rule/RuleModal'
 
 type DBTableDetailProps = {
   table: TableInfo
@@ -10,7 +11,10 @@ type DBTableDetailProps = {
 const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
   const [rows, setRows] = useState(1000)
   const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false)
+  const [isRuleModalOpen, SetIsRuleModalOpen] = useState(false)
+  const [selectedColumnName, setSelectedColumnName] = useState<string>('')
 
+  // FileUploadModal
   const openFileUploadModal = (): void => {
     setIsFileUploadModalOpen(true)
   }
@@ -19,8 +23,14 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
     setIsFileUploadModalOpen(false)
   }
 
+  // RuleModal
   const handleSelectGenerationClick = (columnName: string): void => {
-    alert(`${columnName} 컬럼의 생성 방식을 선택하세요! (기능 구현 필요)`)
+    setSelectedColumnName(columnName)
+    SetIsRuleModalOpen(true)
+  }
+
+  const closeRuleModal = (): void => {
+    SetIsRuleModalOpen(false)
   }
 
   return (
@@ -139,6 +149,13 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
         onClose={closeFileUploadModal}
         tableName={table.name}
       />
+      {selectedColumnName && (
+        <RuleModal
+          isOpen={isRuleModalOpen}
+          onClose={closeRuleModal}
+          columnName={selectedColumnName}
+        />
+      )}
       <style>{`
         .table-detail-container{
           flex-grow: 1;
@@ -226,7 +243,6 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
           background: none; 
           border: none; 
           padding: 0; 
-          color: var(--color-dark-gray); 
           text-decoration: underline; 
           cursor: pointer; 
           font: preRegular14; 
