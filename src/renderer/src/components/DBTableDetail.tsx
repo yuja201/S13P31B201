@@ -92,7 +92,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
                       </div>
                     </td>
                     {/* --- 생성 방식 셀 --- */}
-                    <td className="generation-method-cell preSemiBold16">
+                    <td className="generation-method-cell preSemiBold14">
                       {!col.generation || col.generation === '-' ? (
                         <button
                           className="select-generation-link "
@@ -148,7 +148,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
           flex-direction: column;
           height: 100%;
           overflow: hidden;
-          width:760px;
+          width:780px;
           height: 760px;
         }
         .detail-header {
@@ -220,6 +220,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
 
         .generation-method-cell {
           color: var(--color-main-blue); 
+          min-width: 116px; 
         }
         .select-generation-link {
           background: none; 
