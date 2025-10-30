@@ -64,7 +64,24 @@ const api = {
     update: (data: RuleUpdate): Promise<Rule | undefined> =>
       ipcRenderer.invoke('db:rule:update', data),
     delete: (id: number): Promise<boolean> => ipcRenderer.invoke('db:rule:delete', id)
-  }
+  },
+
+  // Database connection test
+  testConnection: (config: {
+    dbType: 'MySQL' | 'PostgreSQL'
+    host: string
+    port: number
+    username: string
+    password: string
+    database?: string
+  }): Promise<{
+    success: boolean
+    message: string
+    details?: {
+      serverVersion?: string
+      connectionTime?: number
+    }
+  }> => ipcRenderer.invoke('db:connection:test', config)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

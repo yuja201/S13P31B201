@@ -35,7 +35,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
 
   const [selected, setSelected] = useState('MySQL')
   const [showToast, setShowToast] = useState(false)
-  const [toastType, setToastType] = useState<'success' | 'warning'>('success')
+  const [toastType, setToastType] = useState<'success' | 'warning' | 'error'>('success')
   const [toastMessage, setToastMessage] = useState('')
 
   const validateRequiredFields = (): boolean => {
@@ -72,14 +72,35 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
     return true
   }
 
-  const handleConnectionTest = (): void => {
+  const handleConnectionTest = async (): Promise<void> => {
     if (!validateRequiredFields()) {
       return
     }
 
-    setToastType('success')
-    setToastMessage('데이터베이스 연결에 성공했습니다.')
-    setShowToast(true)
+    try {
+      // 연결 테스트
+      const result = await window.api.testConnection({
+        dbType: formData.dbType,
+        host: formData.host,
+        port: parseInt(formData.port),
+        username: formData.username,
+        password: formData.password
+      })
+
+      if (result.success) {
+        setToastType('success')
+        setToastMessage('데이터베이스 연결에 성공했습니다.')
+      } else {
+        setToastType('error')
+        setToastMessage(result.message)
+      }
+      setShowToast(true)
+    } catch (error) {
+      console.error('연결 테스트 중 오류:', error)
+      setToastType('warning')
+      setToastMessage('연결 테스트 중 오류가 발생했습니다.')
+      setShowToast(true)
+    }
   }
 
   const handleInputChange = (field: keyof ProjectFormData, value: string): void => {
@@ -94,34 +115,45 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
       return
     }
 
-    const message = `입력값?
-프로젝트명: ${formData.projectName}
-프로젝트 설명: ${formData.description}
-DBMS: ${formData.dbType}
-호스트: ${formData.host}
-포트: ${formData.port}
-사용자명: ${formData.username}
-비밀번호: ${formData.password}`
+    try {
+      // 프로젝트 생성
+      const project = await window.api.project.create({
+        name: formData.projectName,
+        description: formData.description
+      })
 
-    console.log(message)
+      const dbmsId = formData.dbType === 'MySQL' ? 1 : 2
 
-    if (onSubmit) {
-      onSubmit(formData)
+      // 데이터베이스 연결 정보 저장
+      await window.api.database.create({
+        project_id: project.id,
+        dbms_id: dbmsId,
+        url: `${formData.host}:${formData.port}`,
+        username: formData.username,
+        password: formData.password
+      })
+
+      if (onSubmit) {
+        onSubmit(formData)
+      }
+
+      setFormData({
+        projectName: '',
+        description: '',
+        dbType: 'MySQL',
+        host: '127.0.0.1',
+        port: '3306',
+        username: 'root',
+        password: ''
+      })
+      setSelected('MySQL')
+      onClose()
+    } catch (error) {
+      console.error('프로젝트 생성 중 오류 발생:', error)
+      setToastType('error')
+      setToastMessage('프로젝트 생성에 실패했습니다.')
+      setShowToast(true)
     }
-
-    // 입력값 초기화
-    setFormData({
-      projectName: '',
-      description: '',
-      dbType: 'MySQL',
-      host: '127.0.0.1',
-      port: '3306',
-      username: 'root',
-      password: ''
-    })
-    setSelected('MySQL')
-
-    onClose()
   }
 
   return (
@@ -282,7 +314,13 @@ DBMS: ${formData.dbType}
           >
             <Toast
               type={toastType}
-              title={toastType === 'success' ? '연결 성공' : '입력 오류'}
+              title={
+                toastType === 'success'
+                  ? '연결 성공'
+                  : toastType === 'warning'
+                    ? '입력 오류'
+                    : '연결 실패'
+              }
               onClose={() => setShowToast(false)}
             >
               <div className="toast-text">{toastMessage}</div>
