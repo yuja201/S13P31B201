@@ -3,10 +3,27 @@ import type { Rule, RuleInput, RuleUpdate } from './types'
 
 /**
  * 전체 생성 규칙 조회
+ * - domain 및 category 이름까지 JOIN
  */
 export function getAllRules(): Rule[] {
   const db = getDatabase()
-  const stmt = db.prepare('SELECT * FROM rules ORDER BY created_at DESC')
+  const stmt = db.prepare(`
+    SELECT
+      r.id,
+      r.name,
+      r.data_source,
+      r.domain_id,
+      d.name AS domain_name,
+      c.name AS category_name,
+      r.model_id,
+      r.prompt,
+      r.created_at,
+      r.updated_at
+    FROM rules r
+    JOIN domains d ON r.domain_id = d.id
+    JOIN domain_categories c ON d.category_id = c.id
+    ORDER BY r.created_at DESC
+  `)
   return stmt.all() as Rule[]
 }
 
@@ -15,17 +32,50 @@ export function getAllRules(): Rule[] {
  */
 export function getRuleById(id: number): Rule | undefined {
   const db = getDatabase()
-  const stmt = db.prepare('SELECT * FROM rules WHERE id = ?')
+  const stmt = db.prepare(`
+    SELECT
+      r.id,
+      r.name,
+      r.data_source,
+      r.domain_id,
+      d.name AS domain_name,
+      c.name AS category_name,
+      r.model_id,
+      r.prompt,
+      r.created_at,
+      r.updated_at
+    FROM rules r
+    JOIN domains d ON r.domain_id = d.id
+    JOIN domain_categories c ON d.category_id = c.id
+    WHERE r.id = ?
+  `)
   return stmt.get(id) as Rule | undefined
 }
 
 /**
- * 도메인으로 생성 규칙 목록 조회
+ * 특정 도메인 ID로 생성 규칙 목록 조회
  */
-export function getRulesByDomain(domain: string): Rule[] {
+export function getRulesByDomain(domainId: number): Rule[] {
   const db = getDatabase()
-  const stmt = db.prepare('SELECT * FROM rules WHERE domain = ? ORDER BY created_at DESC')
-  return stmt.all(domain) as Rule[]
+  const stmt = db.prepare(`
+    SELECT
+      r.id,
+      r.name,
+      r.data_source,
+      r.domain_id,
+      d.name AS domain_name,
+      c.name AS category_name,
+      r.model_id,
+      r.prompt,
+      r.created_at,
+      r.updated_at
+    FROM rules r
+    JOIN domains d ON r.domain_id = d.id
+    JOIN domain_categories c ON d.category_id = c.id
+    WHERE r.domain_id = ?
+    ORDER BY r.created_at DESC
+  `)
+  return stmt.all(domainId) as Rule[]
 }
 
 /**
@@ -36,7 +86,7 @@ export function createRule(data: RuleInput): Rule {
   const now = Math.floor(Date.now() / 1000)
 
   const stmt = db.prepare(`
-    INSERT INTO rules (name, data_source, domain, model_id, prompt, created_at, updated_at)
+    INSERT INTO rules (name, data_source, domain_id, model_id, prompt, created_at, updated_at)
     VALUES (?, ?, ?, ?, ?, ?, ?)
   `)
 
@@ -74,7 +124,7 @@ export function updateRule(data: RuleUpdate): Rule | undefined {
   }
 
   if (data.domain !== undefined) {
-    updates.push('domain = ?')
+    updates.push('domain_id = ?')
     values.push(data.domain)
   }
 
