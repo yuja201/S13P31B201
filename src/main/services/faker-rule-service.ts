@@ -1,6 +1,6 @@
 import { createRule } from '../database/rules'
 import type { Rule } from '../database/types'
-import { fakerRuleInput } from './faker-types'
+import { fakerRuleInput } from './types'
 
 const DATA_SOURCE = 'faker'
 
