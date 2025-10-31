@@ -25,6 +25,7 @@ CREATE TABLE IF NOT EXISTS databases (
   url TEXT NOT NULL,
   username TEXT NOT NULL,
   password TEXT NOT NULL,
+  database_name TEXT NOT NULL DEFAULT '',
   created_at NUMERIC NOT NULL DEFAULT (strftime('%s', 'now')),
   updated_at NUMERIC NOT NULL DEFAULT (strftime('%s', 'now')),
   connected_at NUMERIC NOT NULL DEFAULT (strftime('%s', 'now')),

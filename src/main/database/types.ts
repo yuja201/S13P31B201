@@ -20,6 +20,7 @@ export interface Database {
   url: string
   username: string
   password: string
+  database_name: string
   created_at: number
   updated_at: number
   connected_at: number
@@ -54,6 +55,7 @@ export interface DatabaseInput {
   url: string
   username: string
   password: string
+  database_name: string
 }
 
 export interface RuleInput {
@@ -83,6 +85,7 @@ export interface DatabaseUpdate {
   url?: string
   username?: string
   password?: string
+  database_name?: string
   connected_at?: number
 }
 
@@ -93,4 +96,51 @@ export interface RuleUpdate {
   domain?: number
   model_id?: number | null
   prompt?: string | null
+}
+
+// 스키마 관련
+export interface Column {
+  name: string
+  type: string
+  comment?: string
+  isPrimaryKey?: boolean
+  isForeignKey?: boolean
+  notNull?: boolean
+  unique?: boolean
+  check?: string
+  autoIncrement?: boolean
+  default?: string
+  enum?: string[]
+  domain?: string
+}
+
+export interface ForeignKey {
+  column_name: string
+  referenced_table: string
+  referenced_column: string
+  on_delete?: string
+  on_update?: string
+  constraint_name?: string
+}
+
+export interface Index {
+  index_name: string
+  columns: string[]
+  is_unique: boolean
+  is_primary: boolean
+  index_type?: string
+}
+
+export interface Table {
+  name: string
+  rowCount: number
+  comment?: string
+  columns: Column[]
+  foreignKeys?: ForeignKey[]
+  indexes?: Index[]
+}
+
+export interface DatabaseSchema {
+  tables: Table[]
+  fetchedAt: number
 }
