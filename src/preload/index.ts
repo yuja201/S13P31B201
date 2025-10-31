@@ -12,7 +12,8 @@ import type {
   DatabaseUpdate,
   Rule,
   RuleInput,
-  RuleUpdate
+  RuleUpdate,
+  DatabaseSchema
 } from '../main/database/types'
 
 // Custom APIs for renderer
@@ -81,7 +82,13 @@ const api = {
       serverVersion?: string
       connectionTime?: number
     }
-  }> => ipcRenderer.invoke('db:connection:test', config)
+  }> => ipcRenderer.invoke('db:connection:test', config),
+
+  // Schema operations
+  schema: {
+    fetch: (databaseId: number): Promise<DatabaseSchema> =>
+      ipcRenderer.invoke('db:schema:fetch', databaseId)
+  }
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

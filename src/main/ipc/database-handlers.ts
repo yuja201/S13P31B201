@@ -4,6 +4,7 @@ import * as projectOps from '../database/projects'
 import * as databaseOps from '../database/databases'
 import * as ruleOps from '../database/rules'
 import { testDatabaseConnection, ConnectionConfig } from '../utils/db-connection-test'
+import { fetchDatabaseSchema } from '../utils/schema-fetch'
 
 /**
  * SQLite Database
@@ -111,5 +112,29 @@ ipcMain.handle('db:rule:delete', (_, id: number) => {
 
 // Database connection test
 ipcMain.handle('db:connection:test', async (_, config: ConnectionConfig) => {
-  return await testDatabaseConnection(config)
+  return testDatabaseConnection(config)
+})
+
+// Schema operations
+ipcMain.handle('db:schema:fetch', (_, databaseId: number) => {
+  const database = databaseOps.getDatabaseById(databaseId)
+  if (!database) {
+    throw new Error(`Database with id ${databaseId} not found`)
+  }
+
+  const dbms = dbmsOps.getDBMSById(database.dbms_id)
+  if (!dbms) {
+    throw new Error(`DBMS with id ${database.dbms_id} not found`)
+  }
+
+  const [host, port] = database.url.split(':')
+
+  return fetchDatabaseSchema({
+    dbType: dbms.name as 'MySQL' | 'PostgreSQL',
+    host,
+    port: parseInt(port),
+    username: database.username,
+    password: database.password,
+    database: database.database_name
+  })
 })

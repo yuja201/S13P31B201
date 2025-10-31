@@ -20,6 +20,7 @@ export interface ProjectFormData {
   port: string
   username: string
   password: string
+  databaseName: string
 }
 
 const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose, onSubmit }) => {
@@ -30,7 +31,8 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
     host: '127.0.0.1',
     port: '3306',
     username: 'root',
-    password: ''
+    password: '',
+    databaseName: ''
   })
 
   const [selected, setSelected] = useState('MySQL')
@@ -71,6 +73,12 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
       setShowToast(true)
       return false
     }
+    if (!formData.databaseName.trim()) {
+      setToastType('warning')
+      setToastMessage('데이터베이스명을 입력해주세요.')
+      setShowToast(true)
+      return false
+    }
     return true
   }
 
@@ -88,7 +96,8 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
         host: formData.host,
         port: parseInt(formData.port),
         username: formData.username,
-        password: formData.password
+        password: formData.password,
+        database: formData.databaseName
       })
 
       if (result.success) {
@@ -151,7 +160,8 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
         dbms_id: dbmsId,
         url: `${formData.host}:${formData.port}`,
         username: formData.username,
-        password: formData.password
+        password: formData.password,
+        database_name: formData.databaseName
       })
 
       if (onSubmit) {
@@ -165,7 +175,8 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
         host: '127.0.0.1',
         port: '3306',
         username: 'root',
-        password: ''
+        password: '',
+        databaseName: ''
       })
       setSelected('MySQL')
       setIsConnectionTested(false)
@@ -311,22 +322,32 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
               onChange={(value) => handleInputChange('port', value)}
             />
           </div>
+          <div className="create-project-modal-row-group">
+            <InputField
+              title="사용자명"
+              placeholder="user"
+              width={300}
+              required={true}
+              value={formData.username}
+              onChange={(value) => handleInputChange('username', value)}
+            />
+            <InputField
+              title="비밀번호"
+              placeholder="password"
+              width={300}
+              required={true}
+              value={formData.password}
+              onChange={(value) => handleInputChange('password', value)}
+              password={true}
+            />
+          </div>
           <InputField
-            title="사용자명"
-            placeholder="user"
+            title="데이터베이스명"
+            placeholder="sakila"
             width={300}
             required={true}
-            value={formData.username}
-            onChange={(value) => handleInputChange('username', value)}
-          />
-          <InputField
-            title="비밀번호"
-            placeholder="password"
-            width={300}
-            required={true}
-            value={formData.password}
-            onChange={(value) => handleInputChange('password', value)}
-            password={true}
+            value={formData.databaseName}
+            onChange={(value) => handleInputChange('databaseName', value)}
           />
         </div>
         <div className="create-project-modal-button-container">
