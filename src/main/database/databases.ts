@@ -61,8 +61,8 @@ export function createDatabase(data: DatabaseInput): DatabaseType {
   const encryptedPassword = encrypt(data.password)
 
   const stmt = db.prepare(`
-    INSERT INTO databases (project_id, dbms_id, url, username, password, created_at, updated_at, connected_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO databases (project_id, dbms_id, url, username, password, database_name, created_at, updated_at, connected_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
   `)
 
   const result = stmt.run(
@@ -71,6 +71,7 @@ export function createDatabase(data: DatabaseInput): DatabaseType {
     data.url,
     data.username,
     encryptedPassword,
+    data.database_name,
     now,
     now,
     now
@@ -113,6 +114,11 @@ export function updateDatabase(data: DatabaseUpdate): DatabaseType | undefined {
     updates.push('password = ?')
     // 비밀번호 암호화
     values.push(encrypt(data.password))
+  }
+
+  if (data.database_name !== undefined) {
+    updates.push('database_name = ?')
+    values.push(data.database_name)
   }
 
   if (data.connected_at !== undefined) {

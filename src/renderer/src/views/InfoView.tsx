@@ -15,6 +15,7 @@ interface ProjectInfo {
   port: string
   username: string
   password: string
+  databaseName: string
 }
 
 const InfoView: React.FC = () => {
@@ -29,7 +30,8 @@ const InfoView: React.FC = () => {
     host: '127.0.0.1',
     port: '3306',
     username: 'root',
-    password: ''
+    password: '',
+    databaseName: ''
   })
 
   const [selected, setSelected] = useState('MySQL')
@@ -51,7 +53,8 @@ const InfoView: React.FC = () => {
         host: host,
         port: port,
         username: selectedProject.database.username,
-        password: selectedProject.database.password
+        password: selectedProject.database.password,
+        databaseName: selectedProject.database.database_name
       })
 
       setSelected(dbType)
@@ -89,6 +92,12 @@ const InfoView: React.FC = () => {
       setShowToast(true)
       return false
     }
+    if (!formData.databaseName.trim()) {
+      setToastType('warning')
+      setToastMessage('데이터베이스명을 입력해주세요.')
+      setShowToast(true)
+      return false
+    }
     return true
   }
 
@@ -106,7 +115,8 @@ const InfoView: React.FC = () => {
         host: formData.host,
         port: parseInt(formData.port),
         username: formData.username,
-        password: formData.password
+        password: formData.password,
+        database: formData.databaseName
       })
 
       if (result.success) {
@@ -179,7 +189,8 @@ const InfoView: React.FC = () => {
           dbms_id: dbmsId,
           url: `${formData.host}:${formData.port}`,
           username: formData.username,
-          password: formData.password
+          password: formData.password,
+          database_name: formData.databaseName
         })
       }
 
@@ -325,22 +336,32 @@ const InfoView: React.FC = () => {
               onChange={(value) => handleInputChange('port', value)}
             />
           </div>
+          <div className="info-view-row-group">
+            <InputField
+              title="사용자명"
+              placeholder="user"
+              width={300}
+              required={true}
+              value={formData.username}
+              onChange={(value) => handleInputChange('username', value)}
+            />
+            <InputField
+              title="비밀번호"
+              placeholder="password"
+              width={300}
+              required={true}
+              value={formData.password}
+              onChange={(value) => handleInputChange('password', value)}
+              password={true}
+            />
+          </div>
           <InputField
-            title="사용자명"
-            placeholder="user"
+            title="데이터베이스명"
+            placeholder="sakila"
             width={300}
             required={true}
-            value={formData.username}
-            onChange={(value) => handleInputChange('username', value)}
-          />
-          <InputField
-            title="비밀번호"
-            placeholder="password"
-            width={300}
-            required={true}
-            value={formData.password}
-            onChange={(value) => handleInputChange('password', value)}
-            password={true}
+            value={formData.databaseName}
+            onChange={(value) => handleInputChange('databaseName', value)}
           />
         </div>
         <div className="info-view-button-container">

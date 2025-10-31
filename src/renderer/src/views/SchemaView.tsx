@@ -1,88 +1,56 @@
-import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import React, { useState, useEffect } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import Button from '@renderer/components/Button'
 import PageTitle from '@renderer/components/PageTitle'
 import TableInfoContainer from '@renderer/components/TableInfoContainer'
-
-interface Column {
-  name: string
-  type: string
-  isPrimaryKey?: boolean
-  isForeignKey?: boolean
-  notNull?: boolean
-  unique?: boolean
-  check?: string
-  autoIncrement?: boolean
-  default?: string
-  enum?: string[]
-  domain?: string
-}
-
-interface Table {
-  name: string
-  rowCount: number
-  columns: Column[]
-}
+import { useSchemaStore } from '@renderer/stores/schemaStore'
+import { useProjectStore } from '@renderer/stores/projectStore'
+import type { Table } from '../../../main/database/types'
 
 const SchemaView: React.FC = () => {
   const navigate = useNavigate()
+  const { projectId } = useParams<{ projectId: string }>()
+  const selectedProject = useProjectStore((state) => state.selectedProject)
+  const { fetchSchema, isLoading } = useSchemaStore()
 
-  // 임시 데이터 (나중에 실제 데이터베이스 정보로 대체)
-  const [tables] = useState<Table[]>([
-    {
-      name: 'users',
-      rowCount: 1262,
-      columns: [
-        { name: 'id', type: 'INT', isPrimaryKey: true, notNull: true, autoIncrement: true },
-        { name: 'username', type: 'VARCHAR(50)', notNull: true, unique: true },
-        {
-          name: 'email',
-          type: 'VARCHAR(50)',
-          notNull: true,
-          unique: true,
-          check: 'email LIKE "%@%"'
-        },
-        { name: 'age', type: 'INT', check: 'age >= 0' },
-        {
-          name: 'status',
-          type: 'VARCHAR(20)',
-          default: 'active',
-          enum: ['active', 'inactive', 'banned']
-        },
-        { name: 'created_at', type: 'DATETIME', notNull: true, default: 'CURRENT_TIMESTAMP' }
-      ]
-    },
-    {
-      name: 'posts',
-      rowCount: 52489,
-      columns: [
-        { name: 'id', type: 'INT', isPrimaryKey: true, notNull: true, autoIncrement: true },
-        { name: 'user_id', type: 'INT', isForeignKey: true, notNull: true },
-        { name: 'title', type: 'VARCHAR(200)', notNull: true },
-        { name: 'content', type: 'TEXT', notNull: true },
-        { name: 'view_count', type: 'INT', default: '0', check: 'view_count >= 0' },
-        { name: 'created_at', type: 'DATETIME', notNull: true, default: 'CURRENT_TIMESTAMP' }
-      ]
-    },
-    {
-      name: 'comments',
-      rowCount: 893157246,
-      columns: [
-        { name: 'id', type: 'INT', isPrimaryKey: true, notNull: true, autoIncrement: true },
-        { name: 'post_id', type: 'INT', isForeignKey: true, notNull: true },
-        { name: 'user_id', type: 'INT', isForeignKey: true, notNull: true },
-        { name: 'content', type: 'TEXT', notNull: true },
-        { name: 'created_at', type: 'DATETIME', notNull: true, default: 'CURRENT_TIMESTAMP' }
-      ]
+  const [tables, setTables] = useState<Table[]>([])
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+
+  useEffect(() => {
+    const loadSchema = async (): Promise<void> => {
+      if (!selectedProject?.database?.id) {
+        setErrorMessage('데이터베이스 정보를 찾을 수 없습니다.')
+        return
+      }
+
+      try {
+        setErrorMessage(null)
+        const schema = await fetchSchema(selectedProject.database.id)
+        setTables(schema.tables)
+      } catch (err) {
+        console.error('스키마 로딩 실패:', err)
+        const message = '스키마 정보를 불러오는데 실패했습니다.'
+        setErrorMessage(message)
+      }
     }
-  ])
+
+    loadSchema()
+  }, [projectId, selectedProject, fetchSchema])
 
   const handlePrevious = (): void => {
-    navigate('/main/info')
+    if (selectedProject?.id) {
+      navigate(`/main/info/${selectedProject.id}`)
+    } else {
+      navigate('/main')
+    }
   }
 
   const handleConfirm = (): void => {
-    // TODO: 확인 후 다음 단계로 이동
+    if (selectedProject?.id) {
+      navigate(`/main/dashboard/${selectedProject.id}`)
+    } else {
+      navigate('/main')
+    }
   }
 
   return (
@@ -122,7 +90,21 @@ const SchemaView: React.FC = () => {
         </div>
 
         <div className="schema-view-content">
-          <TableInfoContainer tables={tables} />
+          {isLoading ? (
+            <div className="schema-view-loading">
+              <p>스키마 정보를 불러오는 중...</p>
+            </div>
+          ) : errorMessage ? (
+            <div className="schema-view-error">
+              <p style={{ fontSize: '16px', textAlign: 'center' }}>{errorMessage}</p>
+            </div>
+          ) : tables.length === 0 ? (
+            <div className="schema-view-empty">
+              <p style={{ fontSize: '16px', textAlign: 'center' }}>테이블이 없습니다.</p>
+            </div>
+          ) : (
+            <TableInfoContainer tables={tables} />
+          )}
         </div>
 
         <div className="schema-view-button-container">

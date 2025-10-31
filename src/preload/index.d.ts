@@ -11,7 +11,8 @@ import type {
   DatabaseUpdate,
   Rule,
   RuleInput,
-  RuleUpdate
+  RuleUpdate,
+  DatabaseSchema
 } from '../main/database/types'
 
 interface API {
@@ -61,6 +62,9 @@ interface API {
       connectionTime?: number
     }
   }>
+  schema: {
+    fetch: (databaseId: number) => Promise<DatabaseSchema>
+  }
 }
 
 declare global {
