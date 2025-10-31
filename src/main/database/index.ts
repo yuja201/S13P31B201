@@ -1,7 +1,12 @@
 import Database from 'better-sqlite3'
 import { app } from 'electron'
 import path from 'path'
-import { createTablesSQL, insertDefaultDBMSData } from './schema'
+import {
+  createTablesSQL,
+  insertDefaultDBMSData,
+  insertDefaultDomainCategories,
+  insertDefaultDomainData
+} from './schema'
 
 let db: Database.Database | null = null
 
@@ -34,6 +39,10 @@ export function initDatabase(): Database.Database {
 
   // DBMS 종류 저장
   db.exec(insertDefaultDBMSData)
+
+  // 도메인 종류 저장
+  db.exec(insertDefaultDomainCategories)
+  db.exec(insertDefaultDomainData)
 
   return db
 }

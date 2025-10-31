@@ -89,7 +89,7 @@ ipcMain.handle('db:rule:getById', (_, id: number) => {
   return ruleOps.getRuleById(id)
 })
 
-ipcMain.handle('db:rule:getByDomain', (_, domain: string) => {
+ipcMain.handle('db:rule:getByDomain', (_, domain: number) => {
   return ruleOps.getRulesByDomain(domain)
 })
 

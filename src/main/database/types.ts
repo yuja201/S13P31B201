@@ -29,7 +29,9 @@ export interface Rule {
   id: number
   name: string
   data_source: string
-  domain: string
+  domain_id: number
+  domain_name: string
+  category_name: string
   model_id: number | null
   prompt: string | null
   created_at: number
@@ -57,7 +59,7 @@ export interface DatabaseInput {
 export interface RuleInput {
   name: string
   data_source: string
-  domain: string
+  domain: number
   model_id?: number | null
   prompt?: string | null
 }
@@ -88,7 +90,7 @@ export interface RuleUpdate {
   id: number
   name?: string
   data_source?: string
-  domain?: string
+  domain?: number
   model_id?: number | null
   prompt?: string | null
 }
