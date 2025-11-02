@@ -2,9 +2,10 @@ import path from 'node:path'
 import os from 'node:os'
 import { fileURLToPath } from 'node:url'
 import Piscina from 'piscina'
-import type { WorkerTask, WorkerResult, GenerationInput } from '../types'
+import type { WorkerTask, WorkerResult, GenerationInput, GenerationResult } from '../types'
 import { getDatabaseByProjectId } from '../../database/databases'
 import { DBMS_ID_TO_KEY, type SupportedDBMS } from '../../utils/dbms-map.js'
+import { createZipFromSqlFilesStreaming } from './zip-generator'
 
 // ESM 환경용 __dirname 복원
 const __filename = fileURLToPath(import.meta.url)
@@ -26,9 +27,7 @@ export const workerPool = new Piscina({
  * 파일 생성 요청
  * - Piscina가 자동으로 워커 풀 관리 및 병렬 처리
  */
-export async function runDataGenerator(
-  payload: GenerationInput
-): Promise<WorkerResult[] | WorkerResult> {
+export async function runDataGenerator(payload: GenerationInput): Promise<GenerationResult> {
   const { projectId, tables } = payload
 
   if (!tables.length) {
@@ -47,18 +46,7 @@ export async function runDataGenerator(
     throw new Error(`지원하지 않는 DBMS ID: ${database.dbms_id}`)
   }
 
-  // 단일 테이블 처리
-  if (tables.length === 1) {
-    const task: WorkerTask = {
-      projectId,
-      dbType: dbTypeKey,
-      table: tables[0]
-    }
-    const result = (await workerPool.run(task)) as WorkerResult
-    return result
-  }
-
-  // 다중 테이블 병렬 처리
+  // 테이블 병렬 처리
   const tasks: WorkerTask[] = tables.map((table) => ({
     projectId,
     dbType: dbTypeKey,
@@ -70,7 +58,26 @@ export async function runDataGenerator(
     tasks.map((task) => workerPool.run(task) as Promise<WorkerResult>)
   )
 
-  return results
+  const successResults = results.filter((r) => r.success)
+  const failedResults = results.filter((r) => !r.success)
+
+  // SQL 파일 리스트 생성
+  const files = successResults.map((r) => ({
+    filename: r.tableName,
+    path: r.sqlPath
+  }))
+
+  // ZIP 생성 + 디스크 저장
+  const zipPath = await createZipFromSqlFilesStreaming(files, projectId)
+
+  // 프론트로 반환
+  return {
+    zipPath,
+    successCount: successResults.length,
+    failCount: failedResults.length,
+    success: failedResults.length === 0,
+    errors: failedResults.map((r) => `[${r.tableName}] ${r.error ?? 'Unknown error'}`)
+  }
 }
 
 /**

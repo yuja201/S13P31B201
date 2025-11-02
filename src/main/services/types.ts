@@ -49,6 +49,14 @@ export interface WorkerResult {
   error?: string
 }
 
+export interface GenerationResult {
+  zipPath: string
+  successCount: number
+  failCount: number
+  success: boolean
+  errors?: string[]
+}
+
 /**
  * faker
  */
