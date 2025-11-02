@@ -94,7 +94,7 @@ function buildPrompt(info: ColumnSchemaInfo, count: number): string {
   const domainGuidance = buildDomainGuidance(info.domainName)
 
   return `너는 데이터베이스 테스트 데이터 생성 엔진이다.
-${info.dbType} 데이터베이스의 ${info.tableName} 테이블, ${info.columnName} 컬럼에 대해 ${count}개의 현실적이고 다양한 테스트 데이터를 생성해ra.
+${info.dbType} 데이터베이스의 ${info.tableName} 테이블, ${info.columnName} 컬럼에 대해 ${count}개의 현실적이고 다양한 테스트 데이터를 생성해라.
 
 ${domainGuidance}
 
