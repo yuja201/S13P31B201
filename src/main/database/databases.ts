@@ -51,6 +51,23 @@ export function getDatabasesByProjectId(projectId: number): DatabaseType[] {
 }
 
 /**
+ * 프로젝트 ID로 데이터베이스 조회
+ */
+export function getDatabaseByProjectId(projectId: number): DatabaseType | undefined {
+  const db = getDatabase()
+  const stmt = db.prepare('SELECT * FROM databases WHERE project_id = ? LIMIT 1')
+  const database = stmt.get(projectId) as DatabaseType | undefined
+
+  if (!database) return undefined
+
+  // 비밀번호 복호화
+  return {
+    ...database,
+    password: decrypt(database.password)
+  }
+}
+
+/**
  * 새 데이터베이스 추가
  */
 export function createDatabase(data: DatabaseInput): DatabaseType {
