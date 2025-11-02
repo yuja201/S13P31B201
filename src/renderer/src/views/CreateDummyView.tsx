@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useMemo } from 'react'
 import PageTitle from '@renderer/components/PageTitle'
 import DBTableList from '@renderer/components/DBTableList'
 import DBTableDetail from '@renderer/components/DBTableDetail'
@@ -50,26 +50,24 @@ const CreateDummyView: React.FC = () => {
     '테이블을 선택하고 컬럼별 데이터 생성 방식을 설정하세요.\nAI, Faker.js, 파일 업로드, 직접 입력 중 원하는 방식으로 데이터를 생성하세요.'
 
   const selectedProject = useProjectStore((state) => state.selectedProject)
-  const getSchema = useSchemaStore((state) => state.getSchema)
   const isLoading = useSchemaStore((state) => state.isLoading)
   const error = useSchemaStore((state) => state.error)
 
-  const tables: TableInfo[] = useSchemaStore((state) => {
+  const rawTables = useSchemaStore((state) => {
     const currentDatabaseId = selectedProject?.database?.id
-    const schema = currentDatabaseId ? getSchema(currentDatabaseId) : null
+    const schema = currentDatabaseId ? state.getSchema(currentDatabaseId) : null
+    return schema?.tables || [] // 원본 Table[] 배열
+  })
 
-    if (!schema || !schema.tables) {
-      return []
-    }
-
-    return schema.tables.map((table: Table): TableInfo => ({
+  const tables: TableInfo[] = useMemo(() => {
+    return rawTables.map((table: Table): TableInfo => ({
       id: table.name,
       name: table.name,
       columns: table.columns.length,
-      rows: 15324, //  'rows'는 스키마에 없으므로 임시 Mock 데이터 사용
+      rows: 15324, // Mock data
       columnDetails: table.columns.map(convertColumn)
     }))
-  })
+  }, [rawTables])
 
   const [focusedTable, setFocusedTable] = useState<TableInfo | null>(null)
 
