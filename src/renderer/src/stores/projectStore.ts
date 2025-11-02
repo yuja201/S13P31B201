@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Project, Database, DBMS } from '../../../main/database/types'
+import type { Project, Database, DBMS } from '@main/database/types'
 
 export interface ProjectWithDetails extends Project {
   database?: Database
