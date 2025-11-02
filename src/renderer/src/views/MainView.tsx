@@ -5,31 +5,21 @@ import Card from '@renderer/components/Card'
 import CreateProjectModal from '@renderer/modals/CreateProjectModal'
 import { IoFilterOutline } from 'react-icons/io5'
 import { formatRelativeTime } from '@renderer/utils/timeFormat'
-import { useProjectStore } from '@renderer/stores/projectStore'
-import type { ProjectWithDetails } from '@renderer/stores/projectStore'
+import { useProjectStore, ProjectWithDetails } from '@renderer/stores/projectStore'
 
-interface ProjectInfo {
-  id: number
-  name: string
-  dbType: string
-  description: string
-  host: string
-  port: number
-  username: string
-  lastUpdated: string
-  created_at: number
-  updated_at: number
-}
 
 const MainView: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [sortOption, setSortOption] = useState<'modified' | 'created' | 'name'>('modified')
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
-  const [projects, setProjects] = useState<ProjectInfo[]>([])
-  const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
-  const navigate = useNavigate()
+
+  const projects = useProjectStore((state) => state.projects)
+  const setProjects = useProjectStore((state) => state.setProjects)
   const setSelectedProject = useProjectStore((state) => state.setSelectedProject)
+
+  const [loading, setLoading] = useState(true)
+  const navigate = useNavigate()
 
   // 프로젝트 목록 로드
   const loadProjects = useCallback(async (): Promise<void> => {
@@ -43,19 +33,11 @@ const MainView: React.FC = () => {
           const databases = await window.api.database.getByProjectId(project.id)
           const database = databases[0] // 첫 번째 DB 연결 정보 사용
           const dbms = dbmsList.find((d) => d.id === database.dbms_id)
-          const [host, port] = database.url.split(':')
 
           return {
-            id: project.id,
-            name: project.name,
-            dbType: dbms?.name || '정보없음',
-            description: project.description,
-            host: host,
-            port: parseInt(port) || 0,
-            username: database.username,
-            lastUpdated: formatRelativeTime(project.updated_at),
-            created_at: project.created_at,
-            updated_at: project.updated_at
+            ...project,
+            database: database,
+            dbms: dbms
           }
         })
       )
@@ -66,12 +48,15 @@ const MainView: React.FC = () => {
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [setProjects])
 
-  // 컴포넌트 마운트 시 프로젝트 로드
   useEffect(() => {
-    loadProjects()
-  }, [loadProjects])
+    if (projects.length === 0) {
+      loadProjects()
+    } else {
+      setLoading(false)
+    }
+  }, [loadProjects, projects.length])
 
   // 필터링된 프로젝트 목록
   const filteredProjects = projects
@@ -170,9 +155,8 @@ const MainView: React.FC = () => {
                   ].map((option) => (
                     <div
                       key={option.key}
-                      className={`dropdown-item preRegular14 ${
-                        sortOption === option.key ? 'active' : ''
-                      }`}
+                      className={`dropdown-item preRegular14 ${sortOption === option.key ? 'active' : ''
+                        }`}
                       onClick={() =>
                         handleSortChange(option.key as 'modified' | 'created' | 'name')
                       }
@@ -202,9 +186,30 @@ const MainView: React.FC = () => {
               )}
             </div>
           ) : (
-            filteredProjects.map((project) => (
-              <Card key={project.id} {...project} onClick={() => goToProject(project.id)} />
-            ))
+            filteredProjects.map((project) => {
+              const [host, port] = project.database?.url.split(':') || ['정보없음', '0']
+
+              const cardProps = {
+                id: project.id,
+                name: project.name,
+                dbType: project.dbms?.name || '정보없음',
+                description: project.description,
+                host: host,
+                port: parseInt(port.toString()) || 0,
+                username: project.database?.username || '정보없음',
+                lastUpdated: formatRelativeTime(project.updated_at),
+                created_at: project.created_at,
+                updated_at: project.updated_at
+              }
+
+              return (
+                <Card
+                  key={project.id}
+                  {...cardProps}
+                  onClick={() => goToProject(project.id)}
+                />
+              )
+            })
           )}
         </div>
       </div>

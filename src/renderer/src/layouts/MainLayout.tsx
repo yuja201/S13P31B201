@@ -1,13 +1,29 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { Outlet, useLocation, useParams } from 'react-router-dom'
 import Sidebar from '@renderer/components/Sidebar'
 import { useProjectStore } from '@renderer/stores/projectStore'
+import { useSchemaStore } from '@renderer/stores/schemaStore'
 
 const MainLayout: React.FC = () => {
   const location = useLocation()
   const { projectId } = useParams<{ projectId: string }>()
   const selectedProject = useProjectStore((state) => state.selectedProject)
+  const selectProjectById = useProjectStore((state) => state.selectProjectById)
+  const fetchSchema = useSchemaStore((state) => state.fetchSchema)
   const isLocked = location.pathname === '/'
+
+  useEffect(() => {
+    if (projectId) {
+      selectProjectById(projectId)
+    }
+  }, [projectId, selectProjectById])
+
+  useEffect(() => {
+    if (!isLocked && selectedProject?.database?.id) {
+      const databaseId = selectedProject.database.id
+      fetchSchema(databaseId)
+    }
+  }, [isLocked, selectedProject, fetchSchema])
 
   return (
     <div className="layout">
