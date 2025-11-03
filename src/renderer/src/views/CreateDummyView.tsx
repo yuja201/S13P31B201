@@ -13,6 +13,9 @@ export type ColumnDetail = {
   constraints: string[]
   generation: string
   setting: string
+  defaultValue: string | null
+  checkConstraint: string | null
+  enumList: string[] | null
 }
 
 // 테이블 전체 정보 타입
@@ -33,14 +36,34 @@ const convertColumn = (col: Column): ColumnDetail => {
   if (col.unique) constraints.push('UNIQUE')
   if (col.autoIncrement) constraints.push('AUTO INCREMENT')
   if (col.default) constraints.push('DEFAULT')
-  // TODO: 'CHECK', 'DOMAIN', 'ENUM' 등은 store의 Column 타입에 추가 필요
+  if (col.check) constraints.push('CHECK')
+  if (col.enum) constraints.push('ENUM')
+  if (col.domain) constraints.push('DOMAIN')
+
+  // ---  생성 방식 & 설정 자동 채우기 로직 ---
+  let generation = ''
+  let setting = ''
+
+  if (col.autoIncrement) {
+    generation = 'Auto Increment'
+    setting = '자동 증가'
+  } else if (col.default) {
+    generation = '고정값'
+    setting = col.default
+  } else if (col.isForeignKey) {
+    generation = '참조'
+    setting = '테이블.컬럼'
+  }
 
   return {
     name: col.name,
     type: col.type,
     constraints: constraints,
-    generation: '',
-    setting: ''
+    generation: generation,
+    setting: setting,
+    defaultValue: col.default || null,
+    checkConstraint: col.check || null,
+    enumList: col.enum || null
   }
 }
 
@@ -52,41 +75,40 @@ const CreateDummyView: React.FC = () => {
   const selectedProject = useProjectStore((state) => state.selectedProject)
   const isLoading = useSchemaStore((state) => state.isLoading)
   const error = useSchemaStore((state) => state.error)
-
-  const rawTables = useSchemaStore((state) => {
-    const currentDatabaseId = selectedProject?.database?.id
-    const schema = currentDatabaseId ? state.getSchema(currentDatabaseId) : null
-    return schema?.tables || [] // 원본 Table[] 배열
-  })
+  const schemasMap = useSchemaStore((state) => state.schemas)
 
   const tables: TableInfo[] = useMemo(() => {
-    return rawTables.map((table: Table): TableInfo => ({
-      id: table.name,
-      name: table.name,
-      columns: table.columns.length,
-      rows: 15324, // Mock data
-      columnDetails: table.columns.map(convertColumn)
-    }))
-  }, [rawTables])
+    const currentDatabaseId = selectedProject?.database?.id
+    const schema = currentDatabaseId ? schemasMap.get(currentDatabaseId) : null
+    const rawTables = schema?.tables || []
+
+    return rawTables.map(
+      (table: Table): TableInfo => ({
+        id: table.name,
+        name: table.name,
+        columns: table.columns.length,
+        rows: table.rowCount || 0,
+        columnDetails: table.columns.map(convertColumn)
+      })
+    )
+  }, [schemasMap, selectedProject])
 
   const [focusedTable, setFocusedTable] = useState<TableInfo | null>(null)
 
   useEffect(() => {
     if (tables.length > 0 && !focusedTable) {
       setFocusedTable(tables[0])
-
     } else if (tables.length > 0 && focusedTable) {
-      const stillExists = tables.find(t => t.id === focusedTable.id);
-
+      const stillExists = tables.find((t) => t.id === focusedTable.id)
       if (!stillExists) {
-        setFocusedTable(tables[0]);
+        setFocusedTable(tables[0])
+      } else if (stillExists !== focusedTable) {
+        setFocusedTable(stillExists)
       }
-
     } else if (tables.length === 0) {
-      setFocusedTable(null);
+      setFocusedTable(null)
     }
-  }, [tables])
-
+  }, [tables, focusedTable])
 
   if (isLoading) {
     return <div>스키마 로딩 중...</div>
@@ -101,7 +123,7 @@ const CreateDummyView: React.FC = () => {
         <PageTitle title={title} description={description} />
         <div className="dummy-content-wrapper">
           <DBTableList
-            tables={tables as unknown as TableInfo[]}
+            tables={tables}
             focusedTableId={focusedTable?.id || ''}
             onTableSelect={(table) => setFocusedTable(table)}
           />
