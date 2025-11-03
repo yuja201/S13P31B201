@@ -171,15 +171,16 @@ async function fetchMySQLColumns(
        JOIN information_schema.CHECK_CONSTRAINTS cc 
          ON tc.CONSTRAINT_SCHEMA = cc.CONSTRAINT_SCHEMA
          AND tc.CONSTRAINT_NAME = cc.CONSTRAINT_NAME
-       JOIN information_schema.KEY_COLUMN_USAGE kcu
-         ON kcu.CONSTRAINT_SCHEMA = tc.CONSTRAINT_SCHEMA
-         AND kcu.CONSTRAINT_NAME = tc.CONSTRAINT_NAME
-         AND kcu.TABLE_SCHEMA = tc.TABLE_SCHEMA
-         AND kcu.TABLE_NAME = tc.TABLE_NAME
-         AND kcu.COLUMN_NAME = c.COLUMN_NAME
+       /* [!] 1. KEY_COLUMN_USAGE -> CONSTRAINT_COLUMN_USAGE */
+       JOIN information_schema.CONSTRAINT_COLUMN_USAGE ccu 
+         ON ccu.CONSTRAINT_SCHEMA = tc.CONSTRAINT_SCHEMA
+         AND ccu.CONSTRAINT_NAME = tc.CONSTRAINT_NAME
        WHERE tc.TABLE_SCHEMA = c.TABLE_SCHEMA
          AND tc.TABLE_NAME = c.TABLE_NAME 
          AND tc.CONSTRAINT_TYPE = 'CHECK'
+         AND ccu.TABLE_SCHEMA = c.TABLE_SCHEMA  
+         AND ccu.TABLE_NAME = c.TABLE_NAME   
+         AND ccu.COLUMN_NAME = c.COLUMN_NAME 
        LIMIT 1) AS checkConstraint
 
     FROM INFORMATION_SCHEMA.COLUMNS c
