@@ -5,7 +5,7 @@ import RuleCreationContent, { RuleCreationData } from '@renderer/modals/rule/Rul
 import { ColumnDetail } from '@renderer/views/CreateDummyView'
 import EnumSelectContent from '@renderer/modals/rule/EnumSelectContent'
 
-export type GenerationType = 'Faker.js' | 'AI' | '고정값' | '참조' | '파일 업로드' // (필요한 모든 타입)
+export type GenerationType = 'Faker.js' | 'AI' | '참조' | '파일 업로드' | '고정값' | 'ENUM'
 
 export type RuleResult = {
   generation: GenerationType
