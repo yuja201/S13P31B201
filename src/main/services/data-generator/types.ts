@@ -7,7 +7,7 @@ export type DataSourceType = 'FAKER' | 'AI' | 'FILE' | 'MANUAL'
 export type SqlDbType = 'MySQL' | 'PostgreSQL'
 
 /**
- * 컬럼 설정 - 세부 메타데이터
+ * 컬럼 메타데이터
  */
 export type FileMetaData = {
   kind: 'file'
@@ -36,27 +36,13 @@ export type ManualMetaData = {
   fixedValue: string
 }
 
-/**
- * 통합 메타데이터 유니온
- */
 export type ColumnMetaData = FakerMetaData | AIMetaData | FileMetaData | ManualMetaData
 
-/**
- * dataSource ↔ metaData 타입을 강하게 연결
- * - 사용 시 dataSource에 따라 metaData의 타입이 자동 추론됨
- */
-type MetaBySource = {
-  FILE: FileMetaData
-  FAKER: FakerMetaData
-  AI: AIMetaData
-  MANUAL: ManualMetaData
+export interface ColumnConfig {
+  columnName: string
+  dataSource: DataSourceType
+  metaData: ColumnMetaData
 }
-
-export type ColumnConfig =
-  | { columnName: string; dataSource: 'FILE'; metaData: MetaBySource['FILE'] }
-  | { columnName: string; dataSource: 'FAKER'; metaData: MetaBySource['FAKER'] }
-  | { columnName: string; dataSource: 'AI'; metaData: MetaBySource['AI'] }
-  | { columnName: string; dataSource: 'MANUAL'; metaData: MetaBySource['MANUAL'] }
 
 /**
  * 테이블 설정

@@ -13,6 +13,18 @@ function isFileMeta(
   return Boolean(meta && meta.kind === 'file')
 }
 
+function isAIMeta(
+  meta: ColumnMetaData | undefined
+): meta is Extract<ColumnMetaData, { kind: 'ai' }> {
+  return Boolean(meta && meta.kind === 'ai')
+}
+
+function isFakerMeta(
+  meta: ColumnMetaData | undefined
+): meta is Extract<ColumnMetaData, { kind: 'faker' }> {
+  return Boolean(meta && meta.kind === 'faker')
+}
+
 async function runWorker(task: WorkerTask): Promise<WorkerResult> {
   const { projectId, table, dbType } = task
   const { tableName, recordCnt, columns } = table
@@ -38,6 +50,11 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
 
       switch (dataSource) {
         case 'FAKER':
+          if (!isFakerMeta(col.metaData)) {
+            throw new Error(
+              `[Faker 메타데이터 오류] ${tableName}.${col.columnName} 컬럼의 Faker 규칙 설정이 올바르지 않습니다.`
+            )
+          }
           return generateFakeStream({
             projectId,
             tableName,
@@ -49,6 +66,11 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
           })
 
         case 'AI':
+          if (!isAIMeta(col.metaData)) {
+            throw new Error(
+              `[AI 메타데이터 오류] ${tableName}.${col.columnName} 컬럼의 AI 규칙 설정이 올바르지 않습니다.`
+            )
+          }
           return generateAIStream({
             projectId,
             tableName,

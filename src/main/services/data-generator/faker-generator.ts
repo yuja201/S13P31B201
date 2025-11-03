@@ -44,7 +44,7 @@ export async function* generateFakeStream({
       ? getColumnConstraints(projectId, tableName, columnName)
       : null
 
-  const ruleId = resolveRuleId(metaData)
+  const ruleId = Number(metaData.ruleId)
 
   // --- 임시 도메인 rule 매핑 (DB 연결 전용 mock)
   let rule = { domain_name: '이름' }
@@ -102,31 +102,4 @@ export async function generateFakeValue(params: FakerGenerateRequest): Promise<s
   const gen = generateFakeStream({ ...params, recordCnt: 1 })
   const { value } = await gen.next()
   return value ?? ''
-}
-
-function resolveRuleId(metaData: GenerateRequest['metaData']): number {
-  if (!metaData) {
-    throw new Error('Faker 메타데이터가 없습니다.')
-  }
-
-  if (isFakerMeta(metaData)) {
-    return Number(metaData.ruleId)
-  }
-
-  if ('ruleId' in (metaData as Record<string, unknown>)) {
-    const ruleId = Number((metaData as Record<string, unknown>).ruleId)
-    if (!Number.isNaN(ruleId)) return ruleId
-  }
-
-  throw new Error('Faker 메타데이터 형식이 올바르지 않습니다.')
-}
-
-function isFakerMeta(meta: GenerateRequest['metaData']): meta is FakerMetaData {
-  return (
-    typeof meta === 'object' &&
-    meta !== null &&
-    'kind' in meta &&
-    (meta as { kind?: unknown }).kind === 'faker' &&
-    'ruleId' in meta
-  )
 }
