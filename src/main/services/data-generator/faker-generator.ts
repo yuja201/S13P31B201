@@ -1,6 +1,6 @@
 import { faker, Faker } from '@faker-js/faker'
 import type { GenerateRequest } from '../types'
-import { getRuleById } from '../../database/rules'
+// import { getRuleById } from '../../database/rules'
 import { fakerMapper } from '../../utils/faker-mapper'
 
 // 제약조건 임시 타입
@@ -30,8 +30,15 @@ export async function* generateFakeBatches({
       : null
 
   const ruleId = Number(metaData.ruleId)
-  const rule = getRuleById(ruleId)
-  if (!rule) throw new Error(`No rule found for ruleId=${ruleId}`)
+  // const rule = getRuleById(ruleId)
+  let rule = { domain_name: '이름' }
+  if (ruleId === 2) {
+    rule = { domain_name: '이메일' }
+  }
+  if (ruleId === 3) {
+    rule = { domain_name: '금액' }
+  }
+  // if (!rule) throw new Error(`No rule found for ruleId=${ruleId}`)
 
   const fakerPath = fakerMapper[rule.domain_name]
   if (!fakerPath) throw new Error(`No faker mapping for domain: ${rule.domain_name}`)
@@ -82,4 +89,10 @@ export async function* generateFakeBatches({
       await new Promise((res) => setTimeout(res, 10))
     }
   }
+}
+
+export async function generateFakeValue(params: GenerateRequest): Promise<string> {
+  const gen = generateFakeBatches({ ...params, recordCnt: 1 })
+  const { value } = await gen.next()
+  return value?.[0] ?? ''
 }

@@ -15,6 +15,7 @@ import type {
   RuleUpdate,
   DatabaseSchema
 } from '../main/database/types'
+import { GenerationInput } from '../main/services/types'
 
 // Custom APIs for renderer
 const api = {
@@ -88,6 +89,17 @@ const api = {
   schema: {
     fetch: (databaseId: number): Promise<DatabaseSchema> =>
       ipcRenderer.invoke('db:schema:fetch', databaseId)
+  },
+
+  // dataGenerator operations
+  dataGenerator: {
+    generate: (payload: GenerationInput) => ipcRenderer.invoke('gen:dummy:bulk', payload),
+    onProgress: (callback: (msg: unknown) => void) => {
+      ipcRenderer.on('data-generator:progress', (_, msg) => callback(msg))
+    },
+    removeProgressListeners: () => {
+      ipcRenderer.removeAllListeners('data-generator:progress')
+    }
   }
 }
 
