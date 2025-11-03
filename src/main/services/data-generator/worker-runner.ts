@@ -3,6 +3,7 @@ import path from 'node:path'
 import type { WorkerTask, WorkerResult } from '../types.js'
 import { DBMS_MAP } from '../../utils/dbms-map.js'
 import { generateFakeStream } from './faker-generator.js'
+import { DataSourceType } from './types.js'
 
 async function runWorker(task: WorkerTask): Promise<WorkerResult> {
   const { projectId, table, dbType } = task
@@ -26,10 +27,10 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
     // 컬럼별 스트림 준비
     const columnStreams = columns.map((col) => {
       // TODO: 데이터 소스 유형에 따라 분기 처리 필요 (faker / ai / file / manual)
-      const dataSource = col.dataSource?.toLowerCase() || 'faker'
+      const dataSource = col.dataSource as DataSourceType
 
       switch (dataSource) {
-        case 'faker':
+        case 'FAKER':
           // 현재 기본 faker 스트림
           return generateFakeStream({
             projectId,
@@ -39,7 +40,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
             metaData: col.metaData
           })
 
-        case 'ai':
+        case 'AI':
           // TODO: AI 기반 데이터 생성 스트림 함수 연결 (generateAIStream 등)
           // 예시:
           // return generateAIStream({
@@ -51,7 +52,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
           // })
           throw new Error(`[미구현] AI 생성 방식은 아직 지원되지 않습니다. (${col.columnName})`)
 
-        case 'file':
+        case 'FILE':
           // TODO: 파일 업로드 기반 데이터 생성 처리
           // 예시:
           // return generateFileStream({
@@ -63,7 +64,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
           // })
           throw new Error(`[미구현] File 기반 생성은 아직 지원되지 않습니다. (${col.columnName})`)
 
-        case 'manual':
+        case 'MANUAL':
           // TODO: 사용자 직접 입력값 반복 처리
           // 예시:
           // return generateManualStream(col.metaData.fixedValue)
