@@ -48,7 +48,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
 
       switch (dataSource) {
         case 'FAKER':
-          if (!isFakerMeta(col.metaData)) {
+          if (!isFakerMeta(col.metaData) || col.metaData.ruleId == null) {
             throw new Error(
               `[Faker 메타데이터 오류] ${tableName}.${col.columnName} 컬럼의 Faker 규칙 설정이 올바르지 않습니다.`
             )
@@ -64,7 +64,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
           })
 
         case 'AI': {
-          if (!isAIMeta(col.metaData)) {
+          if (!isAIMeta(col.metaData) || col.metaData.ruleId == null) {
             throw new Error(
               `[AI 메타데이터 오류] ${tableName}.${col.columnName} 컬럼의 AI 규칙 설정이 올바르지 않습니다.`
             )
