@@ -16,15 +16,13 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
   const navigate = useNavigate()
   const { projectId } = useParams<{ projectId: string }>()
 
-  const { tableGenerationConfig, setTableRecordCount, applyFileMapping, setColumnRule } =
-    useGenerationStore((state) => ({
-      tableGenerationConfig: state.tables[table.name],
-      setTableRecordCount: state.setTableRecordCount,
-      applyFileMapping: state.applyFileMapping,
-      setColumnRule: state.setColumnRule // [!] 1단계에서 추가한 액션
-    }))
+  const tableGenerationConfig = useGenerationStore((state) => state.tables[table.name])
+  const setTableRecordCount = useGenerationStore((state) => state.setTableRecordCount)
+  const applyFileMapping = useGenerationStore((state) => state.applyFileMapping)
+  const setColumnRule = useGenerationStore((state) => state.setColumnRule)
 
   const [rows, setRows] = useState(1000)
+
   useEffect(() => {
     if (
       tableGenerationConfig?.recordCnt !== undefined &&
