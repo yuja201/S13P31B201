@@ -389,18 +389,20 @@ async function fetchPostgreSQLColumns(client: Client, tableName: string): Promis
       /* --- CHECK 제약조건 조회 쿼리  --- */
       (SELECT substring(pg_get_constraintdef(con.oid) from 'CHECK \\((.*)\\)')
        FROM pg_constraint con
-       JOIN pg_namespace n ON n.oid = con.connamespace
-       WHERE con.conrelid = (quote_ident(c.table_schema)||'.'||quote_ident(c.table_name))::regclass
+       JOIN pg_class rel ON rel.oid = con.conrelid
+       JOIN pg_attribute attr ON attr.attrelid = rel.oid AND attr.attnum = ANY(con.conkey)
+       WHERE rel.relname = c.table_name
+         AND rel.relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = c.table_schema)
          AND con.contype = 'c' -- 'c' for CHECK
-         AND c.ordinal_position = ANY(con.conkey) -- 이 컬럼이 CHECK 제약조건에 포함되는지
+         AND attr.attname = c.column_name 
        LIMIT 1) AS checkConstraint,
 
       /* ---  ENUM 목록 조회 쿼리  --- */
       (SELECT array_agg(e.enumlabel ORDER BY e.enumsortorder)
         FROM pg_type t
         JOIN pg_enum e ON t.oid = e.enumtypid
-        WHERE t.tyname = c.udt_name) AS enumList
-
+        WHERE t.typname = c.udt_name) AS enumList
+        
     FROM information_schema.columns c
     WHERE c.table_schema = 'public'
       AND c.table_name = $1
@@ -433,7 +435,7 @@ async function fetchPostgreSQLColumns(client: Client, tableName: string): Promis
         row.default_value && !row.default_value.includes('nextval') ? row.default_value : undefined,
 
       check: row.checkConstraint || undefined,
-      enum: row.enumList || undefined // 쿼리에서 이미 string[] (배열)로 가져옴
+      enum: row.enumList || undefined
     }
 
     return column
