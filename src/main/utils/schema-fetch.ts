@@ -171,12 +171,18 @@ async function fetchMySQLColumns(
        JOIN information_schema.CHECK_CONSTRAINTS cc 
          ON tc.CONSTRAINT_SCHEMA = cc.CONSTRAINT_SCHEMA
          AND tc.CONSTRAINT_NAME = cc.CONSTRAINT_NAME
+       /* [!] CONSTRAINT_COLUMN_USAGE 테이블을 JOIN하여 정확한 컬럼 매핑 */
+       JOIN information_schema.CONSTRAINT_COLUMN_USAGE ccu 
+         ON ccu.CONSTRAINT_SCHEMA = tc.CONSTRAINT_SCHEMA
+         AND ccu.CONSTRAINT_NAME = tc.CONSTRAINT_NAME
        WHERE tc.TABLE_SCHEMA = c.TABLE_SCHEMA
          AND tc.TABLE_NAME = c.TABLE_NAME 
          AND tc.CONSTRAINT_TYPE = 'CHECK'
-         AND cc.CHECK_CLAUSE LIKE CONCAT('%', c.COLUMN_NAME, '%')
+         AND ccu.TABLE_SCHEMA = c.TABLE_SCHEMA  
+         AND ccu.TABLE_NAME = c.TABLE_NAME    
+         AND ccu.COLUMN_NAME = c.COLUMN_NAME  
        LIMIT 1) AS checkConstraint
-      
+
     FROM INFORMATION_SCHEMA.COLUMNS c
     WHERE c.TABLE_SCHEMA = ? AND c.TABLE_NAME = ?
     ORDER BY c.ORDINAL_POSITION`,
