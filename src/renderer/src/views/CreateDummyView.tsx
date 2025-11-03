@@ -102,6 +102,8 @@ const CreateDummyView: React.FC = () => {
       const stillExists = tables.find((t) => t.id === focusedTable.id)
       if (!stillExists) {
         setFocusedTable(tables[0])
+      } else if (stillExists !== focusedTable) {
+        setFocusedTable(stillExists)
       }
     } else if (tables.length === 0) {
       setFocusedTable(null)
