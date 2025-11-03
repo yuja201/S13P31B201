@@ -33,7 +33,9 @@ const convertColumn = (col: Column): ColumnDetail => {
   if (col.unique) constraints.push('UNIQUE')
   if (col.autoIncrement) constraints.push('AUTO INCREMENT')
   if (col.default) constraints.push('DEFAULT')
-  // TODO: 'CHECK', 'DOMAIN', 'ENUM' 등은 store의 Column 타입에 추가 필요
+  if (col.check) constraints.push('CHECK')
+  if (col.enum) constraints.push('ENUM')
+  if (col.domain) constraints.push('DOMAIN')
 
   return {
     name: col.name,
