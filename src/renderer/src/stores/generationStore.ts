@@ -131,24 +131,28 @@ export const useGenerationStore = create<GenerationState>((set) => ({
     })
   },
   setColumnRule: (tableName, columnName, rule) => {
-    // rule은 { generation: '고정값', setting: 'pending' } 또는
-    // { generation: 'Faker.js', setting: '123' } (ruleId) 형태입니다.
-
     let dataSource: DataSourceType
     let metaData: ColumnMetaData
 
-    // RuleResult 타입을 ColumnConfig 타입으로 변환
     if (rule.generation === '고정값' || rule.generation === 'ENUM') {
       dataSource = 'MANUAL'
       metaData = { kind: 'manual', fixedValue: rule.setting }
     } else if (rule.generation === 'Faker.js') {
+      const ruleId = Number(rule.setting)
+      if (!Number.isInteger(ruleId)) {
+        console.warn(`유효하지 않은 Faker rule id: ${rule.setting}`)
+        return
+      }
       dataSource = 'FAKER'
-      // TODO: setting이 ruleId가 맞는지 확인 필요 (RuleCreationContent 로직 기준)
-      metaData = { kind: 'faker', ruleId: parseInt(rule.setting) }
+      metaData = { kind: 'faker', ruleId }
     } else if (rule.generation === 'AI') {
+      const ruleId = Number(rule.setting)
+      if (!Number.isInteger(ruleId)) {
+        console.warn(`유효하지 않은 Faker rule id: ${rule.setting}`)
+        return
+      }
       dataSource = 'AI'
-      // TODO: setting이 ruleId가 맞는지 확인 필요
-      metaData = { kind: 'ai', ruleId: parseInt(rule.setting) }
+      metaData = { kind: 'ai', ruleId }
     } else {
       // TODO: '참조(REFERENCE)' 등 다른 타입 처리
       console.warn(`Unknown generation type: ${rule.generation}`)
