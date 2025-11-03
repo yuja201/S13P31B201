@@ -150,6 +150,17 @@ async function getCurrentDatabase(connection: mysql.Connection): Promise<string>
   return (rows as MySQLDatabaseRow[])[0].db
 }
 
+/**
+ * Fetches column metadata for a MySQL table from INFORMATION_SCHEMA.
+ *
+ * This returns column definitions augmented with constraint and type details:
+ * - includes a `check` property when a CHECK constraint referencing the column exists,
+ * - parses `ENUM` types into an `enum` array of possible values.
+ *
+ * @param databaseName - The MySQL database/schema name containing the table
+ * @param tableName - The table name whose columns will be retrieved
+ * @returns An array of `Column` objects for the specified table. Each object contains `name`, `type`, `comment`, `isPrimaryKey`, `isForeignKey`, `notNull`, `unique`, `autoIncrement`, `default`, optional `check`, and optional `enum` (for `ENUM` types)
+ */
 async function fetchMySQLColumns(
   connection: mysql.Connection,
   databaseName: string,
@@ -348,6 +359,12 @@ async function fetchPostgreSQLSchema(config: DatabaseConfig): Promise<DatabaseSc
   }
 }
 
+/**
+ * Retrieves column metadata for a table in the public schema.
+ *
+ * @param tableName - The table name in the `public` schema to inspect
+ * @returns An array of `Column` objects describing each column, including name, type, comment, primary/foreign/unique flags, nullability, auto-increment and default info, and optional `check` (CHECK constraint expression) and `enum` (list of enum labels) properties when present
+ */
 async function fetchPostgreSQLColumns(client: Client, tableName: string): Promise<Column[]> {
   const columnResult = await client.query(
     `SELECT
