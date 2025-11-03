@@ -13,6 +13,9 @@ export type ColumnDetail = {
   constraints: string[]
   generation: string
   setting: string
+  defaultValue: string | null
+  checkConstraint: string | null
+  enumList: string[] | null
 }
 
 // 테이블 전체 정보 타입
@@ -37,12 +40,30 @@ const convertColumn = (col: Column): ColumnDetail => {
   if (col.enum) constraints.push('ENUM')
   if (col.domain) constraints.push('DOMAIN')
 
+  // ---  생성 방식 & 설정 자동 채우기 로직 ---
+  let generation = ''
+  let setting = ''
+
+  if (col.autoIncrement) {
+    generation = 'Auto Increment'
+    setting = '자동 증가'
+  } else if (col.default) {
+    generation = '고정값'
+    setting = col.default
+  } else if (col.isForeignKey) {
+    generation = '참조'
+    setting = '테이블.컬럼'
+  }
+
   return {
     name: col.name,
     type: col.type,
     constraints: constraints,
-    generation: '',
-    setting: ''
+    generation: generation,
+    setting: setting,
+    defaultValue: col.default || null,
+    checkConstraint: col.check || null,
+    enumList: col.enum || null
   }
 }
 
