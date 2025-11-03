@@ -96,19 +96,23 @@ const CreateDummyView: React.FC = () => {
   const [focusedTable, setFocusedTable] = useState<TableInfo | null>(null)
 
   useEffect(() => {
-    if (tables.length > 0 && !focusedTable) {
-      setFocusedTable(tables[0])
-    } else if (tables.length > 0 && focusedTable) {
-      const stillExists = tables.find((t) => t.id === focusedTable.id)
-      if (!stillExists) {
+    if (tables.length > 0) {
+      if (!focusedTable) {
         setFocusedTable(tables[0])
-      } else if (stillExists !== focusedTable) {
-        setFocusedTable(stillExists)
+      } else {
+        const stillExists = tables.find((t) => t.id === focusedTable.id)
+
+        if (stillExists) {
+          setFocusedTable(stillExists)
+        } else {
+          setFocusedTable(tables[0])
+        }
       }
-    } else if (tables.length === 0) {
+    } else {
       setFocusedTable(null)
     }
-  }, [tables, focusedTable])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tables])
 
   const handleColumnUpdate = (columnName: string, generation: string, setting: string): void => {
     if (!focusedTable) return
