@@ -163,14 +163,25 @@ async function fetchMySQLColumns(
       IS_NULLABLE as isNullable,
       COLUMN_KEY as columnKey,
       COLUMN_DEFAULT as defaultValue,
-      EXTRA as extra
+      EXTRA as extra,
+
+      /* ---  CHECK 제약조건 조회 쿼리 --- */
+      (SELECT cc.CHECK_CLAUSE
+       FROM information_schema.CHECK_CONSTRAINTS cc
+       WHERE cc.CONTRAINT_SCHEMA = c.TABLE_SCHEMA
+         AND cc.TABLE_NAME = c.TABLE_NAME
+         AND cc.CHECK_CLAUSE LIKE CONCAT('%', c.COLUMN_NAME, '%')
+        LIMIT 1) AS checkConstraint
+      )
     FROM INFORMATION_SCHEMA.COLUMNS
     WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?
     ORDER BY ORDINAL_POSITION`,
     [databaseName, tableName]
   )
 
-  return (columnRows as MySQLColumnRow[]).map((row) => {
+  type MySQLColumnRowWithCheck = MySQLColumnRow & { checkConstraint?: string }
+
+  return (columnRows as MySQLColumnRowWithCheck[]).map((row) => {
     const column: Column = {
       name: row.name,
       type: row.type,
@@ -180,7 +191,8 @@ async function fetchMySQLColumns(
       notNull: row.isNullable === 'NO',
       unique: row.columnKey === 'UNI',
       autoIncrement: row.extra.includes('auto_increment'),
-      default: row.defaultValue !== null ? String(row.defaultValue) : undefined
+      default: row.defaultValue !== null ? String(row.defaultValue) : undefined,
+      check: row.checkConstraint || undefined
     }
 
     // ENUM 타입 파싱
@@ -350,26 +362,48 @@ async function fetchPostgreSQLColumns(client: Client, tableName: string): Promis
         WHERE tc.table_name = c.table_name
           AND kcu.column_name = c.column_name
           AND tc.constraint_type = 'PRIMARY KEY') as is_primary,
+
       (SELECT COUNT(*) > 0 FROM information_schema.table_constraints tc
         JOIN information_schema.key_column_usage kcu
           ON tc.constraint_name = kcu.constraint_name
         WHERE tc.table_name = c.table_name
           AND kcu.column_name = c.column_name
           AND tc.constraint_type = 'FOREIGN KEY') as is_foreign,
+
       (SELECT COUNT(*) > 0 FROM information_schema.table_constraints tc
         JOIN information_schema.key_column_usage kcu
           ON tc.constraint_name = kcu.constraint_name
         WHERE tc.table_name = c.table_name
           AND kcu.column_name = c.column_name
-          AND tc.constraint_type = 'UNIQUE') as is_unique
+          AND tc.constraint_type = 'UNIQUE') as is_unique,
+
+      /* --- CHECK 제약조건 조회 쿼리  --- */
+      (SELECT substring(pg_get_constraintdef(con.oid) from 'CHECK \\((.*)\\)')
+       FROM pg_constraint con
+       JOIN pg_namespace n ON n.oid = con.connamespace
+       WHERE con.conrelid = (quote_ident(c.table_schema)||'.'||quote_ident(c.table_name))::regclass
+         AND con.contype = 'c' -- 'c' for CHECK
+         AND c.ordinal_position = ANY(con.conkey) -- 이 컬럼이 CHECK 제약조건에 포함되는지
+       LIMIT 1) AS checkConstraint,
+
+      /* ---  ENUM 목록 조회 쿼리  --- */
+      (SELECT array_agg(e.enumlabel ORDER BY e.enumsortorder)
+        FROM pg_type t
+        JOIN pg_enum e ON t.oid = e.enumtypid
+        WHERE t.tyname = c.udt_name) AS enumList
+
     FROM information_schema.columns c
     WHERE c.table_schema = 'public'
       AND c.table_name = $1
     ORDER BY c.ordinal_position`,
     [tableName]
   )
+  type PgColumnRowWithDetails = PostgreSQLColumnRow & {
+    checkConstraint?: string
+    enumList?: string[]
+  }
 
-  return (columnResult.rows as PostgreSQLColumnRow[]).map((row) => {
+  return (columnResult.rows as PgColumnRowWithDetails[]).map((row) => {
     let typeStr = row.data_type
     if (row.max_length) {
       typeStr += `(${row.max_length})`
@@ -387,7 +421,10 @@ async function fetchPostgreSQLColumns(client: Client, tableName: string): Promis
       unique: row.is_unique,
       autoIncrement: row.default_value?.includes('nextval') || false,
       default:
-        row.default_value && !row.default_value.includes('nextval') ? row.default_value : undefined
+        row.default_value && !row.default_value.includes('nextval') ? row.default_value : undefined,
+
+      check: row.checkConstraint || undefined,
+      enum: row.enumList || undefined // 쿼리에서 이미 string[] (배열)로 가져옴
     }
 
     return column
