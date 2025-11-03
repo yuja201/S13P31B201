@@ -65,6 +65,11 @@ interface API {
   schema: {
     fetch: (databaseId: number) => Promise<DatabaseSchema>
   }
+  dataGenerator: {
+    generate: (payload: unknown) => Promise<unknown>
+    onProgress: (callback: (msg: unknown) => void) => void
+    removeProgressListeners: () => void
+  }
 }
 
 declare global {
