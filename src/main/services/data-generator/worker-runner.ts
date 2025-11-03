@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import type { WorkerTask, WorkerResult } from '../types.js'
 import { DBMS_MAP } from '../../utils/dbms-map.js'
-import { generateFakeValue } from './faker-generator.js'
+import { generateFakeStream } from './faker-generator.js'
 
 async function runWorker(task: WorkerTask): Promise<WorkerResult> {
   const { projectId, table, dbType } = task
@@ -18,32 +18,36 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
   const columnNames = columns.map((c) => `${quote}${c.columnName}${quote}`).join(', ')
   const BATCH_SIZE = 10_000
   const LOG_INTERVAL = 100_000
+
   let rows: string[] = []
+  let currentRow = 0
 
   try {
+    // 컬럼별 스트림 준비
+    const columnStreams = columns.map((col) =>
+      generateFakeStream({
+        projectId,
+        tableName,
+        columnName: col.columnName,
+        recordCnt,
+        metaData: col.metaData
+      })
+    )
+
+    // 한 행(row)은 모든 컬럼 스트림에서 1개씩 받음
     for (let i = 0; i < recordCnt; i++) {
       const rowValues: string[] = []
 
-      // 컬럼 생성 루프
       for (let j = 0; j < columns.length; j++) {
         const col = columns[j]
-        let value = ''
+        const gen = columnStreams[j]
+        const { value } = await gen.next()
 
-        if (col.dataSource === 'FAKER') {
-          const result = await generateFakeValue({
-            projectId,
-            tableName,
-            columnName: col.columnName,
-            recordCnt,
-            metaData: col.metaData
-          })
-          value = String(result ?? '')
-        }
-
-        const escaped = value.replace(/'/g, "''")
+        if (value === undefined) continue
+        const escaped = String(value).replace(/'/g, "''")
         rowValues.push(`'${escaped}'`)
 
-        // 컬럼 단위 진행률 (프론트로 전달)
+        // 마지막 행 도달 시 컬럼 완료 이벤트
         if (i === recordCnt - 1) {
           process.stdout.write(
             JSON.stringify({
@@ -57,15 +61,17 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
       }
 
       rows.push(`(${rowValues.join(', ')})`)
+      currentRow++
 
+      // 1만 행마다 flush
       if (rows.length >= BATCH_SIZE || i === recordCnt - 1) {
         const sql = `INSERT INTO ${quote}${tableName}${quote} (${columnNames}) VALUES\n${rows.join(',\n')};\n`
         await fs.promises.appendFile(sqlPath, sql, 'utf8')
         rows = []
       }
 
-      // 10만 행마다 로그 전송
-      if ((i + 1) % LOG_INTERVAL === 0 || i === recordCnt - 1) {
+      // 10만 행마다 진행률
+      if (currentRow % LOG_INTERVAL === 0 || i === recordCnt - 1) {
         const progress = Math.round(((i + 1) / recordCnt) * 100)
         process.stdout.write(
           JSON.stringify({
@@ -78,15 +84,16 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
       }
     }
 
+    // flush 완료 후 약간 대기 (I/O 안정화)
     await new Promise((res) => setTimeout(res, 100))
 
-    // 테이블 완성 이벤트
     process.stdout.write(
       JSON.stringify({
         type: 'table-complete',
         tableName
       }) + '\n'
     )
+
     const result: WorkerResult = { tableName, sqlPath, success: true }
     console.log(JSON.stringify(result))
     return result
@@ -112,6 +119,23 @@ async function main(): Promise<void> {
 
   const task = JSON.parse(taskEnv)
   const result = await runWorker(task)
+
+  try {
+    // (1) write 권한으로 열기
+    const fd = await fs.promises.open(result.sqlPath, 'r+')
+
+    // (2) 디스크 flush 강제
+    await fd.sync()
+    await fd.close()
+    console.log(`[FLUSH] ${result.tableName} flush 완료`)
+  } catch (e) {
+    console.warn('⚠️ fsync 실패:', e)
+  }
+
+  // (3) flush 후 0.5초 대기 (Windows I/O 안정화)
+  await new Promise((res) => setTimeout(res, 500))
+
+  // (4) 이제 진짜 종료
   process.exit(result.success ? 0 : 1)
 }
 

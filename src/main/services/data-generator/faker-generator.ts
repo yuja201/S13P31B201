@@ -1,6 +1,5 @@
 import { faker, Faker } from '@faker-js/faker'
 import type { GenerateRequest } from '../types'
-// import { getRuleById } from '../../database/rules'
 import { fakerMapper } from '../../utils/faker-mapper'
 
 // 제약조건 임시 타입
@@ -10,89 +9,85 @@ type ColumnConstraints = {
   length?: number
 }
 
-// 제약조건 임시 함수
+// 제약조건 임시 함수 (나중에 DB 제약조건 연결)
 declare const getColumnConstraints:
   | ((projectId: number, tableName: string, columnName: string) => ColumnConstraints | null)
   | undefined
 
-// 배치 단위 스트리밍 생성기
-export async function* generateFakeBatches({
+/**
+ * faker 스트리밍 생성기 (1행씩 yield)
+ * - 한 번에 하나씩 생성 → 메모리 부담 없음
+ * - Worker에서 for-await-of로 순회하면서 바로 파일에 씀
+ */
+export async function* generateFakeStream({
   projectId,
   tableName,
   columnName,
   recordCnt,
   metaData
-}: GenerateRequest): AsyncGenerator<string[], void, unknown> {
-  // TODO: 제약조건 모듈 연결 예정
+}: GenerateRequest): AsyncGenerator<string, void, unknown> {
+  // --- 제약조건 로딩 (예: min, max, length 등)
   const constraints: ColumnConstraints | null =
     typeof getColumnConstraints === 'function'
       ? getColumnConstraints(projectId, tableName, columnName)
       : null
 
   const ruleId = Number(metaData.ruleId)
-  // const rule = getRuleById(ruleId)
+
+  // --- 임시 도메인 rule 매핑 (DB 연결 전용 mock)
   let rule = { domain_name: '이름' }
-  if (ruleId === 2) {
-    rule = { domain_name: '이메일' }
-  }
-  if (ruleId === 3) {
-    rule = { domain_name: '금액' }
-  }
-  // if (!rule) throw new Error(`No rule found for ruleId=${ruleId}`)
+  if (ruleId === 2) rule = { domain_name: '이메일' }
+  if (ruleId === 3) rule = { domain_name: '금액' }
 
   const fakerPath = fakerMapper[rule.domain_name]
-  if (!fakerPath) throw new Error(`No faker mapping for domain: ${rule.domain_name}`)
+  if (!fakerPath) throw new Error(`❌ No faker mapping for domain: ${rule.domain_name}`)
 
   const [category, method] = fakerPath.split('.') as [keyof Faker, string]
   const fakerCategory = faker[category]
   const fn = (fakerCategory as Record<string, unknown>)[method]
 
-  if (typeof fn !== 'function') throw new Error(`Invalid faker path: ${fakerPath}`)
+  if (typeof fn !== 'function') throw new Error(`❌ Invalid faker path: ${fakerPath}`)
 
-  const BATCH_SIZE = 100_000
-
+  // --- 제약조건 파싱
   const hasRange = constraints?.min !== undefined && constraints?.max !== undefined
   const hasLength = constraints?.length !== undefined
   const min = Number(constraints?.min)
   const max = Number(constraints?.max)
   const length = Number(constraints?.length)
 
-  // 전체 recordCnt를 batch 단위로 나누어 생성
-  for (let start = 0; start < recordCnt; start += BATCH_SIZE) {
-    const limit = Math.min(BATCH_SIZE, recordCnt - start)
-    const batch: string[] = []
+  // --- 메인 루프: recordCnt만큼 한 개씩 생성
+  for (let i = 0; i < recordCnt; i++) {
+    let value: unknown
 
     if (constraints && (hasRange || hasLength)) {
-      for (let i = 0; i < limit; i++) {
-        let value: unknown
-        if (!isNaN(min) && !isNaN(max) && (method === 'int' || method === 'float')) {
-          value = (fn as (opts: { min: number; max: number }) => number)({ min, max })
-        } else if (!isNaN(length)) {
-          const raw = String((fn as () => string)())
-          value = raw.slice(0, length)
-        } else {
-          value = (fn as () => unknown)()
-        }
-        batch.push(String(value))
+      if (!isNaN(min) && !isNaN(max) && (method === 'int' || method === 'float')) {
+        value = (fn as (opts: { min: number; max: number }) => number)({ min, max })
+      } else if (!isNaN(length)) {
+        const raw = String((fn as () => string)())
+        value = raw.slice(0, length)
+      } else {
+        value = (fn as () => unknown)()
       }
     } else {
-      for (let i = 0; i < limit; i++) {
-        const value = (fn as () => unknown)()
-        batch.push(String(value))
-      }
+      value = (fn as () => unknown)()
     }
 
-    yield batch
+    // faker가 만든 값 하나를 즉시 내보냄
+    yield String(value)
 
-    // CPU 과부하 막기 위한 쉬는 시간
-    if (start % (BATCH_SIZE * 2) === 0) {
+    // CPU 부하 완화용 잠깐의 쉬는 시간 (10만 단위)
+    if (i > 0 && i % 100_000 === 0) {
       await new Promise((res) => setTimeout(res, 10))
     }
   }
 }
 
+/**
+ * 단일 값 생성용 헬퍼 (기존 호환)
+ * - 단일 테스트용 API에서 사용됨
+ */
 export async function generateFakeValue(params: GenerateRequest): Promise<string> {
-  const gen = generateFakeBatches({ ...params, recordCnt: 1 })
+  const gen = generateFakeStream({ ...params, recordCnt: 1 })
   const { value } = await gen.next()
-  return value?.[0] ?? ''
+  return value ?? ''
 }
