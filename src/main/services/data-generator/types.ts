@@ -1,11 +1,34 @@
 export type DataSourceType = 'FAKER' | 'AI' | 'FILE' | 'MANUAL'
 export type SqlDbType = 'MySQL' | 'PostgreSQL'
 
-export interface ColumnMetaData {
-  ruleId?: number // FAKER/AI 공통 규칙 ID
-  columnIdx?: number // FILE일 때 사용
-  filePath?: string // FILE일 때 사용
+export type FileMetaData = {
+  kind: 'file'
+  filePath: string
+  fileType: 'csv' | 'json' | 'txt'
+  fileColumn: string
+  useHeaderRow: boolean
+  columnIndex?: number
+  lineSeparator?: string
+  columnSeparator?: string
+  encoding?: string
 }
+
+export type FakerMetaData = {
+  kind: 'faker'
+  ruleId: number
+}
+
+export type AIMetaData = {
+  kind: 'ai'
+  ruleId: number
+}
+
+export type ManualMetaData = {
+  kind: 'manual'
+  fixedValue: string
+}
+
+export type ColumnMetaData = FakerMetaData | AIMetaData | FileMetaData | ManualMetaData
 
 export interface ColumnConfig {
   columnName: string

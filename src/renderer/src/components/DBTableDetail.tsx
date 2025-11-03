@@ -168,6 +168,15 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table, onColumnUpdate }) =>
         isOpen={isFileUploadModalOpen}
         onClose={closeFileUploadModal}
         tableName={table.name}
+        tableColumns={table.columnDetails.map((col) => ({
+          name: col.name,
+          type: col.type
+        }))}
+        recordCount={rows}
+        onApply={() => {
+          // File-based mappings from the main table view are not yet persisted.
+          // This callback can be wired to state/store when the integration is ready.
+        }}
       />
       {isRuleModalOpen && selectedColumn && (
         <RuleModal

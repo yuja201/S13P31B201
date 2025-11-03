@@ -1,120 +1,155 @@
-import React, { useState, useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 import { CgSoftwareDownload } from 'react-icons/cg'
 import PageTitle from '@renderer/components/PageTitle'
 import Toast from '@renderer/components/Toast'
-import type { Column, Row } from '@renderer/components/Table'
+
+export type FileType = 'csv' | 'json' | 'txt'
+
+export interface FileUploadResult {
+  file: File
+  filePath: string
+  fileType: FileType
+  previewContent: string
+  previewTruncated: boolean
+  lineCount: number | null
+  fileSize: number
+}
 
 interface FileUploadContentProps {
   tableName: string
-  onNext: (file: File, columns: Column[], rows: Row[]) => void
+  onNext: (result: FileUploadResult) => void
   onError: (msg: string) => void
 }
 
-const FileUploadContent: React.FC<FileUploadContentProps> = ({ tableName, onNext }) => {
+const SUPPORTED_EXTENSIONS: FileType[] = ['csv', 'json', 'txt']
+const MAX_PREVIEW_CHARS = 200_000 // about 200 KB of preview text
+
+const FileUploadContent: React.FC<FileUploadContentProps> = ({ tableName, onNext, onError }) => {
   const [isDragging, setIsDragging] = useState(false)
   const [showToast, setShowToast] = useState(false)
   const [toastMessage, setToastMessage] = useState('')
 
-  /** Toast 자동 닫기 */
-  const showError = useCallback((msg: string): void => {
-    setToastMessage(msg)
-    setShowToast(true)
-    setTimeout(() => setShowToast(false), 2500)
+  const notifyError = useCallback(
+    (msg: string): void => {
+      setToastMessage(msg)
+      setShowToast(true)
+      setTimeout(() => setShowToast(false), 2500)
+      onError(msg)
+    },
+    [onError]
+  )
+
+  const streamFileToCache = useCallback(async (file: File, ext: FileType) => {
+    if (!window.api?.file?.cache?.stream?.open) {
+      throw new Error('파일 스트리밍 API를 사용할 수 없습니다.')
+    }
+
+    const { streamId, filePath } = await window.api.file.cache.stream.open({ extension: ext })
+    const reader = file.stream().getReader()
+    const decoder = new TextDecoder('utf-8')
+
+    let preview = ''
+    let previewTruncated = false
+    let lineBreakCount = 0
+    let lastByte = -1
+
+    try {
+      while (true) {
+        const { value, done } = await reader.read()
+        if (done) break
+        if (!value) continue
+
+        await window.api.file.cache.stream.write({
+          streamId,
+          chunk: Array.from(value)
+        })
+
+        lastByte = value[value.length - 1] ?? lastByte
+
+        if (ext !== 'json') {
+          lineBreakCount += countNewlines(value)
+        }
+
+        if (!previewTruncated) {
+          const textChunk = decoder.decode(value, { stream: true })
+          preview += textChunk
+          if (preview.length > MAX_PREVIEW_CHARS) {
+            preview = preview.slice(0, MAX_PREVIEW_CHARS)
+            previewTruncated = true
+          }
+        }
+      }
+
+      if (!previewTruncated) {
+        preview += decoder.decode(new Uint8Array(), { stream: false })
+      } else {
+        decoder.decode(new Uint8Array(), { stream: false })
+      }
+
+      await window.api.file.cache.stream.close({ streamId })
+
+      const lineCount =
+        ext === 'json' ? null : lineBreakCount + (file.size > 0 && lastByte !== 0x0a ? 1 : 0)
+
+      return { filePath, preview, previewTruncated, lineCount }
+    } catch (error) {
+      await window.api.file.cache.stream.close({ streamId }).catch(() => {})
+      throw error
+    }
   }, [])
 
-  /** CSV 파싱 */
-  const parseCSV = (text: string): [Column[], Row[]] => {
-    const lines = text.trim().split('\n')
-    if (!lines.length) return [[], []]
-    const headers = lines[0].split(',').map((h) => h.trim())
-    const rows: Row[] = lines.slice(1).map((line, idx) => {
-      const values = line.split(',')
-      const row: Row = { id: idx + 1 }
-      headers.forEach((h, i) => (row[h] = values[i] ?? ''))
-      return row
-    })
-    const cols: Column[] = headers.map((h) => ({ key: h, title: h, type: 'text' }))
-    return [cols, rows]
-  }
-
-  /** JSON 파싱 */
-  const parseJSON = (text: string): [Column[], Row[]] => {
-    try {
-      const data = JSON.parse(text)
-      if (!Array.isArray(data) || !data.length) return [[], []]
-      const keys = Object.keys(data[0])
-      const cols: Column[] = keys.map((k) => ({ key: k, title: k, type: 'text' }))
-      const rows: Row[] = data.map((obj, idx) => ({ id: idx + 1, ...obj }))
-      return [cols, rows]
-    } catch {
-      return [[], []]
-    }
-  }
-
-  /** TXT 파싱 (탭 기준) */
-  const parseTXT = (text: string): [Column[], Row[]] => {
-    const lines = text.trim().split('\n')
-    if (!lines.length) return [[], []]
-    const headers = lines[0].split('\t').map((h) => h.trim())
-    const rows: Row[] = lines.slice(1).map((line, idx) => {
-      const values = line.split('\t')
-      const row: Row = { id: idx + 1 }
-      headers.forEach((h, i) => (row[h] = values[i] ?? ''))
-      return row
-    })
-    const cols: Column[] = headers.map((h) => ({ key: h, title: h, type: 'text' }))
-    return [cols, rows]
-  }
-
-  /** 파일 파싱 + 유효성 검사 */
   const handleFile = async (file: File): Promise<void> => {
     if (!file) return
 
-    const ext = file.name.split('.').pop()?.toLowerCase()
-    if (!['csv', 'json', 'txt'].includes(ext || '')) {
-      showError('지원하지 않는 파일 형식입니다. (csv, json, txt만 가능)')
+    const ext = (file.name.split('.').pop() || '').toLowerCase() as FileType | ''
+    if (!SUPPORTED_EXTENSIONS.includes(ext as FileType)) {
+      notifyError('지원하지 않는 파일 형식입니다. (csv, json, txt만 지원)')
       return
     }
 
     if (file.size === 0) {
-      showError('파일이 비어 있습니다.')
+      notifyError('파일이 비어 있습니다.')
       return
     }
 
-    if (file.size > 5 * 1024 * 1024) {
-      showError('파일 크기는 최대 5MB까지만 허용됩니다.')
-      return
+    try {
+      const { filePath, preview, previewTruncated, lineCount } = await streamFileToCache(
+        file,
+        ext as FileType
+      )
+
+      if (!preview.trim()) {
+        notifyError('파일에서 유효한 데이터를 찾지 못했습니다.')
+        return
+      }
+
+      onNext({
+        file,
+        filePath,
+        fileType: ext as FileType,
+        previewContent: preview,
+        previewTruncated,
+        lineCount,
+        fileSize: file.size
+      })
+    } catch (error) {
+      console.error('파일 처리 실패:', error)
+      notifyError('파일을 처리하는 중 오류가 발생했습니다.')
     }
-
-    const text = await file.text()
-    let cols: Column[] = []
-    let rows: Row[] = []
-
-    if (ext === 'csv') [cols, rows] = parseCSV(text)
-    else if (ext === 'json') [cols, rows] = parseJSON(text)
-    else [cols, rows] = parseTXT(text)
-
-    if (!rows.length) {
-      showError('파일에 데이터가 없습니다.')
-      return
-    }
-
-    onNext(file, cols, rows)
   }
 
-  /** 드래그 드롭 */
   const handleDrop = (e: React.DragEvent<HTMLDivElement>): void => {
     e.preventDefault()
     setIsDragging(false)
     const file = e.dataTransfer.files?.[0]
-    if (file) handleFile(file)
+    if (file) void handleFile(file)
   }
 
   return (
     <div className="file-content">
       <PageTitle
-        title={`데이터 가져오기 - ${tableName}`}
-        description="파일에서 데이터 가져오기"
+        title={`파일 불러오기 - ${tableName}`}
+        description="파일을 이용해 더미 데이터를 생성할 수 있습니다."
         size="small"
       />
       <hr className="divider" />
@@ -129,13 +164,13 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ tableName, onNext
         onDrop={handleDrop}
       >
         <CgSoftwareDownload size={140} color="var(--color-main-blue)" />
-        <p className="preSemiBold20">파일을 드래그하거나 선택하세요.</p>
-        <p className="preRegular16">지원 확장자: csv, json, txt</p>
+        <p className="preSemiBold20">파일을 드래그하거나 선택해주세요</p>
+        <p className="preRegular16">지원 형식: csv, json, txt</p>
         <input
           type="file"
           accept=".csv,.json,.txt"
           className="file-input"
-          onChange={(e) => e.target.files && handleFile(e.target.files[0])}
+          onChange={(e) => e.target.files && void handleFile(e.target.files[0])}
         />
       </div>
 
@@ -192,6 +227,14 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ tableName, onNext
       `}</style>
     </div>
   )
+}
+
+function countNewlines(buffer: Uint8Array): number {
+  let count = 0
+  for (let i = 0; i < buffer.length; i++) {
+    if (buffer[i] === 0x0a) count++
+  }
+  return count
 }
 
 export default FileUploadContent
