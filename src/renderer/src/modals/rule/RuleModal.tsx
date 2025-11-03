@@ -2,15 +2,16 @@ import React, { useState, useEffect } from 'react'
 import Modal from '@renderer/components/Modal'
 import RuleSelectContent from '@renderer/modals/rule/RuleSelectContent'
 import RuleCreationContent, { RuleCreationData } from '@renderer/modals/rule/RuleCreationContent'
+import { ColumnDetail } from '@renderer/views/CreateDummyView'
+import EnumSelectContent from '@renderer/modals/rule/EnumSelectContent'
 
 interface RuleModalProps {
   isOpen: boolean
   onClose: () => void
-  columnName: string
-  columnType: string
+  column: ColumnDetail
 }
 
-const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, columnName, columnType }) => {
+const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column }) => {
   const [mode, setMode] = useState<'select' | 'create'>('select')
 
   const handleCreateNew = (): void => {
@@ -22,12 +23,14 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, columnName, colu
   }
 
   const handleConfirmSelect = (value: string): void => {
-    console.log('선택된 규칙:', value)
+    console.log(`Column '${column.name}' - Selected Rule:`, value)
+    // TODO: DBTableDetail의 상태를 업데이트하는 로직 필요
     onClose()
   }
 
   const handleCreateSubmit = (data: RuleCreationData): void => {
-    console.log('새 규칙 생성 완료:', data)
+    console.log(`Column '${column.name}' - New Rule Created:`, data)
+    // TODO: DBTableDetail의 상태를 업데이트하는 로직 필요
     onClose()
   }
 
@@ -37,20 +40,36 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, columnName, colu
     }
   }, [isOpen])
 
+  const hasEnumList = column.enumList && column.enumList.length > 0
+  const columnType = column.type
+  const columnName = column.name
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} width="720px">
       <div className="rule-modal">
         {mode === 'select' ? (
-          <RuleSelectContent
-            columnName={columnName}
-            columnType={columnType}
-            onCancel={onClose}
-            onConfirm={handleConfirmSelect}
-            onCreateNew={handleCreateNew}
-          />
+          hasEnumList ? (
+            <EnumSelectContent
+              columnName={columnName}
+              enumList={column.enumList!}
+              onCancel={onClose}
+              onConfirm={handleConfirmSelect}
+            />
+          ) : (
+            // ENUM 목록이 없으면 기존 RuleSelectContent 렌더링
+            <RuleSelectContent
+              columnType={columnType}
+              columnName={columnName}
+              onCancel={onClose}
+              onConfirm={handleConfirmSelect}
+              onCreateNew={handleCreateNew}
+            />
+          )
         ) : (
+          // "새로 만들기" 모드
           <RuleCreationContent
             columnType={columnType}
+            columnName={columnName}
             onCancel={handleBack}
             onSubmit={handleCreateSubmit}
           />

@@ -12,23 +12,19 @@ export interface RuleCreationData {
   prompt?: string
   model?: string
   columnType?: string
+  columnName?: string
 }
 
 interface RuleCreationContentProps {
   columnType?: string
+  columnName?: string
   onCancel: () => void
-  onSubmit?: (data: {
-    source: 'faker' | 'ai'
-    settingName: string
-    apiToken?: string
-    prompt?: string
-    model?: string
-    columnType?: string
-  }) => void
+  onSubmit?: (data: RuleCreationData) => void
 }
 
 const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
-  columnType = '',
+  columnType,
+  columnName,
   onCancel,
   onSubmit
 }) => {
@@ -50,7 +46,8 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
       apiToken,
       prompt,
       model: selectedModel,
-      columnType
+      columnType,
+      columnName
     })
   }
 
@@ -63,7 +60,7 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
       <div className="rule-create__header">
         <PageTitle
           size="small"
-          title="새 규칙 만들기"
+          title={`새 규칙 만들기 - ${columnName}`}
           description="데이터 생성 방식을 선택하고, 관련 정보를 입력하세요."
         />
         <br />
