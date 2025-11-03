@@ -168,14 +168,14 @@ async function fetchMySQLColumns(
       /* ---  CHECK 제약조건 조회 쿼리 --- */
       (SELECT cc.CHECK_CLAUSE
        FROM information_schema.CHECK_CONSTRAINTS cc
-       WHERE cc.CONTRAINT_SCHEMA = c.TABLE_SCHEMA
+       WHERE cc.CONSTRAINT_SCHEMA = c.TABLE_SCHEMA
          AND cc.TABLE_NAME = c.TABLE_NAME
          AND cc.CHECK_CLAUSE LIKE CONCAT('%', c.COLUMN_NAME, '%')
         LIMIT 1) AS checkConstraint
-      )
-    FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?
-    ORDER BY ORDINAL_POSITION`,
+      
+    FROM INFORMATION_SCHEMA.COLUMNS c
+    WHERE c.TABLE_SCHEMA = ? AND c.TABLE_NAME = ?
+    ORDER BY c.ORDINAL_POSITION`,
     [databaseName, tableName]
   )
 
