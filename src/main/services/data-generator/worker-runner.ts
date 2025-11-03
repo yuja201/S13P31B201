@@ -4,29 +4,27 @@ import type { WorkerTask, WorkerResult } from './types.js'
 import { DBMS_MAP } from '../../utils/dbms-map.js'
 import { generateFakeStream } from './faker-generator.js'
 import { generateAIStream } from './ai-generator.js'
-import { DataSourceType, type ColumnMetaData } from './types.js'
+import {
+  DataSourceType,
+  type ColumnMetaData,
+  AIMetaData,
+  FakerMetaData,
+  FileMetaData
+} from './types.js'
 import { createFileValueStream } from './file-generator.js'
 
-function isFileMeta(
-  meta: ColumnMetaData | undefined
-): meta is Extract<ColumnMetaData, { kind: 'file' }> {
+function isFileMeta(meta: ColumnMetaData | undefined): meta is FileMetaData {
   return Boolean(meta && meta.kind === 'file')
 }
-
-function isAIMeta(
-  meta: ColumnMetaData | undefined
-): meta is Extract<ColumnMetaData, { kind: 'ai' }> {
+function isAIMeta(meta: ColumnMetaData | undefined): meta is AIMetaData {
   return Boolean(meta && meta.kind === 'ai')
 }
-
-function isFakerMeta(
-  meta: ColumnMetaData | undefined
-): meta is Extract<ColumnMetaData, { kind: 'faker' }> {
+function isFakerMeta(meta: ColumnMetaData | undefined): meta is FakerMetaData {
   return Boolean(meta && meta.kind === 'faker')
 }
 
 async function runWorker(task: WorkerTask): Promise<WorkerResult> {
-  const { projectId, table, dbType } = task
+  const { projectId, table, dbType, schema, database, rules } = task
   const { tableName, recordCnt, columns } = table
 
   const dir = path.join(process.cwd(), 'generated_sql')
@@ -65,21 +63,33 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
             }
           })
 
-        case 'AI':
+        case 'AI': {
           if (!isAIMeta(col.metaData)) {
             throw new Error(
               `[AI 메타데이터 오류] ${tableName}.${col.columnName} 컬럼의 AI 규칙 설정이 올바르지 않습니다.`
             )
           }
+
+          const aiMeta = col.metaData
+          const rule = rules.find((r) => r.id === aiMeta.ruleId)
+
+          if (!rule) {
+            throw new Error(`Rule ${col.metaData.ruleId} not found in worker task`)
+          }
           return generateAIStream({
-            projectId,
+            projectId, // TODO: 리팩토링으로 미사용, faker와 file에서도 사용하지 않는다면 추후 제거
             tableName,
             columnName: col.columnName,
             recordCnt,
             metaData: {
+              // TODO: 리팩토링으로 미사용, faker와 file에서도 사용하지 않는다면 추후 제거
               ruleId: col.metaData.ruleId!
-            }
+            },
+            schema,
+            database,
+            rule
           })
+        }
 
         case 'FILE':
           if (!isFileMeta(col.metaData)) {

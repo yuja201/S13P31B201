@@ -1,6 +1,8 @@
 import mysql from 'mysql2/promise'
 import { Client } from 'pg'
 import type { DatabaseSchema, Table, Column, ForeignKey, Index } from '../database/types'
+import { getDatabaseByProjectId } from '../database/databases'
+import { getDBMSById } from '../database/dbms'
 
 interface DatabaseConfig {
   dbType: 'MySQL' | 'PostgreSQL'
@@ -166,21 +168,20 @@ async function fetchMySQLColumns(
       EXTRA as extra,
 
       /* ---  CHECK 제약조건 조회 쿼리 --- */
-      (SELECT cc.CHECK_CLAUSE
+     (SELECT cc.CHECK_CLAUSE
        FROM information_schema.TABLE_CONSTRAINTS tc
        JOIN information_schema.CHECK_CONSTRAINTS cc 
          ON tc.CONSTRAINT_SCHEMA = cc.CONSTRAINT_SCHEMA
          AND tc.CONSTRAINT_NAME = cc.CONSTRAINT_NAME
-       /* [!] CONSTRAINT_COLUMN_USAGE 테이블을 JOIN하여 정확한 컬럼 매핑 */
-       JOIN information_schema.CONSTRAINT_COLUMN_USAGE ccu 
-         ON ccu.CONSTRAINT_SCHEMA = tc.CONSTRAINT_SCHEMA
-         AND ccu.CONSTRAINT_NAME = tc.CONSTRAINT_NAME
+       JOIN information_schema.KEY_COLUMN_USAGE kcu
+         ON kcu.CONSTRAINT_SCHEMA = tc.CONSTRAINT_SCHEMA
+         AND kcu.CONSTRAINT_NAME = tc.CONSTRAINT_NAME
+         AND kcu.TABLE_SCHEMA = tc.TABLE_SCHEMA
+         AND kcu.TABLE_NAME = tc.TABLE_NAME
+         AND kcu.COLUMN_NAME = c.COLUMN_NAME
        WHERE tc.TABLE_SCHEMA = c.TABLE_SCHEMA
          AND tc.TABLE_NAME = c.TABLE_NAME 
          AND tc.CONSTRAINT_TYPE = 'CHECK'
-         AND ccu.TABLE_SCHEMA = c.TABLE_SCHEMA  
-         AND ccu.TABLE_NAME = c.TABLE_NAME    
-         AND ccu.COLUMN_NAME = c.COLUMN_NAME  
        LIMIT 1) AS checkConstraint
 
     FROM INFORMATION_SCHEMA.COLUMNS c
@@ -390,18 +391,20 @@ async function fetchPostgreSQLColumns(client: Client, tableName: string): Promis
       /* --- CHECK 제약조건 조회 쿼리  --- */
       (SELECT substring(pg_get_constraintdef(con.oid) from 'CHECK \\((.*)\\)')
        FROM pg_constraint con
-       JOIN pg_namespace n ON n.oid = con.connamespace
-       WHERE con.conrelid = (quote_ident(c.table_schema)||'.'||quote_ident(c.table_name))::regclass
+       JOIN pg_class rel ON rel.oid = con.conrelid
+       JOIN pg_attribute attr ON attr.attrelid = rel.oid AND attr.attnum = ANY(con.conkey)
+       WHERE rel.relname = c.table_name
+         AND rel.relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = c.table_schema)
          AND con.contype = 'c' -- 'c' for CHECK
-         AND c.ordinal_position = ANY(con.conkey) -- 이 컬럼이 CHECK 제약조건에 포함되는지
+         AND attr.attname = c.column_name 
        LIMIT 1) AS checkConstraint,
 
       /* ---  ENUM 목록 조회 쿼리  --- */
       (SELECT array_agg(e.enumlabel ORDER BY e.enumsortorder)
         FROM pg_type t
         JOIN pg_enum e ON t.oid = e.enumtypid
-        WHERE t.tyname = c.udt_name) AS enumList
-
+        WHERE t.typname = c.udt_name) AS enumList
+        
     FROM information_schema.columns c
     WHERE c.table_schema = 'public'
       AND c.table_name = $1
@@ -434,7 +437,7 @@ async function fetchPostgreSQLColumns(client: Client, tableName: string): Promis
         row.default_value && !row.default_value.includes('nextval') ? row.default_value : undefined,
 
       check: row.checkConstraint || undefined,
-      enum: row.enumList || undefined // 쿼리에서 이미 string[] (배열)로 가져옴
+      enum: row.enumList || undefined
     }
 
     return column
@@ -516,4 +519,41 @@ export async function fetchDatabaseSchema(config: DatabaseConfig): Promise<Datab
   } else {
     throw new Error(`지원하지 않는 데이터베이스: ${config.dbType}`)
   }
+}
+
+/**
+ * 프로젝트 ID 기반 스키마 조회 (AI Generator용)
+ * - getDatabaseByProjectId, getDBMSById를 사용하여 자동으로 연결 정보 구성
+ */
+export async function fetchSchema(projectId: number): Promise<Table[]> {
+  // 1. Database 정보 조회
+  const database = getDatabaseByProjectId(projectId)
+  if (!database) {
+    throw new Error(`Database not found for project: ${projectId}`)
+  }
+
+  // 2. DBMS 정보 조회
+  const dbms = getDBMSById(database.dbms_id)
+  if (!dbms) {
+    throw new Error(`DBMS not found: ${database.dbms_id}`)
+  }
+
+  // 3. URL 파싱
+  const [host, portStr] = database.url.split(':')
+  const port = parseInt(portStr || (dbms.name === 'MySQL' ? '3306' : '5432'), 10)
+
+  // 4. DatabaseConfig 구성
+  const config: DatabaseConfig = {
+    dbType: dbms.name as 'MySQL' | 'PostgreSQL',
+    host,
+    port,
+    username: database.username,
+    password: database.password,
+    database: database.database_name
+  }
+
+  // 5. 스키마 조회
+  const schema = await fetchDatabaseSchema(config)
+
+  return schema.tables
 }

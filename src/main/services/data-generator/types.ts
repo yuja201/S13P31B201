@@ -1,4 +1,5 @@
 import { DBMS_MAP } from '../../utils/dbms-map'
+import { Table } from '../../database/types'
 
 /**
  * 데이터 소스 타입
@@ -88,6 +89,16 @@ export interface WorkerTask {
   projectId: number
   dbType: keyof typeof DBMS_MAP
   table: TableConfig
+  schema: Table[]
+  database: {
+    id: number
+    dbms_name: string
+  }
+  rules: Array<{
+    id: number
+    domain_name: string
+    model_id: number | null
+  }>
 }
 
 export interface WorkerResult {
