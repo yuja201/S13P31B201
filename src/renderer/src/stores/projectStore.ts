@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { Project, Database, DBMS } from '../../../main/database/types'
+import type { Project, Database, DBMS } from '@main/database/types'
 
 export interface ProjectWithDetails extends Project {
   database?: Database
@@ -7,13 +7,27 @@ export interface ProjectWithDetails extends Project {
 }
 
 interface ProjectState {
+  projects: ProjectWithDetails[]
   selectedProject: ProjectWithDetails | null
+
+  setProjects: (project: ProjectWithDetails[]) => void
+  selectProjectById: (projectId: string | number) => void
+
   setSelectedProject: (project: ProjectWithDetails | null) => void
   clearSelectedProject: () => void
 }
 
-export const useProjectStore = create<ProjectState>((set) => ({
+export const useProjectStore = create<ProjectState>((set, get) => ({
+  projects: [],
   selectedProject: null,
+
+  setProjects: (projects) => set({ projects }),
+
+  selectProjectById: (projectId) => {
+    const idAsNumber = typeof projectId === 'string' ? parseInt(projectId, 10) : projectId
+    const project = get().projects.find((p) => p.id === idAsNumber)
+    set({ selectedProject: project || null })
+  },
   setSelectedProject: (project) => set({ selectedProject: project }),
   clearSelectedProject: () => set({ selectedProject: null })
 }))
