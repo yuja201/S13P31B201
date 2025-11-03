@@ -1,10 +1,12 @@
-import { ipcMain } from 'electron'
+import { ipcMain, BrowserWindow } from 'electron'
 import { getDatabasesByProjectId } from '../database/databases'
 import { getDBMSById } from '../database/dbms'
 import { getRuleById } from '../database/rules'
 import { AIGenerator } from '../services/data-generator/ai-generator'
 import { ColumnSchemaInfo } from '../services/data-generator/types'
 import { resolveModel } from '../services/data-generator/ai/model-map'
+import { runDataGenerator } from '../services/data-generator/data-generator-service'
+import { GenerationInput } from '../services/types'
 
 interface GenerateRequest {
   projectId: number
@@ -82,4 +84,13 @@ ipcMain.handle('gen:ai:bulk', async (_e, payload: GenerateRequest) => {
   }
 
   return results
+})
+
+/**
+ * 더미데이터 생성
+ */
+ipcMain.handle('gen:dummy:bulk', async (event, payload: GenerationInput) => {
+  const mainWindow = BrowserWindow.fromWebContents(event.sender)
+  const result = await runDataGenerator(payload, mainWindow!)
+  return result
 })

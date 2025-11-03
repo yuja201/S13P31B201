@@ -5,10 +5,13 @@ import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { initDatabase } from './database'
 import './ipc/database-handlers'
+import './ipc/data-generator-handlers'
 
 dotenv.config()
 
 function createWindow(): void {
+  const DIRNAME = import.meta.dirname
+
   // Create the browser window.
   const mainWindow = new BrowserWindow({
     width: 1440,
@@ -19,7 +22,7 @@ function createWindow(): void {
     autoHideMenuBar: true,
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
+      preload: join(DIRNAME, '../preload/index.js'),
       sandbox: false
     }
   })
@@ -38,7 +41,7 @@ function createWindow(): void {
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     mainWindow.loadURL(process.env['ELECTRON_RENDERER_URL'])
   } else {
-    mainWindow.loadFile(join(__dirname, '../renderer/index.html'))
+    mainWindow.loadFile(join(DIRNAME, '../renderer/index.html'))
   }
 }
 

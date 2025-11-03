@@ -1,4 +1,4 @@
-export type DataSourceType = 'FAKER' | 'AI' | 'FILE'
+export type DataSourceType = 'FAKER' | 'AI' | 'FILE' | 'MANUAL'
 export type SqlDbType = 'MySQL' | 'PostgreSQL'
 
 export interface ColumnMetaData {
