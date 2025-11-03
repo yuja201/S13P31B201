@@ -36,7 +36,10 @@ export function getDatabaseById(id: number): DatabaseType | undefined {
 }
 
 /**
- * 프로젝트 ID로 데이터베이스 목록 조회
+ * Retrieve all databases for a project, ordered by newest first, with passwords decrypted.
+ *
+ * @param projectId - The project identifier to filter databases
+ * @returns An array of `DatabaseType` records for the project, each with `password` decrypted
  */
 export function getDatabasesByProjectId(projectId: number): DatabaseType[] {
   const db = getDatabase()
@@ -51,7 +54,10 @@ export function getDatabasesByProjectId(projectId: number): DatabaseType[] {
 }
 
 /**
- * 프로젝트 ID로 데이터베이스 조회
+ * Retrieve the first database record for a given project ID.
+ *
+ * @param projectId - The project identifier to query
+ * @returns The database record with its `password` decrypted if found, `undefined` otherwise
  */
 export function getDatabaseByProjectId(projectId: number): DatabaseType | undefined {
   const db = getDatabase()

@@ -9,6 +9,14 @@ import './ipc/data-generator-handlers'
 
 dotenv.config()
 
+/**
+ * Creates and configures the main application BrowserWindow for the Electron app.
+ *
+ * The window is created hidden and shown when ready, configured with size constraints,
+ * an application icon on Linux, and a preload script. It prevents in-window navigation by
+ * opening external links in the user's default browser, and loads the renderer either
+ * from the development URL (when available) or from the packaged index.html.
+ */
 function createWindow(): void {
   const DIRNAME = import.meta.dirname
 

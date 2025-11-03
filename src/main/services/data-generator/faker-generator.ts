@@ -83,8 +83,10 @@ export async function* generateFakeStream({
 }
 
 /**
- * 단일 값 생성용 헬퍼 (기존 호환)
- * - 단일 테스트용 API에서 사용됨
+ * Generate a single fake value according to the provided generation request.
+ *
+ * @param params - Parameters describing the fake data to generate (projectId, tableName, columnName, metaData, etc.)
+ * @returns The generated value as a string; returns an empty string if no value was produced
  */
 export async function generateFakeValue(params: GenerateRequest): Promise<string> {
   const gen = generateFakeStream({ ...params, recordCnt: 1 })

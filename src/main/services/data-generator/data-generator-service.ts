@@ -9,6 +9,16 @@ import { createZipFromSqlFilesStreaming } from './zip-generator.js'
 
 const MAX_PARALLEL = Math.max(1, Math.floor(os.cpus().length / 2))
 
+/**
+ * Generate SQL files for the specified tables using parallel worker processes and produce a ZIP containing the generated SQL files.
+ *
+ * @param payload - Generation input containing `projectId` and an array of tables to generate
+ * @param mainWindow - Electron BrowserWindow used to emit progress updates (`data-generator:progress`)
+ * @returns The generation result including `zipPath`, `successCount`, `failCount`, overall `success`, and `errors`
+ * @throws Error with message '생성할 테이블이 없습니다.' if `tables` is empty
+ * @throws Error with message `프로젝트 ${projectId}의 DB 연결 정보를 찾을 수 없습니다.` if the project database configuration is missing
+ * @throws Error with message `지원하지 않는 DBMS ID: ${database.dbms_id}` if the project's DBMS is not supported
+ */
 export async function runDataGenerator(
   payload: GenerationInput,
   mainWindow: BrowserWindow

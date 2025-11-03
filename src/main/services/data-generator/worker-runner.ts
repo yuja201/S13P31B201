@@ -5,6 +5,12 @@ import { DBMS_MAP } from '../../utils/dbms-map.js'
 import { generateFakeStream } from './faker-generator.js'
 import { DataSourceType } from './types.js'
 
+/**
+ * Generates SQL INSERT statements for a table described by `task`, writes them to a file, and emits progress events to stdout.
+ *
+ * @param task - WorkerTask containing project, table schema, db type, and record count to generate
+ * @returns A WorkerResult with `tableName`, `sqlPath`, and `success`; on failure includes an `error` message
+ */
 async function runWorker(task: WorkerTask): Promise<WorkerResult> {
   const { projectId, table, dbType } = task
   const { tableName, recordCnt, columns } = table
@@ -151,6 +157,11 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
   }
 }
 
+/**
+ * Entrypoint that reads TASK, runs the worker, flushes generated SQL to disk, and exits with a status code.
+ *
+ * Reads the TASK environment variable as JSON and passes it to `runWorker`. If TASK is missing, logs an error and exits with code 1. After the worker completes, attempts to open the generated SQL file for writing, force a disk sync, and close it (warnings are logged if sync fails). Waits 500 ms to stabilize I/O, then exits with code 0 on success or 1 on failure.
+ */
 async function main(): Promise<void> {
   const taskEnv = process.env.TASK
   if (!taskEnv) {

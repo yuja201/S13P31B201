@@ -3,10 +3,11 @@ import path from 'node:path'
 import archiver from 'archiver'
 
 /**
- * 대용량 SQL 파일들을 스트리밍으로 ZIP 압축하여 디스크에 저장
- * @param files SQL 파일 경로 목록
- * @param projectId 프로젝트 ID
- * @returns 생성된 ZIP 파일 경로
+ * Stream multiple large SQL files into a ZIP archive and save it to disk.
+ *
+ * @param files - Array of objects describing each SQL file; each object must include `filename` (used as the entry name without extension) and `path` (filesystem path to the source file)
+ * @param projectId - Numeric project identifier used to place the generated ZIP under `generated/{projectId}`
+ * @returns The filesystem path of the created ZIP file
  */
 export async function createZipFromSqlFilesStreaming(
   files: { filename: string; path: string }[],
