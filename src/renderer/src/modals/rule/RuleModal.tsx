@@ -34,9 +34,11 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, onConfir
   }
 
   const handleCreateSubmit = (data: RuleCreationData): void => {
-    console.log(`Column '${column.name}' - New Rule Created:`, data)
+    const generation =
+      data.source === 'faker' ? 'Faker.js' : data.source === 'ai' ? 'AI' : data.source
+
     const result: RuleResult = {
-      generation: data.source,
+      generation,
       setting: data.settingName
     }
     onConfirm(result)
