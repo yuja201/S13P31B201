@@ -5,13 +5,19 @@ import RuleCreationContent, { RuleCreationData } from '@renderer/modals/rule/Rul
 import { ColumnDetail } from '@renderer/views/CreateDummyView'
 import EnumSelectContent from '@renderer/modals/rule/EnumSelectContent'
 
+export type RuleResult = {
+  generation: string
+  setting: string
+}
+
 interface RuleModalProps {
   isOpen: boolean
   onClose: () => void
   column: ColumnDetail
+  onConfirm: (result: RuleResult) => void
 }
 
-const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column }) => {
+const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, onConfirm }) => {
   const [mode, setMode] = useState<'select' | 'create'>('select')
 
   const handleCreateNew = (): void => {
@@ -22,15 +28,19 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column }) => {
     setMode('select')
   }
 
-  const handleConfirmSelect = (value: string): void => {
-    console.log(`Column '${column.name}' - Selected Rule:`, value)
-    // TODO: DBTableDetail의 상태를 업데이트하는 로직 필요
+  const handleConfirmSelect = (result: RuleResult): void => {
+    console.log(`Column '${column.name}' - Selected Rule:`, result)
+    onConfirm(result)
     onClose()
   }
 
   const handleCreateSubmit = (data: RuleCreationData): void => {
     console.log(`Column '${column.name}' - New Rule Created:`, data)
-    // TODO: DBTableDetail의 상태를 업데이트하는 로직 필요
+    const result: RuleResult = {
+      generation: data.source,
+      setting: data.settingName
+    }
+    onConfirm(result)
     onClose()
   }
 

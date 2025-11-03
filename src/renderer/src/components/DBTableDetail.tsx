@@ -3,13 +3,14 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { TableInfo, ColumnDetail } from '@renderer/views/CreateDummyView'
 import Button from '@renderer/components/Button'
 import FileModal from '@renderer/modals/file/FileModal'
-import RuleModal from '@renderer/modals/rule/RuleModal'
+import RuleModal, { RuleResult } from '@renderer/modals/rule/RuleModal'
 
 type DBTableDetailProps = {
   table: TableInfo
+  onColumnUpdate: (columnName: string, generation: string, setting: string) => void
 }
 
-const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
+const TableDetail: React.FC<DBTableDetailProps> = ({ table, onColumnUpdate }) => {
   const navigate = useNavigate()
   const { projectId } = useParams<{ projectId: string }>()
 
@@ -42,6 +43,13 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
   const handleGenerateData = (): void => {
     navigate(`/main/select-method/${projectId}/${table.id}`)
   }
+
+  const handleRuleConfirm = (result: RuleResult): void => {
+    if (!selectedColumn) return
+
+    onColumnUpdate(selectedColumn.name, result.generation, result.setting)
+  }
+
   return (
     <>
       <div className="table-detail-container shadow">
@@ -161,7 +169,12 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
         tableName={table.name}
       />
       {isRuleModalOpen && selectedColumn && (
-        <RuleModal isOpen={isRuleModalOpen} onClose={closeRuleModal} column={selectedColumn} />
+        <RuleModal
+          isOpen={isRuleModalOpen}
+          onClose={closeRuleModal}
+          column={selectedColumn}
+          onConfirm={handleRuleConfirm} // [!] 핸들러 전달
+        />
       )}
 
       <style>{`

@@ -110,6 +110,22 @@ const CreateDummyView: React.FC = () => {
     }
   }, [tables, focusedTable])
 
+  const handleColumnUpdate = (columnName: string, generation: string, setting: string): void => {
+    if (!focusedTable) return
+
+    const newColumnDetails = focusedTable.columnDetails.map((col) => {
+      if (col.name === columnName) {
+        return { ...col, generation, setting }
+      }
+      return col
+    })
+
+    setFocusedTable({
+      ...focusedTable,
+      columnDetails: newColumnDetails
+    })
+  }
+
   if (isLoading) {
     return <div>스키마 로딩 중...</div>
   }
@@ -127,7 +143,12 @@ const CreateDummyView: React.FC = () => {
             focusedTableId={focusedTable?.id || ''}
             onTableSelect={(table) => setFocusedTable(table)}
           />
-          {focusedTable && <DBTableDetail table={focusedTable} />}
+          {focusedTable && (
+            <DBTableDetail
+              table={focusedTable}
+              onColumnUpdate={handleColumnUpdate} // [!] 함수 전달
+            />
+          )}
         </div>
       </div>
 

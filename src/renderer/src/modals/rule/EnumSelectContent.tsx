@@ -1,12 +1,13 @@
 import React, { useState } from 'react'
 import PageTitle from '@renderer/components/PageTitle'
 import Button from '@renderer/components/Button'
+import { RuleResult } from '@renderer/modals/rule/RuleModal'
 
 interface EnumSelectContentProps {
   columnName: string
   enumList: string[]
   onCancel: () => void
-  onConfirm: (value: string) => void
+  onConfirm: (result: RuleResult) => void
 }
 
 const EnumSelectContent: React.FC<EnumSelectContentProps> = ({
@@ -18,7 +19,10 @@ const EnumSelectContent: React.FC<EnumSelectContentProps> = ({
   const [selectedValue, setSelectedValue] = useState<string>(enumList[0] || '')
 
   const handleConfirm = (): void => {
-    onConfirm(selectedValue)
+    onConfirm({
+      generation: '고정값',
+      setting: selectedValue
+    })
   }
 
   return (
