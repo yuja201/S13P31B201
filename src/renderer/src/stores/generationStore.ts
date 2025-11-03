@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import type { RuleResult } from '@renderer/modals/rule/RuleModal'
 
 export type DataSourceType = 'FAKER' | 'AI' | 'FILE' | 'MANUAL'
 
@@ -65,6 +66,7 @@ interface GenerationState {
   setTableRecordCount: (tableName: string, recordCnt: number) => void
   applyFileMapping: (tableName: string, payload: FileMappingApplyPayload) => void
   resetTable: (tableName: string) => void
+  setColumnRule: (tableName: string, columnName: string, rule: RuleResult) => void
 }
 
 export const useGenerationStore = create<GenerationState>((set) => ({
@@ -123,6 +125,60 @@ export const useGenerationStore = create<GenerationState>((set) => ({
             tableName,
             recordCnt: payload.recordCount ?? existing?.recordCnt ?? 0,
             columns: baseColumns
+          }
+        }
+      }
+    })
+  },
+  setColumnRule: (tableName, columnName, rule) => {
+    // rule은 { generation: '고정값', setting: 'pending' } 또는
+    // { generation: 'Faker.js', setting: '123' } (ruleId) 형태입니다.
+
+    let dataSource: DataSourceType
+    let metaData: ColumnMetaData
+
+    // RuleResult 타입을 ColumnConfig 타입으로 변환
+    if (rule.generation === '고정값' || rule.generation === 'ENUM') {
+      dataSource = 'MANUAL'
+      metaData = { kind: 'manual', fixedValue: rule.setting }
+    } else if (rule.generation === 'Faker.js') {
+      dataSource = 'FAKER'
+      // TODO: setting이 ruleId가 맞는지 확인 필요 (RuleCreationContent 로직 기준)
+      metaData = { kind: 'faker', ruleId: parseInt(rule.setting) }
+    } else if (rule.generation === 'AI') {
+      dataSource = 'AI'
+      // TODO: setting이 ruleId가 맞는지 확인 필요
+      metaData = { kind: 'ai', ruleId: parseInt(rule.setting) }
+    } else {
+      // TODO: '참조(REFERENCE)' 등 다른 타입 처리
+      console.warn(`Unknown generation type: ${rule.generation}`)
+      return // 알 수 없는 타입이면 중단
+    }
+
+    // 새 ColumnConfig 생성
+    const newColumnConfig: ColumnConfig = {
+      columnName: columnName,
+      dataSource: dataSource,
+      metaData: metaData
+    }
+
+    // 스토어 상태 업데이트
+    set((state) => {
+      const existingTable = state.tables[tableName] || {
+        tableName,
+        recordCnt: 1000, // 기본값
+        columns: {}
+      }
+
+      return {
+        tables: {
+          ...state.tables,
+          [tableName]: {
+            ...existingTable,
+            columns: {
+              ...existingTable.columns,
+              [columnName]: newColumnConfig // [!] 이 컬럼의 규칙을 덮어쓰기
+            }
           }
         }
       }
