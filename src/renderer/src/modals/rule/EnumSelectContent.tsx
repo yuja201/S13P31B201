@@ -3,11 +3,10 @@ import PageTitle from '@renderer/components/PageTitle'
 import Button from '@renderer/components/Button'
 
 interface EnumSelectContentProps {
-  columnType?: string
   columnName: string
   enumList: string[]
   onCancel: () => void
-  onConfirm: (value: string) => void // (generation/setting 대신 일단 '고정값'만 전달)
+  onConfirm: (value: string) => void
 }
 
 const EnumSelectContent: React.FC<EnumSelectContentProps> = ({
@@ -29,20 +28,17 @@ const EnumSelectContent: React.FC<EnumSelectContentProps> = ({
         description={`이 컬럼은 ENUM 타입입니다. 목록에서 고정값을 선택하세요.`}
         size="small"
       />
-      <hr className="divider" />
+      <div className="divider" />
 
       <div className="enum-list">
         {enumList.map((enumValue) => (
-          <label key={enumValue} className="enum-option preRegular16">
-            <input
-              type="radio"
-              name={`enum-group-${columnName}`}
-              value={enumValue}
-              checked={selectedValue === enumValue}
-              onChange={() => setSelectedValue(enumValue)}
-            />
+          <div
+            key={enumValue}
+            className={`enum-option preRegular16 ${selectedValue === enumValue ? 'selected' : ''}`}
+            onClick={() => setSelectedValue(enumValue)}
+          >
             {enumValue}
-          </label>
+          </div>
         ))}
       </div>
 
@@ -62,14 +58,16 @@ const EnumSelectContent: React.FC<EnumSelectContentProps> = ({
           gap: 20px;
           padding: 0 14px 14px 0;
         }
+        
         .divider {
           border: none;
-          border-top: 1px solid rgba(0, 0, 0, 0.15);
+          border-top: 1px solid var(--color-gray-200); 
           margin-top: 12px;
         }
+
         .enum-list {
-          display: flex;
-          flex-direction: column;
+          display: grid;
+          grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); 
           gap: 12px;
           max-height: 300px;
           overflow-y: auto;
@@ -77,18 +75,35 @@ const EnumSelectContent: React.FC<EnumSelectContentProps> = ({
           background-color: var(--color-background);
           border-radius: 8px;
         }
+
         .enum-option {
           display: flex;
           align-items: center;
+          justify-content: center;
           gap: 10px;
           cursor: pointer;
-          padding: 8px;
-          border-radius: 4px;
-          transition: background-color 0.2s ease;
+          padding: 12px 16px;
+          border-radius: 8px; 
+          transition: all 0.2s ease;
+          background-color: var(--color-white);
+          border: 1.5px solid var(--color-gray-200); 
+          color: var(--color-dark-gray);
+          text-align: center;
         }
+
         .enum-option:hover {
-          background-color: rgba(0, 0, 0, 0.05);
+          background-color: var(--color-white);
+          border-color: var(--color-main-blue); 
+          color: var(--color-main-blue);
         }
+
+        .enum-option.selected {
+          background-color: var(--color-light-blue);
+          border-color: var(--color-main-blue);
+          color: var(--color-main-blue);
+          font-weight: var(--fw-semiBold);
+        }
+
         .enum-footer {
           display: flex;
           justify-content: flex-end;
