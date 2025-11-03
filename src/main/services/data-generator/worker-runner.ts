@@ -3,7 +3,14 @@ import path from 'node:path'
 import type { WorkerTask, WorkerResult } from '../types.js'
 import { DBMS_MAP } from '../../utils/dbms-map.js'
 import { generateFakeStream } from './faker-generator.js'
-import { DataSourceType } from './types.js'
+import { DataSourceType, type ColumnMetaData } from './types.js'
+import { createFileValueStream } from './file-generator.js'
+
+function isFileMeta(
+  meta: ColumnMetaData | undefined
+): meta is Extract<ColumnMetaData, { kind: 'file' }> {
+  return Boolean(meta && meta.kind === 'file')
+}
 
 async function runWorker(task: WorkerTask): Promise<WorkerResult> {
   const { projectId, table, dbType } = task
@@ -53,16 +60,12 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
           throw new Error(`[미구현] AI 생성 방식은 아직 지원되지 않습니다. (${col.columnName})`)
 
         case 'FILE':
-          // TODO: 파일 업로드 기반 데이터 생성 처리
-          // 예시:
-          // return generateFileStream({
-          //   projectId,
-          //   tableName,
-          //   columnName: col.columnName,
-          //   recordCnt,
-          //   filePath: col.metaData.filePath
-          // })
-          throw new Error(`[미구현] File 기반 생성은 아직 지원되지 않습니다. (${col.columnName})`)
+          if (!isFileMeta(col.metaData)) {
+            throw new Error(
+              `[파일 메타데이터 오류] ${tableName}.${col.columnName} 컬럼의 파일 설정이 올바르지 않습니다.`
+            )
+          }
+          return createFileValueStream(col.metaData, recordCnt)
 
         case 'MANUAL':
           // TODO: 사용자 직접 입력값 반복 처리

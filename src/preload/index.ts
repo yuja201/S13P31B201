@@ -91,6 +91,22 @@ const api = {
       ipcRenderer.invoke('db:schema:fetch', databaseId)
   },
 
+  file: {
+    cache: {
+      write: (payload: { content: string; encoding?: string; extension?: string }) =>
+        ipcRenderer.invoke('file:cache:write', payload),
+      remove: (filePath: string) => ipcRenderer.invoke('file:cache:remove', { filePath }),
+      stream: {
+        open: (payload: { extension?: string }) =>
+          ipcRenderer.invoke('file:cache:stream-open', payload),
+        write: (payload: { streamId: string; chunk: number[] | Uint8Array }) =>
+          ipcRenderer.invoke('file:cache:stream-write', payload),
+        close: (payload: { streamId: string }) =>
+          ipcRenderer.invoke('file:cache:stream-close', payload)
+      }
+    }
+  },
+
   // dataGenerator operations
   dataGenerator: {
     generate: (payload: GenerationInput) => ipcRenderer.invoke('gen:dummy:bulk', payload),

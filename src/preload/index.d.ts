@@ -65,6 +65,22 @@ interface API {
   schema: {
     fetch: (databaseId: number) => Promise<DatabaseSchema>
   }
+  file: {
+    cache: {
+      write: (payload: { content: string; encoding?: string; extension?: string }) => Promise<{
+        filePath: string
+      }>
+      remove: (filePath: string) => Promise<boolean>
+      stream: {
+        open: (payload: { extension?: string }) => Promise<{ streamId: string; filePath: string }>
+        write: (payload: {
+          streamId: string
+          chunk: number[] | Uint8Array
+        }) => Promise<{ ok: true }>
+        close: (payload: { streamId: string }) => Promise<boolean>
+      }
+    }
+  }
   dataGenerator: {
     generate: (payload: unknown) => Promise<unknown>
     onProgress: (callback: (msg: unknown) => void) => void

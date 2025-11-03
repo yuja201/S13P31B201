@@ -3,26 +3,49 @@ import { DBMS_MAP } from '../utils/dbms-map'
 /**
  * 공통
  */
-export type DataSourceType = 'FAKER' | 'AI' | 'FILE'
+export type DataSourceType = 'FAKER' | 'AI' | 'FILE' | 'MANUAL'
+
+export type FileMetaData = {
+  kind: 'file'
+  filePath: string
+  fileType: 'csv' | 'json' | 'txt'
+  fileColumn: string
+  useHeaderRow: boolean
+  columnIndex?: number
+  lineSeparator?: string
+  columnSeparator?: string
+  encoding?: string
+}
+
+export type FakerMetaData = {
+  kind: 'faker'
+  ruleId: number
+}
+
+export type AIMetaData = {
+  kind: 'ai'
+  ruleId: number
+}
+
+export type ManualMetaData = {
+  kind: 'manual'
+  fixedValue: string
+}
+
+export type ColumnMetaData = FakerMetaData | AIMetaData | FileMetaData | ManualMetaData
 
 export interface GenerateRequest {
   projectId: number
   tableName: string
   columnName: string
   recordCnt: number
-  metaData: {
-    ruleId: number
-  }
+  metaData: ColumnMetaData
 }
 
 export interface ColumnDefinition {
   columnName: string
   dataSource: DataSourceType
-  metaData: {
-    ruleId: number
-    columnIdx?: number
-    filePath?: string
-  }
+  metaData: ColumnMetaData
 }
 
 export interface TableInput {
