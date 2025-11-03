@@ -5,8 +5,10 @@ import RuleCreationContent, { RuleCreationData } from '@renderer/modals/rule/Rul
 import { ColumnDetail } from '@renderer/views/CreateDummyView'
 import EnumSelectContent from '@renderer/modals/rule/EnumSelectContent'
 
+export type GenerationType = 'Faker.js' | 'AI' | '고정값' | '참조' | '파일 업로드' // (필요한 모든 타입)
+
 export type RuleResult = {
-  generation: string
+  generation: GenerationType
   setting: string
 }
 
@@ -34,11 +36,13 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, onConfir
   }
 
   const handleCreateSubmit = (data: RuleCreationData): void => {
+    console.log(`Column '${column.name}' - New Rule Created:`, data)
+
     const generation =
       data.source === 'faker' ? 'Faker.js' : data.source === 'ai' ? 'AI' : data.source
 
     const result: RuleResult = {
-      generation,
+      generation: generation as GenerationType,
       setting: data.settingName
     }
     onConfirm(result)
