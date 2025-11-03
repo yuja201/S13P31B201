@@ -6,7 +6,7 @@ import { AIGenerator } from '../services/data-generator/ai-generator'
 import { ColumnSchemaInfo } from '../services/data-generator/types'
 import { resolveModel } from '../services/data-generator/ai/model-map'
 import { runDataGenerator } from '../services/data-generator/data-generator-service'
-import { GenerationInput } from '../services/types'
+import type { GenerationInput, ColumnMetaData } from '../services/types'
 
 interface GenerateRequest {
   projectId: number
@@ -16,7 +16,7 @@ interface GenerateRequest {
     columns: {
       columnName: string
       dataSource: 'AI' | 'FAKER' | 'FILE'
-      metaData: Record<string, unknown>
+      metaData?: ColumnMetaData
     }[]
   }[]
 }
@@ -48,7 +48,7 @@ ipcMain.handle('gen:ai:bulk', async (_e, payload: GenerateRequest) => {
 
     // AI 칼럼별 생성
     for (const col of aiColumns) {
-      const ruleId = (col.metaData as { ruleId?: number }).ruleId
+      const ruleId = extractRuleId(col.metaData)
       if (!ruleId) continue
 
       // DB rules 테이블에서 프롬프트/도메인 가져오기
@@ -94,3 +94,11 @@ ipcMain.handle('gen:dummy:bulk', async (event, payload: GenerationInput) => {
   const result = await runDataGenerator(payload, mainWindow!)
   return result
 })
+
+function extractRuleId(meta?: ColumnMetaData): number | undefined {
+  if (!meta) return undefined
+  if ((meta.kind === 'ai' || meta.kind === 'faker') && typeof meta.ruleId === 'number') {
+    return meta.ruleId
+  }
+  return undefined
+}
