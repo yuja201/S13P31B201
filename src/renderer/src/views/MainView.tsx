@@ -7,7 +7,6 @@ import { IoFilterOutline } from 'react-icons/io5'
 import { formatRelativeTime } from '@renderer/utils/timeFormat'
 import { useProjectStore, ProjectWithDetails } from '@renderer/stores/projectStore'
 
-
 const MainView: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [sortOption, setSortOption] = useState<'modified' | 'created' | 'name'>('modified')
@@ -51,12 +50,8 @@ const MainView: React.FC = () => {
   }, [setProjects])
 
   useEffect(() => {
-    if (projects.length === 0) {
-      loadProjects()
-    } else {
-      setLoading(false)
-    }
-  }, [loadProjects, projects.length])
+    loadProjects()
+  }, [loadProjects])
 
   // 필터링된 프로젝트 목록
   const filteredProjects = projects
@@ -155,8 +150,9 @@ const MainView: React.FC = () => {
                   ].map((option) => (
                     <div
                       key={option.key}
-                      className={`dropdown-item preRegular14 ${sortOption === option.key ? 'active' : ''
-                        }`}
+                      className={`dropdown-item preRegular14 ${
+                        sortOption === option.key ? 'active' : ''
+                      }`}
                       onClick={() =>
                         handleSortChange(option.key as 'modified' | 'created' | 'name')
                       }
@@ -203,11 +199,7 @@ const MainView: React.FC = () => {
               }
 
               return (
-                <Card
-                  key={project.id}
-                  {...cardProps}
-                  onClick={() => goToProject(project.id)}
-                />
+                <Card key={project.id} {...cardProps} onClick={() => goToProject(project.id)} />
               )
             })
           )}
