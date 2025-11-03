@@ -48,6 +48,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table, onColumnUpdate }) =>
     if (!selectedColumn) return
 
     onColumnUpdate(selectedColumn.name, result.generation, result.setting)
+    closeRuleModal()
   }
 
   return (

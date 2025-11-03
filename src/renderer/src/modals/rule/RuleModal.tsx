@@ -31,7 +31,6 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, onConfir
   const handleConfirmSelect = (result: RuleResult): void => {
     console.log(`Column '${column.name}' - Selected Rule:`, result)
     onConfirm(result)
-    onClose()
   }
 
   const handleCreateSubmit = (data: RuleCreationData): void => {
@@ -41,7 +40,6 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, onConfir
       setting: data.settingName
     }
     onConfirm(result)
-    onClose()
   }
 
   useEffect(() => {
