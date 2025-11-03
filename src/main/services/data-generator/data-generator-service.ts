@@ -2,7 +2,7 @@ import path from 'node:path'
 import os from 'node:os'
 import { spawn } from 'node:child_process'
 import { app, BrowserWindow } from 'electron'
-import type { WorkerTask, WorkerResult, GenerationInput, GenerationResult } from '../types.js'
+import type { WorkerTask, WorkerResult, GenerateRequest, GenerationResult } from './types.js'
 import { getDatabaseByProjectId } from '../../database/databases.js'
 import { DBMS_ID_TO_KEY, type SupportedDBMS } from '../../utils/dbms-map.js'
 import { createZipFromSqlFilesStreaming } from './zip-generator.js'
@@ -10,7 +10,7 @@ import { createZipFromSqlFilesStreaming } from './zip-generator.js'
 const MAX_PARALLEL = Math.max(1, Math.floor(os.cpus().length / 2))
 
 export async function runDataGenerator(
-  payload: GenerationInput,
+  payload: GenerateRequest,
   mainWindow: BrowserWindow
 ): Promise<GenerationResult> {
   await app.whenReady()

@@ -1,34 +1,85 @@
+import { DBMS_MAP } from '../../utils/dbms-map'
+
+/**
+ * 데이터 소스 타입
+ */
 export type DataSourceType = 'FAKER' | 'AI' | 'FILE' | 'MANUAL'
 export type SqlDbType = 'MySQL' | 'PostgreSQL'
 
+/**
+ * 컬럼 메타데이터
+ */
 export interface ColumnMetaData {
-  ruleId?: number // FAKER/AI 공통 규칙 ID
+  ruleId?: number // FAKER / AI 공통 규칙 ID
   columnIdx?: number // FILE일 때 사용
   filePath?: string // FILE일 때 사용
 }
 
+/**
+ * 컬럼 설정
+ */
 export interface ColumnConfig {
   columnName: string
   dataSource: DataSourceType
   metaData: ColumnMetaData
 }
 
+/**
+ * 테이블 설정
+ */
 export interface TableConfig {
   tableName: string
   recordCnt: number
   columns: ColumnConfig[]
 }
 
+/**
+ * 전체 데이터 생성 요청
+ * - 프로젝트 단위로 여러 테이블을 한 번에 생성할 때 사용
+ */
 export interface GenerateRequest {
   projectId: number
   tables: TableConfig[]
 }
 
+/**
+ * 테이블 단위 생성 결과
+ */
 export interface GenerateResult {
   tableName: string
   rows: string[]
 }
 
+/**
+ * 여러 테이블 생성 후 최종 결과
+ */
+export interface GenerationResult {
+  zipPath: string
+  successCount: number
+  failCount: number
+  success: boolean
+  errors?: string[]
+}
+
+/**
+ * Worker 관련 타입
+ */
+export interface WorkerTask {
+  projectId: number
+  dbType: keyof typeof DBMS_MAP
+  table: TableConfig
+}
+
+export interface WorkerResult {
+  tableName: string
+  sqlPath: string
+  success: boolean
+  error?: string
+}
+
+/**
+ * 컬럼 제약조건
+ */
 export interface ColumnConstraint {
   notNull?: boolean
   unique?: boolean
@@ -40,6 +91,9 @@ export interface ColumnConstraint {
   referencedColumn?: string
 }
 
+/**
+ * 컬럼 스키마 정보
+ */
 export interface ColumnSchemaInfo {
   dbType: SqlDbType
   tableName: string
@@ -49,6 +103,9 @@ export interface ColumnSchemaInfo {
   domainName?: string
 }
 
+/**
+ * AI 생성 요청
+ */
 export interface AIGenRequest {
   databaseId: number
   vendor: 'openai' | 'anthropic' | 'google'
@@ -57,6 +114,9 @@ export interface AIGenRequest {
   info: ColumnSchemaInfo
 }
 
+/**
+ * AI 생성 결과
+ */
 export interface AIGenResult {
   values: string[]
   diagnostics: {
@@ -65,4 +125,12 @@ export interface AIGenResult {
     fallbackUsed: number
     uniqueAdjusted: number
   }
+}
+
+/**
+ * Faker 규칙 입력
+ */
+export interface FakerRuleInput {
+  name: string
+  domain: number
 }

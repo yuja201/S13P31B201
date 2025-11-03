@@ -15,7 +15,7 @@ import type {
   RuleUpdate,
   DatabaseSchema
 } from '../main/database/types'
-import { GenerationInput } from '../main/services/types'
+import { GenerateRequest } from '../main/services/data-generator/types'
 
 // Custom APIs for renderer
 const api = {
@@ -93,7 +93,7 @@ const api = {
 
   // dataGenerator operations
   dataGenerator: {
-    generate: (payload: GenerationInput) => ipcRenderer.invoke('gen:dummy:bulk', payload),
+    generate: (payload: GenerateRequest) => ipcRenderer.invoke('gen:dummy:bulk', payload),
     onProgress: (callback: (msg: unknown) => void) => {
       ipcRenderer.on('data-generator:progress', (_, msg) => callback(msg))
     },
