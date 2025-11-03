@@ -24,15 +24,55 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
 
   try {
     // 컬럼별 스트림 준비
-    const columnStreams = columns.map((col) =>
-      generateFakeStream({
-        projectId,
-        tableName,
-        columnName: col.columnName,
-        recordCnt,
-        metaData: col.metaData
-      })
-    )
+    const columnStreams = columns.map((col) => {
+      // TODO: 데이터 소스 유형에 따라 분기 처리 필요 (faker / ai / file / manual)
+      const dataSource = col.dataSource?.toLowerCase() || 'faker'
+
+      switch (dataSource) {
+        case 'faker':
+          // 현재 기본 faker 스트림
+          return generateFakeStream({
+            projectId,
+            tableName,
+            columnName: col.columnName,
+            recordCnt,
+            metaData: col.metaData
+          })
+
+        case 'ai':
+          // TODO: AI 기반 데이터 생성 스트림 함수 연결 (generateAIStream 등)
+          // 예시:
+          // return generateAIStream({
+          //   projectId,
+          //   tableName,
+          //   columnName: col.columnName,
+          //   recordCnt,
+          //   metaData: col.metaData
+          // })
+          throw new Error(`[미구현] AI 생성 방식은 아직 지원되지 않습니다. (${col.columnName})`)
+
+        case 'file':
+          // TODO: 파일 업로드 기반 데이터 생성 처리
+          // 예시:
+          // return generateFileStream({
+          //   projectId,
+          //   tableName,
+          //   columnName: col.columnName,
+          //   recordCnt,
+          //   filePath: col.metaData.filePath
+          // })
+          throw new Error(`[미구현] File 기반 생성은 아직 지원되지 않습니다. (${col.columnName})`)
+
+        case 'manual':
+          // TODO: 사용자 직접 입력값 반복 처리
+          // 예시:
+          // return generateManualStream(col.metaData.fixedValue)
+          throw new Error(`[미구현] Manual 입력은 아직 지원되지 않습니다. (${col.columnName})`)
+
+        default:
+          throw new Error(`알 수 없는 데이터 소스: ${dataSource}`)
+      }
+    })
 
     // 한 행(row)은 모든 컬럼 스트림에서 1개씩 받음
     for (let i = 0; i < recordCnt; i++) {
@@ -104,7 +144,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
       success: false,
       error: (err as Error).message
     }
-    console.error('❌ worker-runner error:', err)
+    console.error('worker-runner error:', err)
     console.log(JSON.stringify(result))
     return result
   }
@@ -113,7 +153,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
 async function main(): Promise<void> {
   const taskEnv = process.env.TASK
   if (!taskEnv) {
-    console.error('❌ TASK 환경변수가 없습니다.')
+    console.error('TASK 환경변수가 없습니다.')
     process.exit(1)
   }
 
@@ -129,7 +169,7 @@ async function main(): Promise<void> {
     await fd.close()
     console.log(`[FLUSH] ${result.tableName} flush 완료`)
   } catch (e) {
-    console.warn('⚠️ fsync 실패:', e)
+    console.warn('fsync 실패:', e)
   }
 
   // (3) flush 후 0.5초 대기 (Windows I/O 안정화)
