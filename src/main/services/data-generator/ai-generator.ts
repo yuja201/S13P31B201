@@ -4,6 +4,19 @@ import { getDomainGuideline } from './ai/domain-config'
 import { buildAjvValidator, enforceUniqueness, parseValuesArray } from '../../utils/validators'
 
 /**
+ * AI 스트림 생성 요청 파라미터
+ */
+export interface AIStreamGenerateRequest {
+  projectId: number
+  tableName: string
+  columnName: string
+  recordCnt: number
+  metaData: {
+    ruleId: number
+  }
+}
+
+/**
  * JSON Schema + Prompt 생성
  */
 function buildJsonSchemaForValues(info: ColumnSchemaInfo, count: number): Record<string, unknown> {
@@ -145,6 +158,74 @@ function fallbackValues(domainName: string | undefined, count: number): string[]
     arr.push(`data_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`)
   }
   return arr
+}
+
+/**
+ * AI 스트리밍 생성기 (1행씩 yield)
+ * - 배치 단위로 AI 생성 후, 한 행씩 yield
+ * - Worker에서 for-await-of로 순회하면서 바로 파일에 씀
+ */
+export async function* generateAIStream({
+  projectId,
+  tableName,
+  columnName,
+  recordCnt
+  // metaData
+}: AIStreamGenerateRequest): AsyncGenerator<string, void, unknown> {
+  // TODO: 실제로는 projectId, tableName, columnName으로 DB에서 스키마 정보를 가져와야 함
+  // 지금은 임시로 mock 데이터 사용
+  const info: ColumnSchemaInfo = {
+    dbType: 'MySQL',
+    tableName,
+    columnName,
+    sqlType: 'VARCHAR(255)',
+    constraints: {
+      notNull: true,
+      maxLength: 255
+    },
+    domainName: '이름' // TODO: metaData.ruleId로부터 도메인 이름을 매핑해야 함
+  }
+
+  // AI 생성은 배치 단위로 처리 (한 번에 생성할 개수)
+  const BATCH_SIZE = 1000
+  const batches = Math.ceil(recordCnt / BATCH_SIZE)
+
+  const generator = new AIGenerator()
+
+  for (let batchIdx = 0; batchIdx < batches; batchIdx++) {
+    const start = batchIdx * BATCH_SIZE
+    const end = Math.min(start + BATCH_SIZE, recordCnt)
+    const batchCount = end - start
+
+    try {
+      // 배치 단위로 AI 생성
+      const result = await generator.generate({
+        databaseId: projectId,
+        vendor: 'openai', // TODO: metaData.ruleId로 설정에서 가져오기
+        model: 'gpt-4.1-mini', // TODO: metaData.ruleId로 설정에서 가져오기
+        count: batchCount,
+        info
+      })
+
+      // 생성된 값들을 하나씩 yield
+      for (const value of result.values) {
+        yield value
+      }
+
+      // 배치 간 잠깐 쉬기 (API rate limit 대응)
+      if (batchIdx < batches - 1) {
+        await new Promise((res) => setTimeout(res, 100))
+      }
+    } catch (error) {
+      console.error(`AI 생성 실패 (batch ${batchIdx + 1}/${batches}):`, error)
+
+      // 실패 시 fallback 사용
+      const fallback = fallbackValues(info.domainName, batchCount)
+      for (const value of fallback) {
+        yield value
+      }
+    }
+  }
 }
 
 /**
