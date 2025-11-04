@@ -95,6 +95,11 @@ export async function runDataGenerator(
 
     child.stdout.on('data', (data) => {
       const text = data.toString().trim()
+
+      // 터미널에도 로그 출력
+      process.stdout.write(text + '\n')
+
+      // JSON 메시지면 progress 이벤트로 전송
       if (text.startsWith('{') && text.endsWith('}')) {
         try {
           const msg = JSON.parse(text)
