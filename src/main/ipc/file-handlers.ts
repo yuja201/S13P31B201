@@ -1,10 +1,9 @@
-import { app, ipcMain } from 'electron'
+import { ipcMain } from 'electron'
 import fs from 'node:fs'
 import fsPromises from 'node:fs/promises'
 import path from 'node:path'
 import { randomUUID } from 'node:crypto'
-
-const CACHE_DIR_NAME = 'heresdummy-file-cache'
+import { getFileCacheRoot } from '../utils/cache-path'
 const STREAM_TIMEOUT_MS = 5 * 60 * 1000
 
 type ActiveStream = {
@@ -16,7 +15,7 @@ type ActiveStream = {
 const activeStreams = new Map<string, ActiveStream>()
 
 const ensureCacheDir = async (): Promise<string> => {
-  const dir = path.join(app.getPath('temp'), CACHE_DIR_NAME)
+  const dir = getFileCacheRoot()
   await fsPromises.mkdir(dir, { recursive: true })
   return dir
 }

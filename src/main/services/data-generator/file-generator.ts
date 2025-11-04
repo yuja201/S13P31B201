@@ -1,5 +1,5 @@
-import { app } from 'electron'
 import fs from 'node:fs/promises'
+import os from 'node:os'
 import path from 'node:path'
 import type { FileMetaData } from './types'
 
@@ -18,6 +18,7 @@ type ParsedFile =
 type ParseCacheKey = string
 
 const CACHE_DIR_NAME = 'heresdummy-file-cache'
+const CACHE_DIR_ENV_KEY = 'HERESDUMMY_CACHE_DIR'
 const parseCache = new Map<ParseCacheKey, Promise<ParsedFile>>()
 
 export function createFileValueStream(
@@ -214,7 +215,8 @@ function buildCacheKey(meta: FileMetaData): ParseCacheKey {
 
 function resolveCacheFilePath(filePath: string): string {
   const resolvedTarget = path.resolve(filePath)
-  const cacheDir = path.resolve(app.getPath('temp'), CACHE_DIR_NAME)
+  const envDir = process.env[CACHE_DIR_ENV_KEY]
+  const cacheDir = envDir ? path.resolve(envDir) : path.resolve(os.tmpdir(), CACHE_DIR_NAME)
   const cacheDirWithSep = cacheDir.endsWith(path.sep) ? cacheDir : `${cacheDir}${path.sep}`
 
   const targetCompare = process.platform === 'win32' ? resolvedTarget.toLowerCase() : resolvedTarget

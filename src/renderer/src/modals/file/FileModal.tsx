@@ -45,6 +45,7 @@ const FileModal: React.FC<FileModalProps> = ({
     type: 'warning',
     msg: ''
   })
+  const [preserveOnClose, setPreserveOnClose] = useState(false)
 
   const parsedResult = useMemo<ParsedFileResult | null>(() => {
     if (!uploaded) return null
@@ -62,7 +63,7 @@ const FileModal: React.FC<FileModalProps> = ({
 
   const resetState = useCallback(
     (options?: { preserveFile?: boolean }) => {
-      const preserveFile = options?.preserveFile ?? false
+      const preserveFile = options?.preserveFile ?? preserveOnClose
       if (uploaded?.filePath && !preserveFile) {
         void cleanupCachedFile(uploaded.filePath)
       }
@@ -70,8 +71,9 @@ const FileModal: React.FC<FileModalProps> = ({
       setUploaded(null)
       setParseOptions(DEFAULT_PARSE_OPTIONS)
       setToast({ show: false, type: 'warning', msg: '' })
+      setPreserveOnClose(false)
     },
-    [cleanupCachedFile, uploaded]
+    [cleanupCachedFile, preserveOnClose, uploaded]
   )
 
   useEffect(() => {
@@ -161,6 +163,7 @@ const FileModal: React.FC<FileModalProps> = ({
     }
 
     onApply(applyPayload)
+    setPreserveOnClose(true)
     showToast('파일 데이터 매핑이 완료되었습니다.', 'success')
     setTimeout(() => {
       onClose()
