@@ -5,25 +5,7 @@ import { useProjectStore } from '@renderer/stores/projectStore'
 import { ColumnDetail } from '@renderer/views/CreateDummyView'
 import { RuleResult } from './RuleModal'
 
-declare global {
-  interface Window {
-    api: {
-      schema: {
-        getRandomSample: (params: {
-          databaseId: number
-          table: string
-          column: string
-        }) => Promise<{ sample: any }>
-        validateFkValue: (params: {
-          databaseId: number
-          table: string
-          column: string
-          value: any
-        }) => Promise<{ isValid: boolean }>
-      }
-    }
-  }
-}
+
 
 type ReferenceStrategy = 'RANDOM_SAMPLE' | 'FIXED_VALUE'
 type SampleState = { status: 'idle' | 'loading' | 'success' | 'error'; value: string }
@@ -49,12 +31,30 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
   const referencedTableName = schemaRef?.referenced_table || ''
   const referencedColumnName = schemaRef?.referenced_column || ''
 
-  const [strategy, setStrategy] = useState<ReferenceStrategy>('RANDOM_SAMPLE')
-  const [searchValue, setSearchValue] = useState('')
-  const [validationState, setValidationState] = useState<ValidationState>('idle')
+  const [strategy, setStrategy] = useState<ReferenceStrategy>(() => {
+    if (column.generation === '고정값') {
+      return 'FIXED_VALUE'
+    }
+    return 'RANDOM_SAMPLE'
+  })
+
+  const [searchValue, setSearchValue] = useState(() => {
+    if (column.generation === '고정값') {
+      return column.setting || ''
+    }
+    return ''
+  })
+
+  const [validationState, setValidationState] = useState<ValidationState>(() => {
+    if (column.generation === '고정값' && column.setting) {
+      return 'valid'
+    }
+    return 'idle'
+  })
+
   const [samplePreview, setSamplePreview] = useState<SampleState>({ status: 'idle', value: '' })
 
-  // 무작위 샘플링 (Electron IPC 호출)
+  // 무작위 샘플링 
   useEffect(() => {
     if (strategy === 'RANDOM_SAMPLE' && databaseId) {
       setSamplePreview({ status: 'loading', value: '' })
@@ -75,7 +75,7 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
     }
   }, [strategy, referencedTableName, referencedColumnName, databaseId])
 
-  //  고정값 검증 (Electron IPC 호출)
+  //  고정값 검증 
   const handleValidateValue = () => {
     if (!searchValue.trim()) {
       alert('검색할 값을 입력하세요.')

@@ -231,6 +231,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
                           <Button
                             variant="gray"
                             size="sm"
+                            onClick={() => handleSelectGenerationClick(col)}
                             style={{
                               whiteSpace: 'nowrap',
                               backgroundColor: 'var(--color-sky-blue)',
