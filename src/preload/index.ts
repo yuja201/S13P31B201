@@ -88,7 +88,21 @@ const api = {
   // Schema operations
   schema: {
     fetch: (databaseId: number): Promise<DatabaseSchema> =>
-      ipcRenderer.invoke('db:schema:fetch', databaseId)
+      ipcRenderer.invoke('db:schema:fetch', databaseId),
+
+    getRandomSample: (params: {
+      databaseId: number
+      table: string
+      column: string
+    }): Promise<{ sample: any }> => ipcRenderer.invoke('db:get-random-sample', params),
+
+    // FK Value Verification Function
+    validateFkValue: (params: {
+      databaseId: number
+      table: string
+      column: string
+      value: any
+    }): Promise<{ isValid: boolean }> => ipcRenderer.invoke('db:validate-fk-value', params)
   },
 
   file: {
