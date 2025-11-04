@@ -33,13 +33,21 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, tableNam
     setMode('select')
   }
 
+  const generationLabelMap: Record<RuleSelection['dataSource'], GenerationType> = {
+    FAKER: 'Faker.js',
+    AI: 'AI',
+    FILE: '파일 업로드',
+    FIXED: '고정값',
+    ENUM: 'ENUM'
+  }
+
   const handleConfirmSelect = (value: RuleSelection): void => {
     if (tableName) {
       setRule(tableName, column.name, value)
     }
 
     onConfirm({
-      generation: value.dataSource as GenerationType,
+      generation: generationLabelMap[value.dataSource],
       setting: value.metaData.domainName ?? value.metaData.fixedValue ?? ''
     })
 

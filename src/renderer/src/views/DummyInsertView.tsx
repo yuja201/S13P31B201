@@ -101,17 +101,44 @@ const DummyInsertView: React.FC = () => {
             columns: tableData.columns.map((col) => {
               const { metaData } = col as {
                 metaData: {
+                  kind: string
                   ruleId?: number
-                  domainId?: number
-                  domainName?: string
                   fixedValue?: string
+                  filePath?: string
+                  fileType?: string
+                  fileColumn?: string
+                  useHeaderRow?: boolean
                 }
               }
 
-              const cleanedMeta = {
-                ruleId: metaData.ruleId,
-                domain: metaData.domainId ?? undefined,
-                ...(metaData.fixedValue ? { fixedValue: metaData.fixedValue } : {})
+              let cleanedMeta: Record<string, unknown> = {}
+
+              switch (metaData.kind) {
+                case 'faker':
+                case 'ai':
+                  cleanedMeta = {
+                    ruleId: metaData.ruleId
+                  }
+                  break
+
+                case 'fixed':
+                  cleanedMeta = {
+                    fixedValue: metaData.fixedValue
+                  }
+                  break
+
+                case 'file':
+                  cleanedMeta = {
+                    filePath: metaData.filePath,
+                    fileType: metaData.fileType,
+                    fileColumn: metaData.fileColumn,
+                    useHeaderRow: metaData.useHeaderRow
+                  }
+                  break
+
+                default:
+                  console.warn(`Unknown metaData kind: ${metaData.kind}`)
+                  cleanedMeta = {}
               }
 
               return {
