@@ -1,3 +1,4 @@
+import { app } from 'electron'
 import fs from 'node:fs/promises'
 import path from 'node:path'
 import type { FileMetaData } from './types'
@@ -16,6 +17,7 @@ type ParsedFile =
 
 type ParseCacheKey = string
 
+const CACHE_DIR_NAME = 'heresdummy-file-cache'
 const parseCache = new Map<ParseCacheKey, Promise<ParsedFile>>()
 
 export function createFileValueStream(
@@ -38,16 +40,21 @@ export function createFileValueStream(
 }
 
 async function parseFile(meta: FileMetaData): Promise<ParsedFile> {
-  const cacheKey = buildCacheKey(meta)
+  const safeFilePath = resolveCacheFilePath(meta.filePath)
+  const normalizedMeta = safeFilePath === meta.filePath ? meta : { ...meta, filePath: safeFilePath }
+
+  const cacheKey = buildCacheKey(normalizedMeta)
   const cached = parseCache.get(cacheKey)
   if (cached) return cached
 
   const parsePromise =
-    meta.fileType === 'json'
-      ? parseJson(meta)
+    normalizedMeta.fileType === 'json'
+      ? parseJson(normalizedMeta)
       : parseDelimited(
-          meta,
-          meta.fileType === 'csv' ? ',' : resolveSeparator(meta.columnSeparator, '\t')
+          normalizedMeta,
+          normalizedMeta.fileType === 'csv'
+            ? ','
+            : resolveSeparator(normalizedMeta.columnSeparator, '\t')
         )
 
   parseCache.set(cacheKey, parsePromise)
@@ -203,6 +210,21 @@ function buildCacheKey(meta: FileMetaData): ParseCacheKey {
     meta.columnSeparator ?? '',
     resolveEncoding(meta.encoding)
   ].join('|')
+}
+
+function resolveCacheFilePath(filePath: string): string {
+  const resolvedTarget = path.resolve(filePath)
+  const cacheDir = path.resolve(app.getPath('temp'), CACHE_DIR_NAME)
+  const cacheDirWithSep = cacheDir.endsWith(path.sep) ? cacheDir : `${cacheDir}${path.sep}`
+
+  const targetCompare = process.platform === 'win32' ? resolvedTarget.toLowerCase() : resolvedTarget
+  const dirCompare = process.platform === 'win32' ? cacheDirWithSep.toLowerCase() : cacheDirWithSep
+
+  if (!targetCompare.startsWith(dirCompare)) {
+    throw new Error('[보안 오류] 허용되지 않은 파일 경로입니다.')
+  }
+
+  return resolvedTarget
 }
 
 function resolveSeparator(value: string | undefined, fallback: string): string {
