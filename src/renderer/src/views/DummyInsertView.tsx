@@ -6,7 +6,7 @@ import failureIcon from '@renderer/assets/imgs/failure.svg'
 import Button from '@renderer/components/Button'
 import { useProjectStore } from '@renderer/stores/projectStore'
 import { useGenerationStore } from '@renderer/stores/generationStore'
-import { useLocation } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 type InsertMode = 'sql' | 'db'
 
@@ -32,8 +32,10 @@ const DummyInsertView: React.FC = () => {
   const [logs, setLogs] = useState<string[]>([])
   const [errors, setErrors] = useState<string[]>([])
   const [tables, setTables] = useState<Array<{ name: string; status: string }>>([])
+  const [zipPath, setZipPath] = useState<string | null>(null)
 
   const logEndRef = useRef<HTMLDivElement>(null)
+  const navigate = useNavigate()
 
   // Store에서 데이터 가져오기
   const { selectedProject } = useProjectStore()
@@ -71,7 +73,6 @@ const DummyInsertView: React.FC = () => {
 
         const total = (message.successCount ?? 0) + (message.failCount ?? 0)
         setTotalCount(total)
-
         setInsertedCount(message.successCount ?? 0)
       }
     })
@@ -119,9 +120,13 @@ const DummyInsertView: React.FC = () => {
                   ruleId?: number
                   fixedValue?: string
                   filePath?: string
-                  fileType?: string
+                  fileType?: 'csv' | 'json' | 'txt'
                   fileColumn?: string
                   useHeaderRow?: boolean
+                  columnIndex?: number
+                  lineSeparator?: string
+                  columnSeparator?: string
+                  encoding?: string
                 }
               }
 
@@ -146,7 +151,11 @@ const DummyInsertView: React.FC = () => {
                     filePath: metaData.filePath,
                     fileType: metaData.fileType,
                     fileColumn: metaData.fileColumn,
-                    useHeaderRow: metaData.useHeaderRow
+                    useHeaderRow: metaData.useHeaderRow,
+                    columnIndex: metaData.columnIndex,
+                    lineSeparator: metaData.lineSeparator,
+                    columnSeparator: metaData.columnSeparator,
+                    encoding: metaData.encoding
                   }
                   break
 
@@ -164,7 +173,15 @@ const DummyInsertView: React.FC = () => {
           }))
         }
 
-        await window.api.dataGenerator.generate(payload)
+        const result = await window.api.dataGenerator.generate(payload)
+
+        if (result?.zipPath) {
+          setZipPath(result.zipPath)
+        }
+
+        if (result.errors?.length) {
+          setErrors(result.errors)
+        }
       } catch (error) {
         console.error('Generation error:', error)
         setErrors((prev) => [...prev, `오류 발생: ${error}`])
@@ -428,11 +445,17 @@ const DummyInsertView: React.FC = () => {
 
                 <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
                   {mode === 'sql' && (
-                    <Button variant="blue" onClick={() => console.log('SQL문 다운로드')}>
+                    <Button
+                      variant="blue"
+                      onClick={() => {
+                        if (!zipPath) return // null 방지
+                        window.api.dataGenerator.downloadZip(zipPath)
+                      }}
+                    >
                       SQL문 다운로드
                     </Button>
                   )}
-                  <Button variant="gray" onClick={() => console.log('완료 클릭')}>
+                  <Button variant="gray" onClick={() => navigate('/')}>
                     완료
                   </Button>
                 </div>

@@ -199,17 +199,14 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table, onColumnUpdate, onGe
                     </td>
                     {/* --- 생성 방식 셀 --- */}
                     <td className="generation-method-cell preSemiBold14">
-                      {!col.generation || col.generation === '-' ? (
-                        <button
-                          className="select-generation-link "
-                          // [!] 6. col 객체 전체를 핸들러에 전달
-                          onClick={() => handleSelectGenerationClick(col)}
-                        >
-                          생성방식 선택
-                        </button>
-                      ) : (
-                        <span>{col.generation}</span>
-                      )}
+                      <button
+                        className="select-generation-link"
+                        onClick={() => handleSelectGenerationClick(col)}
+                      >
+                        {col.generation && col.generation !== '-'
+                          ? col.generation
+                          : '생성방식 선택'}
+                      </button>
                     </td>
 
                     <td>
