@@ -104,9 +104,9 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
             setting = '파일 매핑'
           }
           break
-        case 'MANUAL':
+        case 'FIXED':
           generation = '고정값'
-          if (config.metaData.kind === 'manual') {
+          if (config.metaData.kind === 'fixed') {
             setting = config.metaData.fixedValue
           } else {
             setting = '고정값'
