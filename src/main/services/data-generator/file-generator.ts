@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises'
 import path from 'node:path'
-import type { FileMetaData } from '../types'
+import type { FileMetaData } from './types'
 
 type ParsedFile =
   | {
