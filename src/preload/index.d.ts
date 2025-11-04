@@ -1,4 +1,4 @@
-import { FakerRuleInput } from './../main/services/data-generator/types'
+import { FakerRuleInput, AIRuleInput } from './../main/services/data-generator/types'
 import { ElectronAPI } from '@electron-toolkit/preload'
 import type {
   DBMS,
@@ -48,6 +48,7 @@ interface API {
     update: (data: RuleUpdate) => Promise<Rule | undefined>
     delete: (id: number) => Promise<boolean>
     createFaker: (data: FakerRuleInput) => Promise<Rule>
+    createAI: (data: AIRuleInput) => Promise<Rule>
   }
   testConnection: (config: {
     dbType: 'MySQL' | 'PostgreSQL'

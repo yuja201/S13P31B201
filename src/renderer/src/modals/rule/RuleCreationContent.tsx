@@ -67,7 +67,18 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
           domainName: selectedDomain.name
         })
       } else if (selectedSource === 'AI') {
-        // AI 모드일 땐 단순히 폼 데이터 전달
+        if (!apiToken.trim()) {
+          alert('API 토큰을 입력하세요.')
+          return
+        }
+        // 실제 규칙 생성 API 호출
+        const result = await window.api.rule.createAI({
+          name: settingName,
+          domain: selectedDomain.id,
+          model_id: Number(selectedModel),
+          token: apiToken,
+          prompt
+        })
         onSubmit?.({
           source: selectedSource,
           settingName,
@@ -76,6 +87,7 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
           model: selectedModel,
           columnType,
           columnName,
+          result: result.id,
           domainId: selectedDomain.id,
           domainName: selectedDomain.name
         })

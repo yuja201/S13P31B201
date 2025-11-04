@@ -16,7 +16,7 @@ import type {
   DatabaseSchema
 } from '../main/database/types'
 
-import { FakerRuleInput, GenerateRequest } from '../main/services/data-generator/types'
+import { FakerRuleInput, AIRuleInput, GenerateRequest } from '../main/services/data-generator/types'
 
 // Custom APIs for renderer
 const api = {
@@ -68,7 +68,8 @@ const api = {
       ipcRenderer.invoke('db:rule:update', data),
     delete: (id: number): Promise<boolean> => ipcRenderer.invoke('db:rule:delete', id),
     createFaker: (data: FakerRuleInput): Promise<Rule> =>
-      ipcRenderer.invoke('db:rule:createFaker', data)
+      ipcRenderer.invoke('db:rule:createFaker', data),
+    createAI: (data: AIRuleInput): Promise<Rule> => ipcRenderer.invoke('db:rule:createAI', data)
   },
 
   // Database connection test
@@ -131,6 +132,11 @@ if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)
     contextBridge.exposeInMainWorld('api', api)
+    contextBridge.exposeInMainWorld('env', {
+      OPENAI_API_KEY: process.env.OPENAI_API_KEY || null,
+      ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || null,
+      GOOGLE_API_KEY: process.env.GOOGLE_API_KEY || null
+    })
   } catch (error) {
     console.error(error)
   }
