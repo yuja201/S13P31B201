@@ -46,6 +46,7 @@ interface API {
     create: (data: RuleInput) => Promise<Rule>
     update: (data: RuleUpdate) => Promise<Rule | undefined>
     delete: (id: number) => Promise<boolean>
+    createFaker: (data: fakerRuleInput) => Promise<Rule>
   }
   testConnection: (config: {
     dbType: 'MySQL' | 'PostgreSQL'
