@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import Modal from '@renderer/components/Modal'
 import RuleSelectContent, { RuleSelection } from '@renderer/modals/rule/RuleSelectContent'
-import { useRuleStore } from '@renderer/stores/useRuleStore'
+import { useGenerationStore } from '@renderer/stores/generationStore'
 import RuleCreationContent from '@renderer/modals/rule/RuleCreationContent'
 import { ColumnDetail } from '@renderer/views/CreateDummyView'
 import EnumSelectContent from '@renderer/modals/rule/EnumSelectContent'
@@ -18,11 +18,12 @@ interface RuleModalProps {
   onClose: () => void
   column: ColumnDetail
   tableName: string
+  onConfirm: (result: RuleResult) => void
 }
 
-const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, tableName }) => {
+const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, tableName, onConfirm }) => {
   const [mode, setMode] = useState<'select' | 'create'>('select')
-  const setRule = useRuleStore((s) => s.setRule)
+  const setRule = useGenerationStore((s) => s.setColumnRule)
 
   const handleCreateNew = (): void => {
     setMode('create')
@@ -34,29 +35,15 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, tableNam
 
   const handleConfirmSelect = (value: RuleSelection): void => {
     if (tableName) {
-      setRule(tableName, column.name, {
-        columnName: column.name,
-        dataSource: value.dataSource,
-        metaData: {
-          ruleId: value.metaData.ruleId,
-          domainId: value.metaData.domainId,
-          domainName: value.metaData.domainName,
-          fixedValue: value.metaData.fixedValue
-        }
-      })
+      setRule(tableName, column.name, value)
     }
-    onClose()
-  }
 
-  const handleEnumConfirm = (result: RuleResult): void => {
-    const selection: RuleSelection = {
-      columnName: column.name,
-      dataSource: 'ENUM',
-      metaData: {
-        fixedValue: result.setting
-      }
-    }
-    handleConfirmSelect(selection)
+    onConfirm({
+      generation: value.dataSource as GenerationType,
+      setting: value.metaData.domainName ?? value.metaData.fixedValue ?? ''
+    })
+
+    onClose()
   }
 
   useEffect(() => {
@@ -78,7 +65,7 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, tableNam
               columnName={columnName}
               enumList={column.enumList!}
               onCancel={onClose}
-              onConfirm={handleEnumConfirm}
+              onConfirm={handleConfirmSelect}
             />
           ) : (
             // ENUM 목록이 없으면 기존 RuleSelectContent 렌더링

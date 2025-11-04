@@ -17,7 +17,7 @@ export interface RuleCreationData {
 
 export interface RuleSelection {
   columnName: string
-  dataSource: 'FAKER' | 'AI' | 'FILE' | 'FIXED'
+  dataSource: 'FAKER' | 'AI' | 'FILE' | 'FIXED' | 'ENUM'
   metaData: {
     ruleId?: number
     ruleName?: string

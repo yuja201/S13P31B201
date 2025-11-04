@@ -5,7 +5,7 @@ import warningIcon from '@renderer/assets/imgs/warning.svg'
 import failureIcon from '@renderer/assets/imgs/failure.svg'
 import Button from '@renderer/components/Button'
 import { useProjectStore } from '@renderer/stores/projectStore'
-import { useRuleStore } from '@renderer/stores/useRuleStore'
+import { useGenerationStore } from '@renderer/stores/generationStore'
 
 type InsertMode = 'sql' | 'db'
 
@@ -36,7 +36,7 @@ const DummyInsertView: React.FC = () => {
 
   // Store에서 데이터 가져오기
   const { selectedProject } = useProjectStore()
-  const { exportAllTables } = useRuleStore()
+  const { exportAllTables } = useGenerationStore()
 
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: 'smooth' })

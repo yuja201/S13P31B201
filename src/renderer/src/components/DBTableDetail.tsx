@@ -12,42 +12,42 @@ type DBTableDetailProps = {
   onColumnUpdate: (columnName: string, generation: string, setting: string) => void
 }
 
-const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
+const TableDetail: React.FC<DBTableDetailProps> = ({ table, onColumnUpdate }) => {
   const navigate = useNavigate()
   const { projectId } = useParams<{ projectId: string }>()
 
-  // ✅ Zustand (새 구조)
   const tableGenerationConfig = useGenerationStore((state) => state.tables[table.name])
-  const setTableRecordCount = useGenerationStore((state) => state.setTableRecordCount)
   const applyFileMapping = useGenerationStore((state) => state.applyFileMapping)
-  const setColumnRule = useGenerationStore((state) => state.setColumnRule)
 
-  // ✅ Local state
-  const [rows, setRows] = useState(1000)
+  const getTableRecordCount = useGenerationStore((s) => s.getTableRecordCount)
+  const setTableRecordCount = useGenerationStore((s) => s.setTableRecordCount)
+  const [rows, setRows] = useState<number>(() => getTableRecordCount(table.name))
+
+  useEffect(() => {
+    setRows(getTableRecordCount(table.name))
+  }, [table.name])
+
+  useEffect(() => {
+    if (!tableGenerationConfig) return
+    setTableRecordCount(table.name, rows)
+  }, [rows])
+
   const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false)
   const [isRuleModalOpen, setIsRuleModalOpen] = useState(false)
   const [selectedColumn, setSelectedColumn] = useState<ColumnDetail | null>(null)
 
-  // ✅ store -> rows 동기화
-  useEffect(() => {
-    if (
-      tableGenerationConfig?.recordCnt !== undefined &&
-      tableGenerationConfig.recordCnt !== rows
-    ) {
-      setRows(tableGenerationConfig.recordCnt)
-    }
-  }, [tableGenerationConfig?.recordCnt, rows])
+  // ----------------------------
+  // File Upload Modal
+  const openFileUploadModal = (): void => {
+    setIsFileUploadModalOpen(true)
+  }
 
-  useEffect(() => {
-    setTableRecordCount(table.name, rows)
-  }, [rows, setTableRecordCount, table.name])
-
-  // ✅ FileModal 핸들러
-  const openFileUploadModal = (): void => setIsFileUploadModalOpen(true)
-  const closeFileUploadModal = (): void => setIsFileUploadModalOpen(false)
+  const closeFileUploadModal = (): void => {
+    setIsFileUploadModalOpen(false)
+  }
 
   const handleFileMappingApply = useCallback(
-    (payload: FileModalApplyPayload) => {
+    (payload: FileModalApplyPayload): void => {
       applyFileMapping(table.name, payload)
       if (payload.recordCount !== undefined) {
         setRows(payload.recordCount)
@@ -57,7 +57,8 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
     [applyFileMapping, table.name]
   )
 
-  // ✅ RuleModal 핸들러
+  // ----------------------------
+  // Rule Modal
   const handleSelectGenerationClick = (column: ColumnDetail): void => {
     setSelectedColumn(column)
     setIsRuleModalOpen(true)
@@ -70,16 +71,22 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
 
   const handleRuleConfirm = (result: RuleResult): void => {
     if (!selectedColumn) return
-    setColumnRule(table.name, selectedColumn.name, result)
+
+    onColumnUpdate(selectedColumn.name, result.generation, result.setting)
     closeRuleModal()
   }
 
-  // ✅ 생성할 데이터 개수 변경
-  const handleRowsChange = (value: number): void => {
-    setRows(value)
+  // ----------------------------
+  // Navigation & Input handlers
+  const handleGenerateData = (): void => {
+    navigate(`/main/select-method/${projectId}/${table.id}`)
   }
 
-  // ✅ 컬럼 설정 표시
+  const handleRowsChange = (value: number): void => {
+    setRows(value)
+    setTableRecordCount(table.name, value)
+  }
+
   const displayColumnDetails = useMemo(() => {
     const columnConfigs = tableGenerationConfig?.columns ?? {}
 
@@ -101,9 +108,9 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
             setting = '파일 매핑'
           }
           break
-        case 'MANUAL':
+        case 'FIXED':
           generation = '고정값'
-          if (config.metaData.kind === 'manual') {
+          if (config.metaData.kind === 'fixed') {
             setting = config.metaData.fixedValue
           } else {
             setting = '고정값'
@@ -121,28 +128,26 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
             setting = `Rule #${config.metaData.ruleId}`
           }
           break
+        // TODO: 'REFERENCE' 케이스 추가
       }
 
       return { ...col, generation, setting }
     })
   }, [table.columnDetails, tableGenerationConfig?.columns])
 
-  // ✅ 데이터 생성 버튼
-  const handleGenerateData = (): void => {
-    navigate(`/main/select-method/${projectId}/${table.id}`)
-  }
-
   return (
     <>
       <div className="table-detail-container shadow">
+        {/* --- 상세 헤더 --- */}
         <div className="detail-header shadow">
           <h2 className="preBold24">{table.name}</h2>
           <span className="preRegular14">
             {table.columns} columns · {table.rows} row
           </span>
         </div>
-
+        {/* --- 콘텐츠 영역  --- */}
         <div className="detail-content ">
+          {/* --- 생성 옵션 --- */}
           <div className="options-row">
             <div className="input-group">
               <label className="preSemiBold16">생성할 데이터 개수</label>
@@ -155,7 +160,12 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
                 step="100"
               />
             </div>
-            <Button variant="blue" size="sm" onClick={openFileUploadModal}>
+            <Button
+              variant="blue"
+              size="sm"
+              style={{ whiteSpace: 'nowrap' }}
+              onClick={openFileUploadModal}
+            >
               파일로 추가
             </Button>
           </div>
@@ -163,6 +173,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
           {/* --- 컬럼 설정 테이블 --- */}
           <div className="table-scroll-wrapper">
             <table className="column-table">
+              {/* 테이블 헤더 */}
               <thead>
                 <tr>
                   <th>컬럼명</th>
@@ -172,6 +183,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
                   <th>설정</th>
                 </tr>
               </thead>
+              {/* 테이블 바디 (컬럼 목록) */}
               <tbody className="preRegular14">
                 {displayColumnDetails.map((col) => (
                   <tr
@@ -191,14 +203,21 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
                         ))}
                       </div>
                     </td>
+                    {/* --- 생성 방식 셀 --- */}
                     <td className="generation-method-cell preSemiBold14">
-                      <button
-                        className="select-generation-link"
-                        onClick={() => handleSelectGenerationClick(col)}
-                      >
-                        {col.generation || '생성방식 선택'}
-                      </button>
+                      {!col.generation || col.generation === '-' ? (
+                        <button
+                          className="select-generation-link "
+                          // [!] 6. col 객체 전체를 핸들러에 전달
+                          onClick={() => handleSelectGenerationClick(col)}
+                        >
+                          생성방식 선택
+                        </button>
+                      ) : (
+                        <span>{col.generation}</span>
+                      )}
                     </td>
+
                     <td>
                       <Button
                         variant="gray"
@@ -230,7 +249,6 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
           </Button>
         </div>
       </div>
-
       <FileModal
         isOpen={isFileUploadModalOpen}
         onClose={closeFileUploadModal}
@@ -242,16 +260,134 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
         recordCount={rows}
         onApply={handleFileMappingApply}
       />
-
       {isRuleModalOpen && selectedColumn && (
         <RuleModal
           tableName={table.name}
           isOpen={isRuleModalOpen}
           onClose={closeRuleModal}
           column={selectedColumn}
-          onConfirm={handleRuleConfirm}
+          onConfirm={handleRuleConfirm} // [!] 핸들러 전달
         />
       )}
+
+      {/* --- 스타일 그대로 유지 --- */}
+      <style>{`
+        .table-detail-container{
+          flex-grow: 1;
+          background-color: var(--color-white);
+          border-radius: 10px;
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          overflow: hidden;
+          width:780px;
+          height: 760px;
+        }
+        .detail-header {
+          display: flex;
+          align-items: baseline;
+          gap:16px;
+          border-top-left-radius: 10px;
+          border-top-right-radius: 10px;
+          padding: 20px 24px ;
+          flex-shrink: 0;
+        }
+        .detail-header span {
+          color: var(--color-dark-gray);
+        }
+        .detail-content{
+          display: flex;
+          flex-direction: column;
+          padding: 32px;
+          flex-grow: 1;
+          min-height: 0;
+        }
+        .options-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-end;
+          flex-wrap: nowrap;
+          flex-shrink: 0; 
+          margin-bottom: 16px; 
+        }
+        .input-group {
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+        }
+        .input-group input {
+          width: 200px;
+          padding: 8px 12px;
+          border: 1px solid var(--color-gray-200);
+          border-radius: 6px;
+        }
+        .table-scroll-wrapper {
+          flex-grow: 1; 
+          overflow-y: auto; 
+          min-height: 0; 
+        }
+        .column-table {
+          width: 100%;
+          border-collapse: collapse;
+          border-top: 1px solid var(--color-gray-200);
+        }
+
+        .column-table th {
+          background-color: #FAFAFA;
+          text-align: center;
+          padding: 16px 8px;
+          font: var(--preMedium14);
+        }
+        .column-table td {
+          padding: 16px;
+          text-align: center;
+          vertical-align: middle;
+          border-bottom: 1px solid var(--color-gray-200);
+          background-color: var(--color-white); 
+          transition: background-color 0.2s ease;
+        }
+        .column-table tr.has-generation-method td {
+          background-color: var(--color-light-blue); 
+        }
+
+        .generation-method-cell {
+          color: var(--color-main-blue); 
+          min-width: 116px; 
+        }
+        .select-generation-link {
+          background: none; 
+          border: none; 
+          padding: 0; 
+          text-decoration: underline; 
+          cursor: pointer; 
+          font: preRegular14; 
+        }
+        .select-generation-link:hover {
+           color: var(--color-main-blue);
+        }
+    
+        .constraint-badges {
+          display: flex;
+          gap: 4px;
+          flex-wrap: wrap;
+        }
+        .badge {
+          padding: 4px 8px;
+          border-radius: 5px;
+          font-size: 12px;
+          font-weight: 600;
+
+        }
+        .badge-pk { background-color: #FFFBEB; color: #B45309; }
+        .badge-fk { background-color: #EFF6FF; color: #1D4ED8; }
+        .badge-not { background-color: #FEF2F2; color: #B91C1C; }
+        .badge-unique { background-color: #F0FDF4; color: #15803D; }
+        .badge-enum { background-color: #F5F3FF; color: #5B21B6; }
+        .badge-check { background-color: #FEFBF1; color: #D97706; } 
+        .badge-auto { background-color: #F0FDFA; color: #0F766E; } 
+        .badge-default { background-color: #F3F4F6; color: #4B5563; }
+        .badge-domain { background-color: #FFF7ED; color: #EA580C; } 
+      `}</style>
     </>
   )
 }
