@@ -103,6 +103,7 @@ const InputField = ({
           className="input-field-input"
           placeholder={placeholder}
           value={inputValue}
+          lang={password ? 'en' : undefined}
           onChange={handleChange}
           style={{
             height: inputHeight,
