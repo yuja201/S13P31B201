@@ -52,7 +52,6 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
         // 실제 규칙 생성 API 호출
         const result = await window.api.rule.createFaker({
           name: settingName,
-          data_source: 'FAKER',
           domain: selectedDomain.id
         })
 
