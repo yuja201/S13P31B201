@@ -1,5 +1,6 @@
 import { faker, Faker } from '@faker-js/faker'
 import { fakerMapper } from '../../utils/faker-mapper'
+import type { FakerMetaData } from './types'
 
 // 제약조건 임시 타입
 type ColumnConstraints = {
@@ -21,9 +22,7 @@ export interface FakerGenerateRequest {
   tableName: string
   columnName: string
   recordCnt: number
-  metaData: {
-    ruleId: number
-  }
+  metaData: Pick<FakerMetaData, 'ruleId'>
 }
 
 /**
