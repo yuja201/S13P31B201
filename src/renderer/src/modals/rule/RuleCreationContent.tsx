@@ -6,13 +6,16 @@ import SelectDomain from '@renderer/components/SelectDomain'
 import Button from '@renderer/components/Button'
 
 export interface RuleCreationData {
-  source: 'faker' | 'ai'
+  source: 'FAKER' | 'AI'
   settingName: string
   apiToken?: string
   prompt?: string
   model?: string
   columnType?: string
   columnName?: string
+  result?: number
+  domainId?: number
+  domainName?: string
 }
 
 interface RuleCreationContentProps {
@@ -28,27 +31,61 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
   onCancel,
   onSubmit
 }) => {
-  const [selectedSource, setSelectedSource] = useState<'faker' | 'ai'>('faker')
+  const [selectedSource, setSelectedSource] = useState<'FAKER' | 'AI'>('FAKER')
   const [settingName, setSettingName] = useState('')
   const [apiToken, setApiToken] = useState('')
   const [prompt, setPrompt] = useState('')
   const [selectedModel, setSelectedModel] = useState('OpenAI GPT-4o')
+  const [selectedDomain, setSelectedDomain] = useState<{ id: number; name: string } | null>(null)
 
-  const handleSubmit = (): void => {
+  const handleSubmit = async (): Promise<void> => {
     if (!settingName.trim()) {
       alert('설정 이름을 입력하세요.')
       return
     }
+    if (!selectedDomain) {
+      alert('도메인을 선택하세요.')
+      return
+    }
+    try {
+      if (selectedSource === 'FAKER') {
+        // 실제 규칙 생성 API 호출
+        const result = await window.api.rule.createFaker({
+          name: settingName,
+          domain: selectedDomain.id
+        })
 
-    onSubmit?.({
-      source: selectedSource,
-      settingName,
-      apiToken,
-      prompt,
-      model: selectedModel,
-      columnType,
-      columnName
-    })
+        onSubmit?.({
+          source: selectedSource,
+          settingName,
+          columnType,
+          columnName,
+          result: result.id,
+          domainId: selectedDomain.id,
+          domainName: selectedDomain.name
+        })
+      } else if (selectedSource === 'AI') {
+        // AI 모드일 땐 단순히 폼 데이터 전달
+        onSubmit?.({
+          source: selectedSource,
+          settingName,
+          apiToken,
+          prompt,
+          model: selectedModel,
+          columnType,
+          columnName,
+          domainId: selectedDomain.id,
+          domainName: selectedDomain.name
+        })
+      }
+
+      onCancel()
+
+      // AI 선택 시 로직은 추후 추가
+    } catch (err) {
+      console.error(err)
+      alert('규칙 저장 중 오류가 발생했습니다.')
+    }
   }
 
   return (
@@ -98,25 +135,25 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
           <SimpleCard
             title="Faker.js 생성"
             description="무작위 데이터를 생성해요"
-            selected={selectedSource === 'faker'}
-            onSelect={() => setSelectedSource('faker')}
+            selected={selectedSource === 'FAKER'}
+            onSelect={() => setSelectedSource('FAKER')}
           />
           <SimpleCard
             title="AI 생성"
             description="진짜 같은 데이터를 생성해요"
-            selected={selectedSource === 'ai'}
-            onSelect={() => setSelectedSource('ai')}
+            selected={selectedSource === 'AI'}
+            onSelect={() => setSelectedSource('AI')}
           />
         </div>
       </div>
 
       {/* 도메인 선택 */}
       <div style={{ width: '100%', overflow: 'hidden' }}>
-        <SelectDomain />
+        <SelectDomain onChange={(value) => setSelectedDomain(value)} />
       </div>
 
       {/* AI 생성 선택 시에만 표시되는 섹션 */}
-      {selectedSource === 'ai' && (
+      {selectedSource === 'AI' && (
         <>
           {/* 모델 선택 */}
           <div className="rule-create__section">
@@ -196,7 +233,6 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
           padding: 0 14px 14px 0;
         }
 
-        /* 상단 타입 */
         .rule-create__type {
           font-family: var(--font-family);
           font-size: 20px;

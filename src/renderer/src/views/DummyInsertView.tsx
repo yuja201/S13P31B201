@@ -4,48 +4,162 @@ import successIcon from '@renderer/assets/imgs/success.svg'
 import warningIcon from '@renderer/assets/imgs/warning.svg'
 import failureIcon from '@renderer/assets/imgs/failure.svg'
 import Button from '@renderer/components/Button'
+import { useProjectStore } from '@renderer/stores/projectStore'
+import { useGenerationStore } from '@renderer/stores/generationStore'
 
 type InsertMode = 'sql' | 'db'
 
-const DummyInsertView: React.FC = () => {
-  // 방식
-  const [mode] = useState<InsertMode>('sql')
+interface ProgressMessage {
+  type: 'row-progress' | 'column-progress' | 'table-complete' | 'all-complete' | 'log' | 'error'
+  progress?: number
+  message?: string
+  tableName?: string
+  columnName?: string
+  status?: 'success' | 'warning' | 'failure'
+  totalCount?: number
+  insertedCount?: number
+  successCount?: number
+  failCount?: number
+}
 
-  // 진행 상태
+const DummyInsertView: React.FC = () => {
+  const [mode] = useState<InsertMode>('sql')
   const [progress, setProgress] = useState<number>(0)
   const [isCompleted, setIsCompleted] = useState<boolean>(false)
-
-  // 결과 데이터 개수
-  const [totalCount] = useState<number>(20000)
+  const [totalCount, setTotalCount] = useState<number>(0)
   const [insertedCount, setInsertedCount] = useState<number>(0)
-
-  // 로그 데이터
-  const [logs] = useState<string[]>([
-    '데이터 생성 완료: users 테이블 — 100%',
-    '데이터 생성 완료: categories 테이블 — 100%'
-  ])
-  const [errors] = useState<string[]>([])
+  const [logs, setLogs] = useState<string[]>([])
+  const [errors, setErrors] = useState<string[]>([])
+  const [tables, setTables] = useState<Array<{ name: string; status: string }>>([])
 
   const logEndRef = useRef<HTMLDivElement>(null)
+
+  // Store에서 데이터 가져오기
+  const { selectedProject } = useProjectStore()
+  const { exportAllTables } = useGenerationStore()
+
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [logs])
 
-  // 더미 progress 시뮬레이션 (테스트용)
+  // 데이터 생성 시작
   useEffect(() => {
-    const timer = setInterval(() => {
-      setProgress((prev) => {
-        const next = prev + 25
-        if (next >= 100) {
-          clearInterval(timer)
-          setIsCompleted(true)
-          setInsertedCount(19998)
-        }
-        return Math.min(next, 100)
-      })
-    }, 800)
-    return () => clearInterval(timer)
+    window.api.dataGenerator.onProgress((msg: unknown) => {
+      const message = msg as ProgressMessage
+      setLogs((prev) => [...prev, `[DEBUG] ${JSON.stringify(message)}`])
+      if (message.type === 'row-progress' && message.progress !== undefined) {
+        setProgress(message.progress)
+      }
+
+      if (message.type === 'table-complete' && message.tableName) {
+        setTables((prev) =>
+          prev.map((t) => (t.name === message.tableName ? { ...t, status: 'success' } : t))
+        )
+      }
+
+      if (message.type === 'error' && message.message) {
+        setErrors((prev) => [...prev, message.message!])
+      }
+
+      if (message.type === 'all-complete') {
+        setIsCompleted(true)
+
+        const total = (message.successCount ?? 0) + (message.failCount ?? 0)
+        setTotalCount(total)
+
+        setInsertedCount(message.successCount ?? 0)
+      }
+    })
+
+    return () => {
+      window.api.dataGenerator.removeProgressListeners()
+    }
   }, [])
+
+  useEffect(() => {
+    const startGeneration = async (): Promise<void> => {
+      if (!selectedProject?.id) {
+        setErrors(['프로젝트가 선택되지 않았습니다.'])
+        return
+      }
+
+      try {
+        const allTables = exportAllTables()
+
+        if (allTables.length === 0) {
+          setErrors(['생성할 테이블 정보가 없습니다.'])
+          return
+        }
+
+        setTables(allTables.map((t) => ({ name: t.tableName, status: 'pending' })))
+
+        const payload = {
+          projectId: selectedProject.id,
+          tables: allTables.map((tableData) => ({
+            tableName: tableData.tableName,
+            recordCnt: tableData.recordCnt,
+            columns: tableData.columns.map((col) => {
+              const { metaData } = col as {
+                metaData: {
+                  kind: string
+                  ruleId?: number
+                  fixedValue?: string
+                  filePath?: string
+                  fileType?: string
+                  fileColumn?: string
+                  useHeaderRow?: boolean
+                }
+              }
+
+              let cleanedMeta: Record<string, unknown> = {}
+
+              switch (metaData.kind) {
+                case 'faker':
+                case 'ai':
+                  cleanedMeta = {
+                    ruleId: metaData.ruleId
+                  }
+                  break
+
+                case 'fixed':
+                  cleanedMeta = {
+                    fixedValue: metaData.fixedValue
+                  }
+                  break
+
+                case 'file':
+                  cleanedMeta = {
+                    filePath: metaData.filePath,
+                    fileType: metaData.fileType,
+                    fileColumn: metaData.fileColumn,
+                    useHeaderRow: metaData.useHeaderRow
+                  }
+                  break
+
+                default:
+                  console.warn(`Unknown metaData kind: ${metaData.kind}`)
+                  cleanedMeta = {}
+              }
+
+              return {
+                columnName: col.columnName,
+                dataSource: col.dataSource,
+                metaData: cleanedMeta
+              }
+            })
+          }))
+        }
+
+        await window.api.dataGenerator.generate(payload)
+      } catch (error) {
+        console.error('Generation error:', error)
+        setErrors((prev) => [...prev, `오류 발생: ${error}`])
+        setIsCompleted(true)
+      }
+    }
+
+    startGeneration()
+  }, [selectedProject, exportAllTables])
 
   const getStatusIcon = (status: string): string => {
     switch (status) {
@@ -59,13 +173,6 @@ const DummyInsertView: React.FC = () => {
         return warningIcon
     }
   }
-
-  const tables = [
-    { name: 'users', status: 'success' },
-    { name: 'categories', status: 'success' },
-    { name: 'posts', status: 'warning' },
-    { name: 'phones', status: 'failure' }
-  ]
 
   return (
     <div
@@ -291,7 +398,11 @@ const DummyInsertView: React.FC = () => {
                   }}
                 >
                   {errors.length > 0 ? (
-                    errors.map((e, i) => <div key={i}>{e}</div>)
+                    errors.map((e, i) => (
+                      <div key={i} style={{ color: 'var(--color-red)', marginBottom: 8 }}>
+                        {e}
+                      </div>
+                    ))
                   ) : (
                     <div>
                       {mode === 'sql'

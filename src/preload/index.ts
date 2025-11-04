@@ -15,7 +15,8 @@ import type {
   RuleUpdate,
   DatabaseSchema
 } from '../main/database/types'
-import { GenerateRequest } from '../main/services/data-generator/types'
+
+import { FakerRuleInput, GenerateRequest } from '../main/services/data-generator/types'
 
 // Custom APIs for renderer
 const api = {
@@ -65,7 +66,9 @@ const api = {
     create: (data: RuleInput): Promise<Rule> => ipcRenderer.invoke('db:rule:create', data),
     update: (data: RuleUpdate): Promise<Rule | undefined> =>
       ipcRenderer.invoke('db:rule:update', data),
-    delete: (id: number): Promise<boolean> => ipcRenderer.invoke('db:rule:delete', id)
+    delete: (id: number): Promise<boolean> => ipcRenderer.invoke('db:rule:delete', id),
+    createFaker: (data: FakerRuleInput): Promise<Rule> =>
+      ipcRenderer.invoke('db:rule:createFaker', data)
   },
 
   // Database connection test
@@ -111,7 +114,9 @@ const api = {
   dataGenerator: {
     generate: (payload: GenerateRequest) => ipcRenderer.invoke('gen:dummy:bulk', payload),
     onProgress: (callback: (msg: unknown) => void) => {
-      ipcRenderer.on('data-generator:progress', (_, msg) => callback(msg))
+      ipcRenderer.on('data-generator:progress', (_, msg) => {
+        callback(msg)
+      })
     },
     removeProgressListeners: () => {
       ipcRenderer.removeAllListeners('data-generator:progress')

@@ -145,7 +145,7 @@ const CreateDummyView: React.FC = () => {
           <DBTableList
             tables={tables}
             focusedTableId={focusedTable?.id || ''}
-            onTableSelect={(table) => setFocusedTable(table)}
+            onTableSelect={(table) => setFocusedTable({ ...table })}
           />
           {focusedTable && (
             <DBTableDetail

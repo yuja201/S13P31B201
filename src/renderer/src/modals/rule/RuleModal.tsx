@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react'
 import Modal from '@renderer/components/Modal'
-import RuleSelectContent from '@renderer/modals/rule/RuleSelectContent'
-import RuleCreationContent, { RuleCreationData } from '@renderer/modals/rule/RuleCreationContent'
+import RuleSelectContent, { RuleSelection } from '@renderer/modals/rule/RuleSelectContent'
+import { useGenerationStore } from '@renderer/stores/generationStore'
+import RuleCreationContent from '@renderer/modals/rule/RuleCreationContent'
 import { ColumnDetail } from '@renderer/views/CreateDummyView'
 import EnumSelectContent from '@renderer/modals/rule/EnumSelectContent'
 
@@ -16,11 +17,13 @@ interface RuleModalProps {
   isOpen: boolean
   onClose: () => void
   column: ColumnDetail
+  tableName: string
   onConfirm: (result: RuleResult) => void
 }
 
-const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, onConfirm }) => {
+const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, tableName, onConfirm }) => {
   const [mode, setMode] = useState<'select' | 'create'>('select')
+  const setRule = useGenerationStore((s) => s.setColumnRule)
 
   const handleCreateNew = (): void => {
     setMode('create')
@@ -30,22 +33,25 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, onConfir
     setMode('select')
   }
 
-  const handleConfirmSelect = (result: RuleResult): void => {
-    console.log(`Column '${column.name}' - Selected Rule:`, result)
-    onConfirm(result)
+  const generationLabelMap: Record<RuleSelection['dataSource'], GenerationType> = {
+    FAKER: 'Faker.js',
+    AI: 'AI',
+    FILE: '파일 업로드',
+    FIXED: '고정값',
+    ENUM: 'ENUM'
   }
 
-  const handleCreateSubmit = (data: RuleCreationData): void => {
-    console.log(`Column '${column.name}' - New Rule Created:`, data)
-
-    const generation =
-      data.source === 'faker' ? 'Faker.js' : data.source === 'ai' ? 'AI' : data.source
-
-    const result: RuleResult = {
-      generation: generation as GenerationType,
-      setting: data.settingName
+  const handleConfirmSelect = (value: RuleSelection): void => {
+    if (tableName) {
+      setRule(tableName, column.name, value)
     }
-    onConfirm(result)
+
+    onConfirm({
+      generation: generationLabelMap[value.dataSource],
+      setting: value.metaData.domainName ?? value.metaData.fixedValue ?? ''
+    })
+
+    onClose()
   }
 
   useEffect(() => {
@@ -85,7 +91,6 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, onConfir
             columnType={columnType}
             columnName={columnName}
             onCancel={handleBack}
-            onSubmit={handleCreateSubmit}
           />
         )}
       </div>
