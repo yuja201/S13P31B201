@@ -1,17 +1,26 @@
 import React, { useState, useEffect } from 'react'
 import Modal from '@renderer/components/Modal'
-import RuleSelectContent from '@renderer/modals/rule/RuleSelectContent'
-import RuleCreationContent, { RuleCreationData } from '@renderer/modals/rule/RuleCreationContent'
+import RuleSelectContent, { RuleSelection } from '@renderer/modals/rule/RuleSelectContent'
+import RuleCreationContent from '@renderer/modals/rule/RuleCreationContent'
+import { useRuleStore } from '@renderer/stores/useRuleStore'
 
 interface RuleModalProps {
   isOpen: boolean
   onClose: () => void
   columnName: string
   columnType: string
+  tableName: string
 }
 
-const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, columnName, columnType }) => {
+const RuleModal: React.FC<RuleModalProps> = ({
+  isOpen,
+  onClose,
+  columnName,
+  columnType,
+  tableName
+}) => {
   const [mode, setMode] = useState<'select' | 'create'>('select')
+  const setRule = useRuleStore((s) => s.setRule)
 
   const handleCreateNew = (): void => {
     setMode('create')
@@ -21,13 +30,18 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, columnName, colu
     setMode('select')
   }
 
-  const handleConfirmSelect = (value: string): void => {
-    console.log('선택된 규칙:', value)
-    onClose()
-  }
-
-  const handleCreateSubmit = (data: RuleCreationData): void => {
-    console.log('새 규칙 생성 완료:', data)
+  const handleConfirmSelect = (value: RuleSelection): void => {
+    if (tableName) {
+      setRule(tableName, columnName, {
+        columnName,
+        dataSource: value.dataSource,
+        metaData: {
+          ruleId: value.metaData.ruleId,
+          domainId: value.metaData.domainId,
+          domainName: value.metaData.domainName
+        }
+      })
+    }
     onClose()
   }
 
@@ -49,11 +63,7 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, columnName, colu
             onCreateNew={handleCreateNew}
           />
         ) : (
-          <RuleCreationContent
-            columnType={columnType}
-            onCancel={handleBack}
-            onSubmit={handleCreateSubmit}
-          />
+          <RuleCreationContent columnType={columnType} onCancel={handleBack} />
         )}
       </div>
 

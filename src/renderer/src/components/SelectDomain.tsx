@@ -12,11 +12,23 @@ interface DomainCategory {
   items: DomainOption[]
 }
 
-const SelectDomain: React.FC = () => {
+interface SelectDomainProps {
+  onChange: (domain: { id: number; name: string }) => void
+}
+
+const SelectDomain: React.FC<SelectDomainProps> = ({ onChange }) => {
   const [selected, setSelected] = useState<string | null>(null)
 
   const handleSelect = (id: string): void => {
     setSelected(id)
+
+    const selectedItem = categories
+      .flatMap((category) => category.items)
+      .find((item) => item.id === id)
+
+    if (selectedItem) {
+      onChange?.({ id: Number(selectedItem.id), name: selectedItem.title })
+    }
   }
 
   const categories: DomainCategory[] = [

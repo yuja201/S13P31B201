@@ -1,9 +1,10 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { TableInfo } from '@renderer/views/CreateDummyView'
 import Button from '@renderer/components/Button'
 import FileModal from '@renderer/modals/file/FileModal'
 import RuleModal from '@renderer/modals/rule/RuleModal'
+import { useRuleStore } from '@renderer/stores/useRuleStore'
 
 type DBTableDetailProps = {
   table: TableInfo
@@ -13,13 +14,30 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
   const navigate = useNavigate()
   const { projectId } = useParams<{ projectId: string }>()
 
-  const [rows, setRows] = useState(1000)
-  const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false)
-  const [isRuleModalOpen, setIsRuleModalOpen] = useState(false)
+  // Zustand selectors - 올바르게 구독
+  const setTableRecordCnt = useRuleStore((s) => s.setTableRecordCnt)
+  const getTableRecordCnt = useRuleStore((s) => s.getTableRecordCnt)
+  // const getTableRules = useRuleStore((s) => s.getTableRules)
+
+  // 현재 테이블의 rules를 구독
+  const currentTableData = useRuleStore((state) => state.tables[table.name])
+  const rules = currentTableData?.rules || {}
+
+  // Local states
+  const [rows, setRows] = useState<number>(getTableRecordCnt(table.name))
+  const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState<boolean>(false)
+  const [isRuleModalOpen, setIsRuleModalOpen] = useState<boolean>(false)
   const [selectedColumnName, setSelectedColumnName] = useState<string>('')
   const [selectedColumnType, setSelectedColumnType] = useState<string>('')
 
-  // FileUploadModal
+  // 테이블이 바뀌면 해당 테이블의 rows 값으로 초기화
+  useEffect(() => {
+    const tableRows = getTableRecordCnt(table.name)
+    setRows(tableRows)
+  }, [table.name, getTableRecordCnt])
+
+  // ----------------------------
+  // File Upload Modal
   const openFileUploadModal = (): void => {
     setIsFileUploadModalOpen(true)
   }
@@ -28,7 +46,8 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
     setIsFileUploadModalOpen(false)
   }
 
-  // 생성방식 선택 버튼
+  // ----------------------------
+  // Rule Modal
   const handleSelectGenerationClick = (columnName: string): void => {
     const selectedColumn = table.columnDetails.find((col) => col.name === columnName)
     if (selectedColumn) {
@@ -37,15 +56,22 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
       setIsRuleModalOpen(true)
     }
   }
-  // RuleModal
+
   const closeRuleModal = (): void => {
     setIsRuleModalOpen(false)
     setSelectedColumnName('')
     setSelectedColumnType('')
   }
 
+  // ----------------------------
+  // Navigation & Input handlers
   const handleGenerateData = (): void => {
     navigate(`/main/select-method/${projectId}/${table.id}`)
+  }
+
+  const handleRowsChange = (value: number): void => {
+    setRows(value)
+    setTableRecordCnt(table.name, value)
   }
   return (
     <>
@@ -66,7 +92,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
               <input
                 type="number"
                 value={rows}
-                onChange={(e) => setRows(Number(e.target.value))}
+                onChange={(e) => handleRowsChange(Number(e.target.value))}
                 placeholder="e.g., 1,000"
                 className="preMedium16 shadow"
                 step="100"
@@ -97,54 +123,59 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
               </thead>
               {/* 테이블 바디 (컬럼 목록) */}
               <tbody className="preRegular14">
-                {table.columnDetails.map((col) => (
-                  <tr
-                    key={col.name}
-                    className={
-                      col.generation && col.generation !== '-' ? 'has-generation-method' : ''
-                    }
-                  >
-                    <td className="preMedium14">{col.name}</td>
-                    <td>{col.type}</td>
-                    <td>
-                      <div className="constraint-badges">
-                        {col.constraints.map((c) => (
-                          <span key={c} className={`badge badge-${c.toLowerCase()}`}>
-                            {c}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    {/* --- 생성 방식 셀 --- */}
-                    <td className="generation-method-cell preSemiBold14">
-                      {!col.generation || col.generation === '-' ? (
+                {table.columnDetails.map((col) => {
+                  const selectedRule = rules[col.name]
+                  const displaySetting =
+                    selectedRule?.dataSource === 'FAKER'
+                      ? (selectedRule.metaData.domainName ?? '-')
+                      : selectedRule?.dataSource === 'FIXED'
+                        ? (selectedRule.metaData.fixedValue ?? '-')
+                        : '-' // TODO: faker말고 다른 방식 변경 예정
+
+                  return (
+                    <tr
+                      key={col.name}
+                      className={selectedRule?.dataSource ? 'has-generation-method' : ''}
+                    >
+                      <td className="preMedium14">{col.name}</td>
+                      <td>{col.type}</td>
+                      <td>
+                        <div className="constraint-badges">
+                          {col.constraints.map((c) => (
+                            <span key={c} className={`badge badge-${c.toLowerCase()}`}>
+                              {c}
+                            </span>
+                          ))}
+                        </div>
+                      </td>
+
+                      <td className="generation-method-cell preSemiBold14">
                         <button
-                          className="select-generation-link "
+                          className="select-generation-link"
                           onClick={() => handleSelectGenerationClick(col.name)}
                         >
-                          생성방식 선택
+                          {selectedRule?.dataSource ?? '생성방식 선택'}
                         </button>
-                      ) : (
-                        col.generation
-                      )}
-                    </td>
-                    <td>
-                      <Button
-                        variant="gray"
-                        size="sm"
-                        style={{
-                          whiteSpace: 'nowrap',
-                          backgroundColor: 'var(--color-sky-blue)',
-                          color: 'var(--color-main-blue)',
-                          borderRadius: '10px',
-                          padding: '4px 12px'
-                        }}
-                      >
-                        {col.setting} 🖊️
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+
+                      <td>
+                        <Button
+                          variant="gray"
+                          size="sm"
+                          style={{
+                            whiteSpace: 'nowrap',
+                            backgroundColor: 'var(--color-sky-blue)',
+                            color: 'var(--color-main-blue)',
+                            borderRadius: '10px',
+                            padding: '4px 12px'
+                          }}
+                        >
+                          {displaySetting} 🖊️
+                        </Button>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -166,6 +197,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
       />
       {selectedColumnName && (
         <RuleModal
+          tableName={table.name}
           isOpen={isRuleModalOpen}
           onClose={closeRuleModal}
           columnName={selectedColumnName}

@@ -60,13 +60,15 @@ const CreateDummyView: React.FC = () => {
   })
 
   const tables: TableInfo[] = useMemo(() => {
-    return rawTables.map((table: Table): TableInfo => ({
-      id: table.name,
-      name: table.name,
-      columns: table.columns.length,
-      rows: 15324, // Mock data
-      columnDetails: table.columns.map(convertColumn)
-    }))
+    return rawTables.map(
+      (table: Table): TableInfo => ({
+        id: table.name,
+        name: table.name,
+        columns: table.columns.length,
+        rows: 15324, // Mock data
+        columnDetails: table.columns.map(convertColumn)
+      })
+    )
   }, [rawTables])
 
   const [focusedTable, setFocusedTable] = useState<TableInfo | null>(null)
@@ -74,19 +76,16 @@ const CreateDummyView: React.FC = () => {
   useEffect(() => {
     if (tables.length > 0 && !focusedTable) {
       setFocusedTable(tables[0])
-
     } else if (tables.length > 0 && focusedTable) {
-      const stillExists = tables.find(t => t.id === focusedTable.id);
+      const stillExists = tables.find((t) => t.id === focusedTable.id)
 
       if (!stillExists) {
-        setFocusedTable(tables[0]);
+        setFocusedTable(tables[0])
       }
-
     } else if (tables.length === 0) {
-      setFocusedTable(null);
+      setFocusedTable(null)
     }
   }, [tables])
-
 
   if (isLoading) {
     return <div>스키마 로딩 중...</div>
@@ -103,7 +102,7 @@ const CreateDummyView: React.FC = () => {
           <DBTableList
             tables={tables as unknown as TableInfo[]}
             focusedTableId={focusedTable?.id || ''}
-            onTableSelect={(table) => setFocusedTable(table)}
+            onTableSelect={(table) => setFocusedTable({ ...table })}
           />
           {focusedTable && <DBTableDetail table={focusedTable} />}
         </div>
