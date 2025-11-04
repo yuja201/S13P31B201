@@ -1,4 +1,4 @@
-import fs from 'node:fs/promises'
+﻿import fs from 'node:fs/promises'
 import os from 'node:os'
 import path from 'node:path'
 import type { FileMetaData } from './types'
@@ -41,8 +41,8 @@ export function createFileValueStream(
 }
 
 async function parseFile(meta: FileMetaData): Promise<ParsedFile> {
-  const safeFilePath = resolveCacheFilePath(meta.filePath)
-  const normalizedMeta = safeFilePath === meta.filePath ? meta : { ...meta, filePath: safeFilePath }
+  const safeFilePath = await resolveCacheFilePath(meta.filePath)
+  const normalizedMeta = safeFilePath ? { ...meta, filePath: safeFilePath } : meta
 
   const cacheKey = buildCacheKey(normalizedMeta)
   const cached = parseCache.get(cacheKey)
@@ -213,20 +213,41 @@ function buildCacheKey(meta: FileMetaData): ParseCacheKey {
   ].join('|')
 }
 
-function resolveCacheFilePath(filePath: string): string {
-  const resolvedTarget = path.resolve(filePath)
+async function resolveCacheFilePath(filePath: string): Promise<string | null> {
   const envDir = process.env[CACHE_DIR_ENV_KEY]
   const cacheDir = envDir ? path.resolve(envDir) : path.resolve(os.tmpdir(), CACHE_DIR_NAME)
-  const cacheDirWithSep = cacheDir.endsWith(path.sep) ? cacheDir : `${cacheDir}${path.sep}`
 
-  const targetCompare = process.platform === 'win32' ? resolvedTarget.toLowerCase() : resolvedTarget
-  const dirCompare = process.platform === 'win32' ? cacheDirWithSep.toLowerCase() : cacheDirWithSep
+  try {
+    const [cacheDirReal, targetReal] = await Promise.all([
+      fs.realpath(cacheDir).catch(() => path.resolve(cacheDir)),
+      fs.realpath(filePath)
+    ])
 
-  if (!targetCompare.startsWith(dirCompare)) {
-    throw new Error('[보안 오류] 허용되지 않은 파일 경로입니다.')
+    if (!isPathInside(cacheDirReal, targetReal)) {
+      throw new Error('[보안 오류] 허용되지 않은 파일 경로입니다.')
+    }
+
+    return targetReal
+  } catch (error) {
+    const err = error as NodeJS.ErrnoException
+    if (err && err.code === 'ENOENT') {
+      return null
+    }
+    throw error
   }
+}
 
-  return resolvedTarget
+function isPathInside(parent: string, child: string): boolean {
+  const normalizedParent = normalizeForComparison(
+    parent.endsWith(path.sep) ? parent : `${parent}${path.sep}`
+  )
+  const normalizedChild = normalizeForComparison(child)
+  return normalizedChild.startsWith(normalizedParent)
+}
+
+function normalizeForComparison(filePath: string): string {
+  const normalized = path.resolve(filePath)
+  return process.platform === 'win32' ? normalized.toLowerCase() : normalized
 }
 
 function resolveSeparator(value: string | undefined, fallback: string): string {
