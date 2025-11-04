@@ -63,6 +63,9 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
 
   // 생성방식 선택 버튼
   const handleSelectGenerationClick = (column: ColumnDetail): void => {
+    if (column.isForeignKey && column.foreignKeys && column.foreignKeys.length > 0) {
+      // FK 컬럼이면 바로 참조 모달로 이동 (RuleModal이 처리해야 함)
+    }
     setSelectedColumn(column)
     setIsRuleModalOpen(true)
   }

@@ -4,7 +4,7 @@ import DBTableList from '@renderer/components/DBTableList'
 import DBTableDetail from '@renderer/components/DBTableDetail'
 import { useSchemaStore } from '@renderer/stores/schemaStore'
 import { useProjectStore } from '@renderer/stores/projectStore'
-import type { Table, Column } from '@main/database/types'
+import type { Table, Column, ForeignKey } from '@main/database/types'
 
 // 컬럼 상세 정보 타입
 export type ColumnDetail = {
@@ -16,6 +16,8 @@ export type ColumnDetail = {
   defaultValue: string | null
   checkConstraint: string | null
   enumList: string[] | null
+  isForeignKey: boolean
+  foreignKeys: ForeignKey[] | null
 }
 
 // 테이블 전체 정보 타입
@@ -28,7 +30,7 @@ export type TableInfo = {
 }
 
 // Store의 Column 타입을 View의 ColumnDetail 타입으로 변환
-const convertColumn = (col: Column): ColumnDetail => {
+const convertColumn = (col: Column, table: Table): ColumnDetail => {
   const constraints: string[] = []
   if (col.isPrimaryKey) constraints.push('PK')
   if (col.isForeignKey) constraints.push('FK')
@@ -39,6 +41,8 @@ const convertColumn = (col: Column): ColumnDetail => {
   if (col.check) constraints.push('CHECK')
   if (col.enum) constraints.push('ENUM')
   if (col.domain) constraints.push('DOMAIN')
+
+  const columnForeignKeys = table.foreignKeys?.filter((fk) => fk.column_name === col.name) || null
 
   // ---  생성 방식 & 설정 자동 채우기 로직 ---
   let generation = ''
@@ -55,6 +59,12 @@ const convertColumn = (col: Column): ColumnDetail => {
     setting = '테이블.컬럼'
   }
 
+  if (col.isForeignKey && columnForeignKeys && columnForeignKeys.length > 0) {
+    generation = '참조'
+    const ref = columnForeignKeys[0]
+    setting = `${ref.referenced_table}.${ref.referenced_table}`
+  }
+
   return {
     name: col.name,
     type: col.type,
@@ -63,7 +73,9 @@ const convertColumn = (col: Column): ColumnDetail => {
     setting: setting,
     defaultValue: col.default || null,
     checkConstraint: col.check || null,
-    enumList: col.enum || null
+    enumList: col.enum || null,
+    isForeignKey: col.isForeignKey || false,
+    foreignKeys: columnForeignKeys
   }
 }
 
@@ -88,7 +100,7 @@ const CreateDummyView: React.FC = () => {
         name: table.name,
         columns: table.columns.length,
         rows: table.rowCount || 0,
-        columnDetails: table.columns.map(convertColumn)
+        columnDetails: table.columns.map((col) => convertColumn(col, table))
       })
     )
   }, [schemasMap, selectedProject])
