@@ -97,26 +97,32 @@ export async function runDataGenerator(
     running.add(child)
 
     let stdout = ''
+    let stdoutBuffer = ''
     let stderr = ''
 
     child.stdout.on('data', (data) => {
-      const text = data.toString().trim()
+      const chunk = data.toString()
+      process.stdout.write(chunk)
+      stdout += chunk
 
-      // 터미널에도 로그 출력
-      process.stdout.write(text + '\n')
+      stdoutBuffer += chunk
+      let newlineIndex: number
+      while ((newlineIndex = stdoutBuffer.indexOf('\n')) !== -1) {
+        const line = stdoutBuffer.slice(0, newlineIndex).trim()
+        stdoutBuffer = stdoutBuffer.slice(newlineIndex + 1)
+        if (!line) continue
 
-      // JSON 메시지면 progress 이벤트로 전송
-      if (text.startsWith('{') && text.endsWith('}')) {
-        try {
-          const msg = JSON.parse(text)
-          if (msg.type) {
-            mainWindow.webContents.send('data-generator:progress', msg)
+        if (line.startsWith('{') && line.endsWith('}')) {
+          try {
+            const msg = JSON.parse(line)
+            if (msg.type) {
+              mainWindow.webContents.send('data-generator:progress', msg)
+            }
+          } catch {
+            // JSON 파싱 실패 시 무시 (불완전 청크일 가능성)
           }
-        } catch {
-          // JSON이 아닌 일반 로그는 무시
         }
       }
-      stdout += text + '\n'
     })
 
     child.stderr.on('data', (data) => {
