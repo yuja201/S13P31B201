@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { RuleResult } from '@renderer/modals/rule/RuleModal'
 
-export type DataSourceType = 'FAKER' | 'AI' | 'FILE' | 'MANUAL'
+export type DataSourceType = 'FAKER' | 'AI' | 'FILE' | 'FIXED'
 
 export type FileMetaData = {
   kind: 'file'
@@ -25,12 +25,12 @@ export type AIMetaData = {
   ruleId: number
 }
 
-export type ManualMetaData = {
-  kind: 'manual'
+export type FixedMetaData = {
+  kind: 'fixed'
   fixedValue: string
 }
 
-export type ColumnMetaData = FakerMetaData | AIMetaData | FileMetaData | ManualMetaData
+export type ColumnMetaData = FakerMetaData | AIMetaData | FileMetaData | FixedMetaData
 
 export interface ColumnConfig {
   columnName: string
@@ -135,8 +135,8 @@ export const useGenerationStore = create<GenerationState>((set) => ({
     let metaData: ColumnMetaData
 
     if (rule.generation === '고정값' || rule.generation === 'ENUM') {
-      dataSource = 'MANUAL'
-      metaData = { kind: 'manual', fixedValue: rule.setting }
+      dataSource = 'FIXED'
+      metaData = { kind: 'fixed', fixedValue: rule.setting }
     } else if (rule.generation === 'Faker.js') {
       const ruleId = Number(rule.setting)
       if (!Number.isInteger(ruleId)) {

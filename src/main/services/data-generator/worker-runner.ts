@@ -11,9 +11,11 @@ import {
   type ColumnMetaData,
   AIMetaData,
   FakerMetaData,
-  FileMetaData
+  FileMetaData,
+  FixedMetaData
 } from './types.js'
 import { createFileValueStream } from './file-generator.js'
+import { generateFixedStream } from './fixed-generator.js'
 
 function isFileMeta(meta: ColumnMetaData | undefined): meta is FileMetaData {
   return Boolean(meta && meta.kind === 'file')
@@ -25,6 +27,9 @@ function isAIMeta(meta: ColumnMetaData | undefined): meta is AIMetaData {
 
 function isFakerMeta(meta: ColumnMetaData | undefined): meta is FakerMetaData {
   return Boolean(meta && meta.kind === 'faker')
+}
+function isFixedMeta(meta: ColumnMetaData | undefined): meta is FixedMetaData {
+  return Boolean(meta && meta.kind === 'fixed')
 }
 
 type DirectContext = {
@@ -146,9 +151,18 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
             )
           }
           return createFileValueStream(col.metaData, recordCnt)
-        }
-        case 'MANUAL':
-          throw new Error(`Manual data source is not implemented (${col.columnName}).`)
+
+        case 'FIXED':
+          if (!isFixedMeta(col.metaData)) {
+            throw new Error(
+              `[고정값 메타데이터 오류] ${tableName}.${col.columnName} 컬럼의 고정값 설정이 올바르지 않습니다.`
+            )
+          }
+          return generateFixedStream({
+            fixedValue: col.metaData.fixedValue,
+            recordCnt
+          })
+
         default:
           throw new Error(`Unsupported data source: ${String(dataSource)}`)
       }
