@@ -1,4 +1,4 @@
-import path from 'node:path'
+﻿import path from 'node:path'
 import os from 'node:os'
 import { spawn } from 'node:child_process'
 import { app, BrowserWindow } from 'electron'
@@ -19,52 +19,64 @@ export async function runDataGenerator(
 ): Promise<GenerationResult> {
   await app.whenReady()
 
-  const { projectId, tables } = payload
-  if (!tables.length) throw new Error('생성할 테이블이 없습니다.')
+  const { projectId, tables, mode = 'SQL_FILE' } = payload
+  if (!tables.length) {
+    throw new Error('No tables provided for data generation.')
+  }
 
-  // 1. Database 정보 조회
   const database = getDatabaseByProjectId(projectId)
-  if (!database) throw new Error(`프로젝트 ${projectId}의 DB 연결 정보를 찾을 수 없습니다.`)
+  if (!database) {
+    throw new Error(`Database connection info not found for project ${projectId}.`)
+  }
 
-  // 2. DBMS 정보 조회
   const dbms = getDBMSById(database.dbms_id)
-  if (!dbms) throw new Error(`DBMS not found: ${database.dbms_id}`)
+  if (!dbms) {
+    throw new Error(`DBMS not found for id ${database.dbms_id}.`)
+  }
 
   const dbTypeKey: SupportedDBMS | undefined = DBMS_ID_TO_KEY[database.dbms_id]
-  if (!dbTypeKey) throw new Error(`지원하지 않는 DBMS ID: ${database.dbms_id}`)
+  if (!dbTypeKey) {
+    throw new Error(`Unsupported DBMS id: ${database.dbms_id}`)
+  }
 
-  // 3. 스키마 정보 미리 조회 (모든 worker가 공유)
   const schema = await fetchSchema(projectId)
 
-  // 4. 모든 테이블에서 사용되는 Rule들 미리 조회
   const ruleIds = new Set<number>()
   for (const table of tables) {
     for (const column of table.columns) {
-      // 데이터 소스가 FAKER 또는 AI일 때만 ruleId 사용
       if (
         (column.dataSource === 'FAKER' || column.dataSource === 'AI') &&
         'ruleId' in column.metaData &&
-        typeof column.metaData.ruleId === 'number'
+        typeof (column.metaData as { ruleId?: unknown }).ruleId === 'number'
       ) {
-        ruleIds.add(column.metaData.ruleId)
+        ruleIds.add((column.metaData as { ruleId: number }).ruleId)
       }
     }
   }
 
   const rules = Array.from(ruleIds)
     .map((id) => getRuleById(id))
-    .filter((rule) => rule !== undefined)
+    .filter((rule): rule is NonNullable<typeof rule> => Boolean(rule))
     .map((rule) => ({
-      id: rule!.id,
-      domain_name: rule!.domain_name,
-      model_id: rule!.model_id
+      id: rule.id,
+      domain_name: rule.domain_name,
+      model_id: rule.model_id
     }))
 
-  // 5. Database 정보 간소화
   const databaseInfo = {
     id: database.id,
     dbms_name: dbms.name
   }
+
+  const connectionInfo =
+    mode === 'DIRECT_DB'
+      ? {
+          ...parseDatabaseUrl(database.url, dbTypeKey),
+          username: database.username,
+          password: database.password,
+          database: database.database_name
+        }
+      : undefined
 
   const queue = [...tables]
   const running = new Set<ReturnType<typeof spawn>>()
@@ -75,14 +87,15 @@ export async function runDataGenerator(
     if (queue.length === 0) return
     const table = queue.shift()!
 
-    // Worker Task 구성 (스키마, DB 정보, Rule 정보 포함)
     const task: WorkerTask = {
       projectId,
       dbType: dbTypeKey,
       table,
       schema,
       database: databaseInfo,
-      rules
+      rules,
+      mode,
+      connection: connectionInfo
     }
 
     const workerPath = path.resolve(app.getAppPath(), 'out/main/worker-runner.js')
@@ -108,7 +121,7 @@ export async function runDataGenerator(
             mainWindow.webContents.send('data-generator:progress', msg)
           }
         } catch {
-          // JSON이 아닌 일반 로그는 무시
+          // ignore non-JSON stdout content
         }
       }
       stdout += text + '\n'
@@ -116,16 +129,25 @@ export async function runDataGenerator(
 
     child.stderr.on('data', (data) => {
       stderr += data.toString()
-      console.error('⚠️ worker stderr:', data.toString())
+      console.error('[worker] stderr:', data.toString())
     })
 
     child.on('close', (code) => {
       running.delete(child)
       if (code === 0) {
-        const result = JSON.parse(
-          stdout.split('\n').filter((l) => l.startsWith('{') && l.includes('"success"'))[0]
-        )
-        results.push(result)
+        const resultLine = stdout
+          .split('\n')
+          .find((line) => line.startsWith('{') && line.includes('"success"'))
+        if (resultLine) {
+          results.push(JSON.parse(resultLine))
+        } else {
+          results.push({
+            success: false,
+            tableName: table.tableName,
+            sqlPath: '',
+            error: 'Worker finished without returning a result payload.'
+          })
+        }
       } else {
         results.push({
           success: false,
@@ -138,22 +160,21 @@ export async function runDataGenerator(
     })
   }
 
-  // 병렬 실행 시작
   for (let i = 0; i < Math.min(MAX_PARALLEL, queue.length); i++) {
     startNext()
   }
 
-  // 전체 완료 대기
   while (running.size > 0 || queue.length > 0) {
     await new Promise((res) => setTimeout(res, 300))
   }
 
-  // 결과 요약 및 zip 생성
   const successResults = results.filter((r) => r.success)
   const failedResults = results.filter((r) => !r.success)
 
   const files = successResults.map((r) => ({ filename: r.tableName, path: r.sqlPath }))
-  const zipPath = await createZipFromSqlFilesStreaming(files, projectId)
+  const zipPath = files.length > 0 ? await createZipFromSqlFilesStreaming(files, projectId) : null
+
+  const executedTables = successResults.filter((r) => r.directInserted).map((r) => r.tableName)
 
   mainWindow.webContents.send('data-generator:progress', {
     type: 'all-complete',
@@ -161,11 +182,24 @@ export async function runDataGenerator(
     failCount: failedResults.length
   })
 
+  const allErrors = failedResults.map((r) => `[${r.tableName}] ${r.error ?? 'Unknown error'}`)
+
   return {
     zipPath,
     successCount: successResults.length,
     failCount: failedResults.length,
-    success: failedResults.length === 0,
-    errors: failedResults.map((r) => `[${r.tableName}] ${r.error ?? 'Unknown error'}`)
+    success: allErrors.length === 0,
+    executedTables: executedTables.length ? executedTables : undefined,
+    errors: allErrors.length ? allErrors : undefined
+  }
+}
+
+function parseDatabaseUrl(rawUrl: string, dbType: SupportedDBMS): { host: string; port: number } {
+  const [hostPart, portPart] = rawUrl.split(':')
+  const defaultPort = dbType === 'mysql' ? 3306 : 5432
+  const parsed = Number(portPart)
+  return {
+    host: hostPart || 'localhost',
+    port: Number.isFinite(parsed) ? parsed : defaultPort
   }
 }

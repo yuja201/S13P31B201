@@ -14,6 +14,7 @@ import type {
   RuleUpdate,
   DatabaseSchema
 } from '../main/database/types'
+import type { GenerateRequest, GenerationResult } from '../main/services/data-generator/types'
 
 interface API {
   dbms: {
@@ -82,7 +83,7 @@ interface API {
     }
   }
   dataGenerator: {
-    generate: (payload: unknown) => Promise<unknown>
+    generate: (payload: GenerateRequest) => Promise<GenerationResult>
     onProgress: (callback: (msg: unknown) => void) => void
     removeProgressListeners: () => void
   }

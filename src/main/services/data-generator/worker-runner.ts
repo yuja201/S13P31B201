@@ -1,5 +1,7 @@
-import fs from 'node:fs'
+﻿import fs from 'node:fs'
 import path from 'node:path'
+import mysql from 'mysql2/promise'
+import { Client as PgClient } from 'pg'
 import type { WorkerTask, WorkerResult } from './types.js'
 import { DBMS_MAP } from '../../utils/dbms-map.js'
 import { generateFakeStream } from './faker-generator.js'
@@ -16,21 +18,72 @@ import { createFileValueStream } from './file-generator.js'
 function isFileMeta(meta: ColumnMetaData | undefined): meta is FileMetaData {
   return Boolean(meta && meta.kind === 'file')
 }
+
 function isAIMeta(meta: ColumnMetaData | undefined): meta is AIMetaData {
   return Boolean(meta && meta.kind === 'ai')
 }
+
 function isFakerMeta(meta: ColumnMetaData | undefined): meta is FakerMetaData {
   return Boolean(meta && meta.kind === 'faker')
 }
 
+type DirectContext = {
+  execute: (sql: string) => Promise<void>
+  commit: () => Promise<void>
+  rollback: () => Promise<void>
+  close: () => Promise<void>
+}
+
+async function createDirectContext(
+  dbType: keyof typeof DBMS_MAP,
+  connection: NonNullable<WorkerTask['connection']>
+): Promise<DirectContext> {
+  if (dbType === 'mysql') {
+    const client = await mysql.createConnection({
+      host: connection.host,
+      port: connection.port,
+      user: connection.username,
+      password: connection.password,
+      database: connection.database
+    })
+    await client.beginTransaction()
+    return {
+      execute: async (sql: string) => {
+        await client.query(sql)
+      },
+      commit: () => client.commit(),
+      rollback: () => client.rollback(),
+      close: () => client.end()
+    }
+  }
+
+  const client = new PgClient({
+    host: connection.host,
+    port: connection.port,
+    user: connection.username,
+    password: connection.password,
+    database: connection.database
+  })
+  await client.connect()
+  await client.query('BEGIN')
+  return {
+    execute: async (sql: string) => {
+      await client.query(sql)
+    },
+    commit: () => client.query('COMMIT'),
+    rollback: () => client.query('ROLLBACK'),
+    close: () => client.end()
+  }
+}
+
 async function runWorker(task: WorkerTask): Promise<WorkerResult> {
-  const { projectId, table, dbType, schema, database, rules } = task
+  const { projectId, table, dbType, schema, database, rules, mode, connection } = task
   const { tableName, recordCnt, columns } = table
 
-  const dir = path.join(process.cwd(), 'generated_sql')
-  await fs.promises.mkdir(dir, { recursive: true })
+  const outputDir = path.join(process.cwd(), 'generated_sql')
+  await fs.promises.mkdir(outputDir, { recursive: true })
 
-  const sqlPath = path.join(dir, `${tableName}.sql`)
+  const sqlPath = path.join(outputDir, `${tableName}.sql`)
   await fs.promises.writeFile(sqlPath, `-- SQL for ${tableName}\n\n`, 'utf8')
 
   const { quote } = DBMS_MAP[dbType]
@@ -40,17 +93,21 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
 
   let rows: string[] = []
   let currentRow = 0
+  const directMode = mode === 'DIRECT_DB' && Boolean(connection)
+  let directContext: DirectContext | null = null
 
   try {
-    // 컬럼별 스트림 준비
+    if (directMode && connection) {
+      directContext = await createDirectContext(dbType, connection)
+    }
+
     const columnStreams = columns.map((col) => {
       const dataSource = col.dataSource as DataSourceType
-
       switch (dataSource) {
-        case 'FAKER':
+        case 'FAKER': {
           if (!isFakerMeta(col.metaData) || col.metaData.ruleId == null) {
             throw new Error(
-              `[Faker 메타데이터 오류] ${tableName}.${col.columnName} 컬럼의 Faker 규칙 설정이 올바르지 않습니다.`
+              `Invalid faker metadata for ${tableName}.${col.columnName}: ruleId is required.`
             )
           }
           return generateFakeStream({
@@ -58,72 +115,57 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
             tableName,
             columnName: col.columnName,
             recordCnt,
-            metaData: {
-              ruleId: col.metaData.ruleId!
-            }
+            metaData: { ruleId: col.metaData.ruleId }
           })
-
+        }
         case 'AI': {
           if (!isAIMeta(col.metaData) || col.metaData.ruleId == null) {
             throw new Error(
-              `[AI 메타데이터 오류] ${tableName}.${col.columnName} 컬럼의 AI 규칙 설정이 올바르지 않습니다.`
+              `Invalid AI metadata for ${tableName}.${col.columnName}: ruleId is required.`
             )
           }
-
-          const aiMeta = col.metaData
-          const rule = rules.find((r) => r.id === aiMeta.ruleId)
-
+          const rule = rules.find((r) => r.id === col.metaData.ruleId)
           if (!rule) {
-            throw new Error(`Rule ${col.metaData.ruleId} not found in worker task`)
+            throw new Error(`Rule ${col.metaData.ruleId} not found for AI generation.`)
           }
           return generateAIStream({
-            projectId, // TODO: 리팩토링으로 미사용, faker와 file에서도 사용하지 않는다면 추후 제거
+            projectId,
             tableName,
             columnName: col.columnName,
             recordCnt,
-            metaData: {
-              // TODO: 리팩토링으로 미사용, faker와 file에서도 사용하지 않는다면 추후 제거
-              ruleId: col.metaData.ruleId!
-            },
+            metaData: { ruleId: col.metaData.ruleId },
             schema,
             database,
             rule
           })
         }
-
-        case 'FILE':
+        case 'FILE': {
           if (!isFileMeta(col.metaData)) {
             throw new Error(
-              `[파일 메타데이터 오류] ${tableName}.${col.columnName} 컬럼의 파일 설정이 올바르지 않습니다.`
+              `File metadata is missing or invalid for ${tableName}.${col.columnName}.`
             )
           }
           return createFileValueStream(col.metaData, recordCnt)
-
+        }
         case 'MANUAL':
-          // TODO: 사용자 직접 입력값 반복 처리
-          // 예시:
-          // return generateManualStream(col.metaData.fixedValue)
-          throw new Error(`[미구현] Manual 입력은 아직 지원되지 않습니다. (${col.columnName})`)
-
+          throw new Error(`Manual data source is not implemented (${col.columnName}).`)
         default:
-          throw new Error(`알 수 없는 데이터 소스: ${dataSource}`)
+          throw new Error(`Unsupported data source: ${String(dataSource)}`)
       }
     })
 
-    // 한 행(row)은 모든 컬럼 스트림에서 1개씩 받음
     for (let i = 0; i < recordCnt; i++) {
       const rowValues: string[] = []
 
       for (let j = 0; j < columns.length; j++) {
         const col = columns[j]
-        const gen = columnStreams[j]
-        const { value } = await gen.next()
+        const generator = columnStreams[j]
+        const { value } = await generator.next()
 
         if (value === undefined) continue
         const escaped = String(value).replace(/'/g, "''")
         rowValues.push(`'${escaped}'`)
 
-        // 마지막 행 도달 시 컬럼 완료 이벤트
         if (i === recordCnt - 1) {
           process.stdout.write(
             JSON.stringify({
@@ -139,14 +181,15 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
       rows.push(`(${rowValues.join(', ')})`)
       currentRow++
 
-      // 1만 행마다 flush
       if (rows.length >= BATCH_SIZE || i === recordCnt - 1) {
         const sql = `INSERT INTO ${quote}${tableName}${quote} (${columnNames}) VALUES\n${rows.join(',\n')};\n`
+        if (directContext) {
+          await directContext.execute(sql)
+        }
         await fs.promises.appendFile(sqlPath, sql, 'utf8')
         rows = []
       }
 
-      // 10만 행마다 진행률
       if (currentRow % LOG_INTERVAL === 0 || i === recordCnt - 1) {
         const progress = Math.round(((i + 1) / recordCnt) * 100)
         process.stdout.write(
@@ -160,8 +203,13 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
       }
     }
 
-    // flush 완료 후 약간 대기 (I/O 안정화)
     await new Promise((res) => setTimeout(res, 100))
+
+    if (directContext) {
+      await directContext.commit()
+      await directContext.close()
+      directContext = null
+    }
 
     process.stdout.write(
       JSON.stringify({
@@ -170,10 +218,21 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
       }) + '\n'
     )
 
-    const result: WorkerResult = { tableName, sqlPath, success: true }
+    const result: WorkerResult = {
+      tableName,
+      sqlPath,
+      success: true,
+      directInserted: directMode ? true : undefined
+    }
     console.log(JSON.stringify(result))
     return result
   } catch (err) {
+    if (directContext) {
+      await directContext.rollback().catch(() => {})
+      await directContext.close().catch(() => {})
+      directContext = null
+    }
+
     const result: WorkerResult = {
       tableName,
       sqlPath,
@@ -189,7 +248,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
 async function main(): Promise<void> {
   const taskEnv = process.env.TASK
   if (!taskEnv) {
-    console.error('TASK 환경변수가 없습니다.')
+    console.error('TASK environment variable is missing.')
     process.exit(1)
   }
 
@@ -197,21 +256,16 @@ async function main(): Promise<void> {
   const result = await runWorker(task)
 
   try {
-    // (1) write 권한으로 열기
     const fd = await fs.promises.open(result.sqlPath, 'r+')
-
-    // (2) 디스크 flush 강제
     await fd.sync()
     await fd.close()
-    console.log(`[FLUSH] ${result.tableName} flush 완료`)
+    console.log(`[FLUSH] ${result.tableName} flush complete`)
   } catch (e) {
-    console.warn('fsync 실패:', e)
+    console.warn('fsync failed:', e)
   }
 
-  // (3) flush 후 0.5초 대기 (Windows I/O 안정화)
   await new Promise((res) => setTimeout(res, 500))
 
-  // (4) 이제 진짜 종료
   process.exit(result.success ? 0 : 1)
 }
 
