@@ -173,15 +173,10 @@ async function fetchMySQLColumns(
        JOIN information_schema.CHECK_CONSTRAINTS cc 
          ON tc.CONSTRAINT_SCHEMA = cc.CONSTRAINT_SCHEMA
          AND tc.CONSTRAINT_NAME = cc.CONSTRAINT_NAME
-       JOIN information_schema.KEY_COLUMN_USAGE kcu
-         ON kcu.CONSTRAINT_SCHEMA = tc.CONSTRAINT_SCHEMA
-         AND kcu.CONSTRAINT_NAME = tc.CONSTRAINT_NAME
-         AND kcu.TABLE_SCHEMA = tc.TABLE_SCHEMA
-         AND kcu.TABLE_NAME = tc.TABLE_NAME
-         AND kcu.COLUMN_NAME = c.COLUMN_NAME
        WHERE tc.TABLE_SCHEMA = c.TABLE_SCHEMA
          AND tc.TABLE_NAME = c.TABLE_NAME 
          AND tc.CONSTRAINT_TYPE = 'CHECK'
+         AND cc.CHECK_CLAUSE LIKE CONCAT('%', c.COLUMN_NAME, '%')
        LIMIT 1) AS checkConstraint
 
     FROM INFORMATION_SCHEMA.COLUMNS c
@@ -400,10 +395,13 @@ async function fetchPostgreSQLColumns(client: Client, tableName: string): Promis
        LIMIT 1) AS checkConstraint,
 
       /* ---  ENUM 목록 조회 쿼리  --- */
-      (SELECT array_agg(e.enumlabel ORDER BY e.enumsortorder)
-        FROM pg_type t
-        JOIN pg_enum e ON t.oid = e.enumtypid
-        WHERE t.typname = c.udt_name) AS enumList
+      (SELECT array_agg(enumlabel ORDER BY enumsortorder)
+       FROM pg_catalog.pg_enum
+       WHERE enumtypid = (
+         SELECT oid FROM pg_type t
+         WHERE t.typname = c.udt_name AND t.typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = c.table_schema)
+       )
+      ) AS enumList
         
     FROM information_schema.columns c
     WHERE c.table_schema = 'public'

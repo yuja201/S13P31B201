@@ -1,23 +1,44 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { TableInfo } from '@renderer/views/CreateDummyView'
+import { TableInfo, ColumnDetail } from '@renderer/views/CreateDummyView'
 import Button from '@renderer/components/Button'
 import FileModal from '@renderer/modals/file/FileModal'
-import RuleModal from '@renderer/modals/rule/RuleModal'
+import RuleModal, { RuleResult } from '@renderer/modals/rule/RuleModal'
+import { useGenerationStore } from '@renderer/stores/generationStore'
+import type { FileModalApplyPayload } from '@renderer/modals/file/types'
 
 type DBTableDetailProps = {
   table: TableInfo
+  onColumnUpdate: (columnName: string, generation: string, setting: string) => void
 }
 
 const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
   const navigate = useNavigate()
   const { projectId } = useParams<{ projectId: string }>()
 
+  const tableGenerationConfig = useGenerationStore((state) => state.tables[table.name])
+  const setTableRecordCount = useGenerationStore((state) => state.setTableRecordCount)
+  const applyFileMapping = useGenerationStore((state) => state.applyFileMapping)
+  const setColumnRule = useGenerationStore((state) => state.setColumnRule)
+
   const [rows, setRows] = useState(1000)
+
+  useEffect(() => {
+    if (
+      tableGenerationConfig?.recordCnt !== undefined &&
+      tableGenerationConfig.recordCnt !== rows
+    ) {
+      setRows(tableGenerationConfig.recordCnt)
+    }
+  }, [tableGenerationConfig?.recordCnt, rows])
+
+  useEffect(() => {
+    setTableRecordCount(table.name, rows)
+  }, [rows, setTableRecordCount, table.name])
+
   const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false)
   const [isRuleModalOpen, setIsRuleModalOpen] = useState(false)
-  const [selectedColumnName, setSelectedColumnName] = useState<string>('')
-  const [selectedColumnType, setSelectedColumnType] = useState<string>('')
+  const [selectedColumn, setSelectedColumn] = useState<ColumnDetail | null>(null)
 
   // FileUploadModal
   const openFileUploadModal = (): void => {
@@ -28,25 +49,88 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
     setIsFileUploadModalOpen(false)
   }
 
+  const handleFileMappingApply = useCallback(
+    (payload: FileModalApplyPayload) => {
+      applyFileMapping(table.name, payload)
+      if (payload.recordCount !== undefined) {
+        setRows(payload.recordCount)
+        // setTableRecordCount(table.name, payload.recordCount) // setRows -> useEffect가 호출해줌
+      }
+      closeFileUploadModal()
+    },
+    [applyFileMapping, table.name]
+  )
+
   // 생성방식 선택 버튼
-  const handleSelectGenerationClick = (columnName: string): void => {
-    const selectedColumn = table.columnDetails.find((col) => col.name === columnName)
-    if (selectedColumn) {
-      setSelectedColumnName(columnName)
-      setSelectedColumnType(selectedColumn.type)
-      setIsRuleModalOpen(true)
-    }
+  const handleSelectGenerationClick = (column: ColumnDetail): void => {
+    setSelectedColumn(column)
+    setIsRuleModalOpen(true)
   }
-  // RuleModal
+
   const closeRuleModal = (): void => {
     setIsRuleModalOpen(false)
-    setSelectedColumnName('')
-    setSelectedColumnType('')
+    setSelectedColumn(null)
   }
 
   const handleGenerateData = (): void => {
     navigate(`/main/select-method/${projectId}/${table.id}`)
   }
+
+  const handleRuleConfirm = (result: RuleResult): void => {
+    if (!selectedColumn) return
+
+    setColumnRule(table.name, selectedColumn.name, result)
+    closeRuleModal()
+  }
+
+  const displayColumnDetails = useMemo(() => {
+    const columnConfigs = tableGenerationConfig?.columns ?? {}
+
+    return table.columnDetails.map((col) => {
+      const config = columnConfigs[col.name]
+      if (!config) {
+        return col
+      }
+
+      let generation = '',
+        setting = ''
+
+      switch (config.dataSource) {
+        case 'FILE':
+          generation = '파일 업로드'
+          if (config.metaData.kind === 'file') {
+            setting = config.metaData.fileColumn
+          } else {
+            setting = '파일 매핑'
+          }
+          break
+        case 'MANUAL':
+          generation = '고정값'
+          if (config.metaData.kind === 'manual') {
+            setting = config.metaData.fixedValue
+          } else {
+            setting = '고정값'
+          }
+          break
+        case 'FAKER':
+          generation = 'Faker.js'
+          if (config.metaData.kind === 'faker') {
+            setting = `Rule #${config.metaData.ruleId}`
+          }
+          break
+        case 'AI':
+          generation = 'AI'
+          if (config.metaData.kind === 'ai') {
+            setting = `Rule #${config.metaData.ruleId}`
+          }
+          break
+        // TODO: 'REFERENCE' 케이스 추가
+      }
+
+      return { ...col, generation, setting }
+    })
+  }, [table.columnDetails, tableGenerationConfig?.columns])
+
   return (
     <>
       <div className="table-detail-container shadow">
@@ -97,7 +181,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
               </thead>
               {/* 테이블 바디 (컬럼 목록) */}
               <tbody className="preRegular14">
-                {table.columnDetails.map((col) => (
+                {displayColumnDetails.map((col) => (
                   <tr
                     key={col.name}
                     className={
@@ -120,7 +204,8 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
                       {!col.generation || col.generation === '-' ? (
                         <button
                           className="select-generation-link "
-                          onClick={() => handleSelectGenerationClick(col.name)}
+                          // [!] 6. col 객체 전체를 핸들러에 전달
+                          onClick={() => handleSelectGenerationClick(col)}
                         >
                           생성방식 선택
                         </button>
@@ -168,19 +253,17 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
           type: col.type
         }))}
         recordCount={rows}
-        onApply={() => {
-          // File-based mappings from the main table view are not yet persisted.
-          // This callback can be wired to state/store when the integration is ready.
-        }}
+        onApply={handleFileMappingApply}
       />
-      {selectedColumnName && (
+      {isRuleModalOpen && selectedColumn && (
         <RuleModal
           isOpen={isRuleModalOpen}
           onClose={closeRuleModal}
-          columnName={selectedColumnName}
-          columnType={selectedColumnType}
+          column={selectedColumn}
+          onConfirm={handleRuleConfirm} // [!] 핸들러 전달
         />
       )}
+
       <style>{`
         .table-detail-container{
           flex-grow: 1;

@@ -3,6 +3,7 @@ import Button from '@renderer/components/Button'
 import InputField from '@renderer/components/InputField'
 import PageTitle from '@renderer/components/PageTitle'
 import Label from '@renderer/components/Label'
+import { RuleResult } from '@renderer/modals/rule/RuleModal'
 
 export interface RuleCreationData {
   source: 'faker' | 'ai'
@@ -18,7 +19,7 @@ interface RuleSelectContentProps {
   columnName: string
   columnType: string
   onCancel: () => void
-  onConfirm?: (value: string) => void
+  onConfirm?: (result: RuleResult) => void
   onCreateNew?: () => void
 }
 
@@ -32,7 +33,10 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
   const [fixedValue, setFixedValue] = useState('')
 
   const handleConfirm = (): void => {
-    onConfirm?.(fixedValue)
+    onConfirm?.({
+      generation: '고정값',
+      setting: fixedValue
+    })
   }
 
   return (
