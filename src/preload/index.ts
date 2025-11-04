@@ -15,7 +15,8 @@ import type {
   RuleUpdate,
   DatabaseSchema
 } from '../main/database/types'
-import { fakerRuleInput, GenerationInput } from '../main/services/types'
+
+import { FakerRuleInput, GenerateRequest } from '../main/services/data-generator/types'
 
 // Custom APIs for renderer
 const api = {
@@ -66,7 +67,7 @@ const api = {
     update: (data: RuleUpdate): Promise<Rule | undefined> =>
       ipcRenderer.invoke('db:rule:update', data),
     delete: (id: number): Promise<boolean> => ipcRenderer.invoke('db:rule:delete', id),
-    createFaker: (data: fakerRuleInput): Promise<Rule> =>
+    createFaker: (data: FakerRuleInput): Promise<Rule> =>
       ipcRenderer.invoke('db:rule:createFaker', data)
   },
 
@@ -93,9 +94,25 @@ const api = {
       ipcRenderer.invoke('db:schema:fetch', databaseId)
   },
 
+  file: {
+    cache: {
+      write: (payload: { content: string; encoding?: string; extension?: string }) =>
+        ipcRenderer.invoke('file:cache:write', payload),
+      remove: (filePath: string) => ipcRenderer.invoke('file:cache:remove', { filePath }),
+      stream: {
+        open: (payload: { extension?: string }) =>
+          ipcRenderer.invoke('file:cache:stream-open', payload),
+        write: (payload: { streamId: string; chunk: number[] | Uint8Array }) =>
+          ipcRenderer.invoke('file:cache:stream-write', payload),
+        close: (payload: { streamId: string }) =>
+          ipcRenderer.invoke('file:cache:stream-close', payload)
+      }
+    }
+  },
+
   // dataGenerator operations
   dataGenerator: {
-    generate: (payload: GenerationInput) => ipcRenderer.invoke('gen:dummy:bulk', payload),
+    generate: (payload: GenerateRequest) => ipcRenderer.invoke('gen:dummy:bulk', payload),
     onProgress: (callback: (msg: unknown) => void) => {
       ipcRenderer.on('data-generator:progress', (_, msg) => {
         callback(msg)

@@ -12,6 +12,7 @@ export interface RuleCreationData {
   prompt?: string
   model?: string
   columnType?: string
+  columnName?: string
   result?: number
   domainId?: number
   domainName?: string
@@ -19,12 +20,14 @@ export interface RuleCreationData {
 
 interface RuleCreationContentProps {
   columnType?: string
+  columnName?: string
   onCancel: () => void
   onSubmit?: (data: RuleCreationData) => void
 }
 
 const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
-  columnType = '',
+  columnType,
+  columnName,
   onCancel,
   onSubmit
 }) => {
@@ -44,9 +47,9 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
       alert('도메인을 선택하세요.')
       return
     }
-
     try {
       if (selectedSource === 'FAKER') {
+        // 실제 규칙 생성 API 호출
         const result = await window.api.rule.createFaker({
           name: settingName,
           data_source: 'FAKER',
@@ -57,13 +60,28 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
           source: selectedSource,
           settingName,
           columnType,
-          domainName: selectedDomain.name,
+          columnName,
+          result: result.id,
           domainId: selectedDomain.id,
-          result: result.id
+          domainName: selectedDomain.name
         })
-
-        onCancel()
+      } else if (selectedSource === 'AI') {
+        // AI 모드일 땐 단순히 폼 데이터 전달
+        onSubmit?.({
+          source: selectedSource,
+          settingName,
+          apiToken,
+          prompt,
+          model: selectedModel,
+          columnType,
+          columnName,
+          domainId: selectedDomain.id,
+          domainName: selectedDomain.name
+        })
       }
+
+      onCancel()
+
       // AI 선택 시 로직은 추후 추가
     } catch (err) {
       console.error(err)
@@ -80,7 +98,7 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
       <div className="rule-create__header">
         <PageTitle
           size="small"
-          title="새 규칙 만들기"
+          title={`새 규칙 만들기 - ${columnName}`}
           description="데이터 생성 방식을 선택하고, 관련 정보를 입력하세요."
         />
         <br />

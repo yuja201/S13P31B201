@@ -22,6 +22,7 @@ const InfoView: React.FC = () => {
   const navigate = useNavigate()
   const selectedProject = useProjectStore((state) => state.selectedProject)
   const setSelectedProject = useProjectStore((state) => state.setSelectedProject)
+  const updateProjectInList = useProjectStore((state) => state.updateProjectInList)
 
   const [formData, setFormData] = useState<ProjectInfo>({
     projectName: '',
@@ -202,11 +203,14 @@ const InfoView: React.FC = () => {
 
       // Zustand Store 업데이트
       if (updatedProject) {
-        setSelectedProject({
+        const updatedProjectWithDetails = {
           ...updatedProject,
           database: updatedDatabase,
           dbms: updatedDbms
-        })
+        }
+
+        setSelectedProject(updatedProjectWithDetails)
+        updateProjectInList(selectedProject.id, updatedProjectWithDetails)
       }
 
       // SchemaView로 이동

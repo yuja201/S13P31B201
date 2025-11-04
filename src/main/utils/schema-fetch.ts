@@ -1,6 +1,8 @@
 import mysql from 'mysql2/promise'
 import { Client } from 'pg'
 import type { DatabaseSchema, Table, Column, ForeignKey, Index } from '../database/types'
+import { getDatabaseByProjectId } from '../database/databases'
+import { getDBMSById } from '../database/dbms'
 
 interface DatabaseConfig {
   dbType: 'MySQL' | 'PostgreSQL'
@@ -163,14 +165,29 @@ async function fetchMySQLColumns(
       IS_NULLABLE as isNullable,
       COLUMN_KEY as columnKey,
       COLUMN_DEFAULT as defaultValue,
-      EXTRA as extra
-    FROM INFORMATION_SCHEMA.COLUMNS
-    WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?
-    ORDER BY ORDINAL_POSITION`,
+      EXTRA as extra,
+
+      /* ---  CHECK 제약조건 조회 쿼리 --- */
+     (SELECT cc.CHECK_CLAUSE
+       FROM information_schema.TABLE_CONSTRAINTS tc
+       JOIN information_schema.CHECK_CONSTRAINTS cc 
+         ON tc.CONSTRAINT_SCHEMA = cc.CONSTRAINT_SCHEMA
+         AND tc.CONSTRAINT_NAME = cc.CONSTRAINT_NAME
+       WHERE tc.TABLE_SCHEMA = c.TABLE_SCHEMA
+         AND tc.TABLE_NAME = c.TABLE_NAME 
+         AND tc.CONSTRAINT_TYPE = 'CHECK'
+         AND cc.CHECK_CLAUSE LIKE CONCAT('%', c.COLUMN_NAME, '%')
+       LIMIT 1) AS checkConstraint
+
+    FROM INFORMATION_SCHEMA.COLUMNS c
+    WHERE c.TABLE_SCHEMA = ? AND c.TABLE_NAME = ?
+    ORDER BY c.ORDINAL_POSITION`,
     [databaseName, tableName]
   )
 
-  return (columnRows as MySQLColumnRow[]).map((row) => {
+  type MySQLColumnRowWithCheck = MySQLColumnRow & { checkConstraint?: string }
+
+  return (columnRows as MySQLColumnRowWithCheck[]).map((row) => {
     const column: Column = {
       name: row.name,
       type: row.type,
@@ -180,7 +197,8 @@ async function fetchMySQLColumns(
       notNull: row.isNullable === 'NO',
       unique: row.columnKey === 'UNI',
       autoIncrement: row.extra.includes('auto_increment'),
-      default: row.defaultValue !== null ? String(row.defaultValue) : undefined
+      default: row.defaultValue !== null ? String(row.defaultValue) : undefined,
+      check: row.checkConstraint || undefined
     }
 
     // ENUM 타입 파싱
@@ -350,26 +368,53 @@ async function fetchPostgreSQLColumns(client: Client, tableName: string): Promis
         WHERE tc.table_name = c.table_name
           AND kcu.column_name = c.column_name
           AND tc.constraint_type = 'PRIMARY KEY') as is_primary,
+
       (SELECT COUNT(*) > 0 FROM information_schema.table_constraints tc
         JOIN information_schema.key_column_usage kcu
           ON tc.constraint_name = kcu.constraint_name
         WHERE tc.table_name = c.table_name
           AND kcu.column_name = c.column_name
           AND tc.constraint_type = 'FOREIGN KEY') as is_foreign,
+
       (SELECT COUNT(*) > 0 FROM information_schema.table_constraints tc
         JOIN information_schema.key_column_usage kcu
           ON tc.constraint_name = kcu.constraint_name
         WHERE tc.table_name = c.table_name
           AND kcu.column_name = c.column_name
-          AND tc.constraint_type = 'UNIQUE') as is_unique
+          AND tc.constraint_type = 'UNIQUE') as is_unique,
+
+      /* --- CHECK 제약조건 조회 쿼리  --- */
+      (SELECT substring(pg_get_constraintdef(con.oid) from 'CHECK \\((.*)\\)')
+       FROM pg_constraint con
+       JOIN pg_class rel ON rel.oid = con.conrelid
+       JOIN pg_attribute attr ON attr.attrelid = rel.oid AND attr.attnum = ANY(con.conkey)
+       WHERE rel.relname = c.table_name
+         AND rel.relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = c.table_schema)
+         AND con.contype = 'c' -- 'c' for CHECK
+         AND attr.attname = c.column_name 
+       LIMIT 1) AS checkConstraint,
+
+      /* ---  ENUM 목록 조회 쿼리  --- */
+      (SELECT array_agg(enumlabel ORDER BY enumsortorder)
+       FROM pg_catalog.pg_enum
+       WHERE enumtypid = (
+         SELECT oid FROM pg_type t
+         WHERE t.typname = c.udt_name AND t.typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = c.table_schema)
+       )
+      ) AS enumList
+        
     FROM information_schema.columns c
     WHERE c.table_schema = 'public'
       AND c.table_name = $1
     ORDER BY c.ordinal_position`,
     [tableName]
   )
+  type PgColumnRowWithDetails = PostgreSQLColumnRow & {
+    checkConstraint?: string
+    enumList?: string[]
+  }
 
-  return (columnResult.rows as PostgreSQLColumnRow[]).map((row) => {
+  return (columnResult.rows as PgColumnRowWithDetails[]).map((row) => {
     let typeStr = row.data_type
     if (row.max_length) {
       typeStr += `(${row.max_length})`
@@ -387,7 +432,10 @@ async function fetchPostgreSQLColumns(client: Client, tableName: string): Promis
       unique: row.is_unique,
       autoIncrement: row.default_value?.includes('nextval') || false,
       default:
-        row.default_value && !row.default_value.includes('nextval') ? row.default_value : undefined
+        row.default_value && !row.default_value.includes('nextval') ? row.default_value : undefined,
+
+      check: row.checkConstraint || undefined,
+      enum: row.enumList || undefined
     }
 
     return column
@@ -469,4 +517,41 @@ export async function fetchDatabaseSchema(config: DatabaseConfig): Promise<Datab
   } else {
     throw new Error(`지원하지 않는 데이터베이스: ${config.dbType}`)
   }
+}
+
+/**
+ * 프로젝트 ID 기반 스키마 조회 (AI Generator용)
+ * - getDatabaseByProjectId, getDBMSById를 사용하여 자동으로 연결 정보 구성
+ */
+export async function fetchSchema(projectId: number): Promise<Table[]> {
+  // 1. Database 정보 조회
+  const database = getDatabaseByProjectId(projectId)
+  if (!database) {
+    throw new Error(`Database not found for project: ${projectId}`)
+  }
+
+  // 2. DBMS 정보 조회
+  const dbms = getDBMSById(database.dbms_id)
+  if (!dbms) {
+    throw new Error(`DBMS not found: ${database.dbms_id}`)
+  }
+
+  // 3. URL 파싱
+  const [host, portStr] = database.url.split(':')
+  const port = parseInt(portStr || (dbms.name === 'MySQL' ? '3306' : '5432'), 10)
+
+  // 4. DatabaseConfig 구성
+  const config: DatabaseConfig = {
+    dbType: dbms.name as 'MySQL' | 'PostgreSQL',
+    host,
+    port,
+    username: database.username,
+    password: database.password,
+    database: database.database_name
+  }
+
+  // 5. 스키마 조회
+  const schema = await fetchDatabaseSchema(config)
+
+  return schema.tables
 }

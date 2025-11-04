@@ -1,24 +1,26 @@
 import React, { useState, useEffect } from 'react'
 import Modal from '@renderer/components/Modal'
 import RuleSelectContent, { RuleSelection } from '@renderer/modals/rule/RuleSelectContent'
-import RuleCreationContent from '@renderer/modals/rule/RuleCreationContent'
 import { useRuleStore } from '@renderer/stores/useRuleStore'
+import RuleCreationContent from '@renderer/modals/rule/RuleCreationContent'
+import { ColumnDetail } from '@renderer/views/CreateDummyView'
+import EnumSelectContent from '@renderer/modals/rule/EnumSelectContent'
+
+export type GenerationType = 'Faker.js' | 'AI' | '참조' | '파일 업로드' | '고정값' | 'ENUM'
+
+export type RuleResult = {
+  generation: GenerationType
+  setting: string
+}
 
 interface RuleModalProps {
   isOpen: boolean
   onClose: () => void
-  columnName: string
-  columnType: string
+  column: ColumnDetail
   tableName: string
 }
 
-const RuleModal: React.FC<RuleModalProps> = ({
-  isOpen,
-  onClose,
-  columnName,
-  columnType,
-  tableName
-}) => {
+const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, tableName }) => {
   const [mode, setMode] = useState<'select' | 'create'>('select')
   const setRule = useRuleStore((s) => s.setRule)
 
@@ -32,17 +34,29 @@ const RuleModal: React.FC<RuleModalProps> = ({
 
   const handleConfirmSelect = (value: RuleSelection): void => {
     if (tableName) {
-      setRule(tableName, columnName, {
-        columnName,
+      setRule(tableName, column.name, {
+        columnName: column.name,
         dataSource: value.dataSource,
         metaData: {
           ruleId: value.metaData.ruleId,
           domainId: value.metaData.domainId,
-          domainName: value.metaData.domainName
+          domainName: value.metaData.domainName,
+          fixedValue: value.metaData.fixedValue
         }
       })
     }
     onClose()
+  }
+
+  const handleEnumConfirm = (result: RuleResult): void => {
+    const selection: RuleSelection = {
+      columnName: column.name,
+      dataSource: 'ENUM',
+      metaData: {
+        fixedValue: result.setting
+      }
+    }
+    handleConfirmSelect(selection)
   }
 
   useEffect(() => {
@@ -51,19 +65,38 @@ const RuleModal: React.FC<RuleModalProps> = ({
     }
   }, [isOpen])
 
+  const hasEnumList = column.enumList && column.enumList.length > 0
+  const columnType = column.type
+  const columnName = column.name
+
   return (
     <Modal isOpen={isOpen} onClose={onClose} width="720px">
       <div className="rule-modal">
         {mode === 'select' ? (
-          <RuleSelectContent
-            columnName={columnName}
-            columnType={columnType}
-            onCancel={onClose}
-            onConfirm={handleConfirmSelect}
-            onCreateNew={handleCreateNew}
-          />
+          hasEnumList ? (
+            <EnumSelectContent
+              columnName={columnName}
+              enumList={column.enumList!}
+              onCancel={onClose}
+              onConfirm={handleEnumConfirm}
+            />
+          ) : (
+            // ENUM 목록이 없으면 기존 RuleSelectContent 렌더링
+            <RuleSelectContent
+              columnType={columnType}
+              columnName={columnName}
+              onCancel={onClose}
+              onConfirm={handleConfirmSelect}
+              onCreateNew={handleCreateNew}
+            />
+          )
         ) : (
-          <RuleCreationContent columnType={columnType} onCancel={handleBack} />
+          // "새로 만들기" 모드
+          <RuleCreationContent
+            columnType={columnType}
+            columnName={columnName}
+            onCancel={handleBack}
+          />
         )}
       </div>
 

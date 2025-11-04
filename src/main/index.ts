@@ -7,6 +7,7 @@ import { initDatabase } from './database'
 import './ipc/database-handlers'
 import './ipc/data-generator-handlers'
 import './ipc/rule-handlers'
+import './ipc/file-handlers'
 
 dotenv.config()
 

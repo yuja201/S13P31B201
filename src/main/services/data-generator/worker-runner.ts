@@ -1,12 +1,30 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import type { WorkerTask, WorkerResult } from '../types.js'
+import type { WorkerTask, WorkerResult } from './types.js'
 import { DBMS_MAP } from '../../utils/dbms-map.js'
 import { generateFakeStream } from './faker-generator.js'
-import { DataSourceType } from './types.js'
+import { generateAIStream } from './ai-generator.js'
+import {
+  DataSourceType,
+  type ColumnMetaData,
+  AIMetaData,
+  FakerMetaData,
+  FileMetaData
+} from './types.js'
+import { createFileValueStream } from './file-generator.js'
+
+function isFileMeta(meta: ColumnMetaData | undefined): meta is FileMetaData {
+  return Boolean(meta && meta.kind === 'file')
+}
+function isAIMeta(meta: ColumnMetaData | undefined): meta is AIMetaData {
+  return Boolean(meta && meta.kind === 'ai')
+}
+function isFakerMeta(meta: ColumnMetaData | undefined): meta is FakerMetaData {
+  return Boolean(meta && meta.kind === 'faker')
+}
 
 async function runWorker(task: WorkerTask): Promise<WorkerResult> {
-  const { projectId, table, dbType } = task
+  const { projectId, table, dbType, schema, database, rules } = task
   const { tableName, recordCnt, columns } = table
 
   const dir = path.join(process.cwd(), 'generated_sql')
@@ -26,43 +44,60 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
   try {
     // 컬럼별 스트림 준비
     const columnStreams = columns.map((col) => {
-      // TODO: 데이터 소스 유형에 따라 분기 처리 필요 (faker / ai / file / manual)
       const dataSource = col.dataSource as DataSourceType
 
       switch (dataSource) {
         case 'FAKER':
-          // 현재 기본 faker 스트림
+          if (!isFakerMeta(col.metaData) || col.metaData.ruleId == null) {
+            throw new Error(
+              `[Faker 메타데이터 오류] ${tableName}.${col.columnName} 컬럼의 Faker 규칙 설정이 올바르지 않습니다.`
+            )
+          }
           return generateFakeStream({
             projectId,
             tableName,
             columnName: col.columnName,
             recordCnt,
-            metaData: col.metaData
+            metaData: {
+              ruleId: col.metaData.ruleId!
+            }
           })
 
-        case 'AI':
-          // TODO: AI 기반 데이터 생성 스트림 함수 연결 (generateAIStream 등)
-          // 예시:
-          // return generateAIStream({
-          //   projectId,
-          //   tableName,
-          //   columnName: col.columnName,
-          //   recordCnt,
-          //   metaData: col.metaData
-          // })
-          throw new Error(`[미구현] AI 생성 방식은 아직 지원되지 않습니다. (${col.columnName})`)
+        case 'AI': {
+          if (!isAIMeta(col.metaData) || col.metaData.ruleId == null) {
+            throw new Error(
+              `[AI 메타데이터 오류] ${tableName}.${col.columnName} 컬럼의 AI 규칙 설정이 올바르지 않습니다.`
+            )
+          }
+
+          const aiMeta = col.metaData
+          const rule = rules.find((r) => r.id === aiMeta.ruleId)
+
+          if (!rule) {
+            throw new Error(`Rule ${col.metaData.ruleId} not found in worker task`)
+          }
+          return generateAIStream({
+            projectId, // TODO: 리팩토링으로 미사용, faker와 file에서도 사용하지 않는다면 추후 제거
+            tableName,
+            columnName: col.columnName,
+            recordCnt,
+            metaData: {
+              // TODO: 리팩토링으로 미사용, faker와 file에서도 사용하지 않는다면 추후 제거
+              ruleId: col.metaData.ruleId!
+            },
+            schema,
+            database,
+            rule
+          })
+        }
 
         case 'FILE':
-          // TODO: 파일 업로드 기반 데이터 생성 처리
-          // 예시:
-          // return generateFileStream({
-          //   projectId,
-          //   tableName,
-          //   columnName: col.columnName,
-          //   recordCnt,
-          //   filePath: col.metaData.filePath
-          // })
-          throw new Error(`[미구현] File 기반 생성은 아직 지원되지 않습니다. (${col.columnName})`)
+          if (!isFileMeta(col.metaData)) {
+            throw new Error(
+              `[파일 메타데이터 오류] ${tableName}.${col.columnName} 컬럼의 파일 설정이 올바르지 않습니다.`
+            )
+          }
+          return createFileValueStream(col.metaData, recordCnt)
 
         case 'MANUAL':
           // TODO: 사용자 직접 입력값 반복 처리

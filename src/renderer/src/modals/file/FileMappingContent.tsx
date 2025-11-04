@@ -1,54 +1,82 @@
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useMemo, useState, useCallback } from 'react'
 import PageTitle from '@renderer/components/PageTitle'
-import Table, { Column, Row } from '@renderer/components/Table'
 import Checkbox from '@renderer/components/Checkbox'
 import Button from '@renderer/components/Button'
 import Toast from '@renderer/components/Toast'
+import type { Row } from '@renderer/components/Table'
+import type { MappingColumn, MappingSubmitPayload } from './types'
 
 interface FileMappingContentProps {
   tableName: string
-  columns: Column[]
+  tableColumns: { name: string; type: string }[]
+  fileHeaders: string[]
   rows: Row[]
-  tableColumns?: { name: string; type: string }[]
+  recordCount: number
+  maxRecords?: number | null
   onBack: () => void
-  onComplete: (mappings: MappingColumn[]) => void
-}
-
-export interface MappingColumn {
-  name: string
-  type: string
-  mappedTo: string
-  selected: boolean
+  onComplete: (payload: MappingSubmitPayload) => void
 }
 
 const FileMappingContent: React.FC<FileMappingContentProps> = ({
   tableName,
-  columns,
+  tableColumns,
+  fileHeaders,
   rows,
-  tableColumns = [
-    { name: 'id', type: 'INT' },
-    { name: 'username', type: 'VARCHAR(100)' },
-    { name: 'email', type: 'VARCHAR(200)' },
-    { name: 'created_at', type: 'DATETIME' },
-    { name: 'updated_at', type: 'DATETIME' }
-  ],
+  recordCount,
+  maxRecords,
   onBack,
   onComplete
 }) => {
+  const availableRowLimit =
+    typeof maxRecords === 'number' && maxRecords > 0 ? Math.floor(maxRecords) : null
+
+  const normalizeRecordCount = useCallback(
+    (value: number): number => {
+      if (!Number.isFinite(value) || value <= 0) return 1
+      const normalized = Math.floor(value)
+      if (availableRowLimit) return Math.min(normalized, availableRowLimit)
+      return normalized
+    },
+    [availableRowLimit]
+  )
+
   const [mappings, setMappings] = useState<MappingColumn[]>(
     tableColumns.map((col) => ({
       name: col.name,
       type: col.type,
       mappedTo: '',
-      selected: true
+      selected: false
     }))
   )
-
-  const [recordCount, setRecordCount] = useState(rows.length)
+  const [recordCountState, setRecordCountState] = useState<number>(() =>
+    normalizeRecordCount(recordCount)
+  )
   const [allowDuplicates, setAllowDuplicates] = useState(true)
   const [showToast, setShowToast] = useState(false)
 
-  const fileHeaders = columns.map((c) => c.key)
+  useEffect(() => {
+    setMappings(
+      tableColumns.map((col) => ({
+        name: col.name,
+        type: col.type,
+        mappedTo: '',
+        selected: false
+      }))
+    )
+  }, [tableColumns])
+
+  useEffect(() => {
+    setRecordCountState(normalizeRecordCount(recordCount))
+  }, [normalizeRecordCount, recordCount])
+
+  useEffect(() => {
+    setMappings((prev) =>
+      prev.map((mapping) => ({
+        ...mapping,
+        mappedTo: fileHeaders.includes(mapping.mappedTo) ? mapping.mappedTo : ''
+      }))
+    )
+  }, [fileHeaders])
 
   useEffect(() => {
     if (showToast) {
@@ -58,104 +86,120 @@ const FileMappingContent: React.FC<FileMappingContentProps> = ({
     return undefined
   }, [showToast])
 
+  const activeMappings = useMemo(() => mappings.filter((m) => m.selected && m.mappedTo), [mappings])
+
   const handleConfirm = (): void => {
-    if (!mappings.some((m) => m.selected && m.mappedTo)) {
+    if (!activeMappings.length) {
       setShowToast(true)
       return
     }
-    console.log('최종 매핑 결과:', mappings)
-    onComplete(mappings)
+
+    onComplete({
+      mappings,
+      recordCount: normalizeRecordCount(recordCountState),
+      allowDuplicates
+    })
   }
 
-  const tableCols: Column[] = [
-    { key: 'select', title: '✔', type: 'checkbox' },
-    { key: 'name', title: 'DB 컬럼명', type: 'text' },
-    { key: 'type', title: '타입', type: 'text' },
-    {
-      key: 'mappedTo',
-      title: '파일 컬럼 매핑',
-      type: 'dropdown',
-      options: fileHeaders
-    }
-  ]
-
-  const handleDropdownChange = (
-    e: React.ChangeEvent<HTMLSelectElement>,
-    rowIndex: number
-  ): void => {
-    const newValue = e.target.value
-    setMappings((prev) =>
-      prev.map((m, idx) => (idx === rowIndex ? { ...m, mappedTo: newValue } : m))
-    )
-  }
-
-  const tableRows: Row[] = mappings.map((m, i) => ({
-    id: i + 1,
-    select: (
-      <Checkbox
-        checked={m.selected}
-        onChange={() =>
-          setMappings((prev) =>
-            prev.map((x, idx) => (idx === i ? { ...x, selected: !x.selected } : x))
-          )
-        }
-      />
-    ),
-    name: m.name,
-    type: m.type,
-    mappedTo: (
-      <div className="custom-select-wrapper">
-        <select
-          className="custom-select"
-          value={m.mappedTo || ''}
-          onChange={(e) => handleDropdownChange(e, i)}
-          disabled={!m.selected}
-        >
-          <option value="">선택 없음</option>
-          {fileHeaders.map((opt) => (
-            <option key={opt} value={opt}>
-              {opt}
-            </option>
-          ))}
-        </select>
-      </div>
-    )
-  }))
+  const formattedRowLimit = useMemo(() => {
+    if (availableRowLimit) return availableRowLimit.toLocaleString()
+    if (rows.length) return `${rows.length.toLocaleString()} (미리보기 기준)`
+    return '미확인'
+  }, [availableRowLimit, rows.length])
 
   return (
     <div className="file-content">
       <PageTitle
         title={`매핑 설정 - ${tableName}`}
-        description="DB 컬럼과 파일 컬럼을 매핑합니다."
+        description="테이블 컬럼과 파일 컬럼을 연결합니다."
         size="small"
       />
       <hr className="divider" />
 
       <div className="mapping-settings">
         <div className="record-info">
-          <span className="label">레코드 수 :</span>
-          <span className="value">{rows.length.toLocaleString()}</span>
+          <span className="label">파일 데이터 행</span>
+          <span className="value">{formattedRowLimit} 행</span>
         </div>
-
         <div className="record-input">
-          <span className="label">가져올 레코드 수 :</span>
+          <span className="label">생성할 행 수</span>
           <input
-            type="number"
             className="record-field"
-            value={recordCount}
-            onChange={(e) => setRecordCount(Number(e.target.value))}
+            type="number"
+            min={1}
+            value={recordCountState}
+            onChange={(e) => setRecordCountState(normalizeRecordCount(Number(e.target.value)))}
           />
         </div>
-
-        <Checkbox
-          label="값 반복 삽입"
-          checked={allowDuplicates}
-          onChange={() => setAllowDuplicates((p) => !p)}
-        />
+        <div className="record-info">
+          <Checkbox
+            checked={allowDuplicates}
+            onChange={() => setAllowDuplicates((prev) => !prev)}
+          />
+          <span className="label">중복 허용</span>
+        </div>
       </div>
+      {availableRowLimit && recordCountState === availableRowLimit && (
+        <p className="hint preRegular12">
+          파일에 포함된 행 수({availableRowLimit.toLocaleString()}행)를 초과할 수 없습니다.
+        </p>
+      )}
 
-      {/* Table.tsx 직접 사용 */}
-      <Table columns={tableCols} rows={tableRows} maxHeight="350px" />
+      <div className="mapping-table-wrapper">
+        <table className="mapping-table">
+          <thead>
+            <tr>
+              <th>선택</th>
+              <th>DB 컬럼명</th>
+              <th>타입</th>
+              <th>파일 컬럼 매핑</th>
+            </tr>
+          </thead>
+          <tbody>
+            {mappings.map((mapping, index) => (
+              <tr key={mapping.name}>
+                <td className="select-cell">
+                  <Checkbox
+                    checked={mapping.selected}
+                    onChange={() =>
+                      setMappings((prev) =>
+                        prev.map((item, idx) =>
+                          idx === index ? { ...item, selected: !item.selected } : item
+                        )
+                      )
+                    }
+                  />
+                </td>
+                <td>{mapping.name}</td>
+                <td>{mapping.type}</td>
+                <td>
+                  <div className="custom-select-wrapper">
+                    <select
+                      className="custom-select"
+                      value={mapping.mappedTo}
+                      onChange={(e) =>
+                        setMappings((prev) =>
+                          prev.map((item, idx) =>
+                            idx === index ? { ...item, mappedTo: e.target.value } : item
+                          )
+                        )
+                      }
+                      disabled={!mapping.selected}
+                    >
+                      <option value="">선택 없음</option>
+                      {fileHeaders.map((header) => (
+                        <option key={header} value={header}>
+                          {header}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       <div className="actions">
         <Button variant="gray" onClick={onBack}>
@@ -169,7 +213,7 @@ const FileMappingContent: React.FC<FileMappingContentProps> = ({
       {showToast && (
         <div className="toast-wrapper">
           <Toast type="warning" title="매핑 오류" duration={2500}>
-            매핑할 컬럼을 선택해주세요.
+            매핑할 컬럼을 1개 이상 선택해주세요.
           </Toast>
         </div>
       )}
@@ -195,8 +239,9 @@ const FileMappingContent: React.FC<FileMappingContentProps> = ({
           align-items: center;
           justify-content: space-between;
           width: 100%;
-          margin-bottom: 20px;
+          margin-bottom: 12px;
           padding: 6px 0;
+          gap: 16px;
         }
 
         .record-info,
@@ -214,6 +259,11 @@ const FileMappingContent: React.FC<FileMappingContentProps> = ({
         .value {
           font: var(--preSemiBold14);
           color: var(--color-black);
+        }
+
+        .hint {
+          color: var(--color-dark-gray);
+          margin-bottom: 8px;
         }
 
         .record-field {
@@ -234,20 +284,49 @@ const FileMappingContent: React.FC<FileMappingContentProps> = ({
           box-shadow: 0 0 0 3px rgba(19, 70, 134, 0.15);
         }
 
-        .actions {
+        .mapping-table-wrapper {
           width: 100%;
-          display: flex;
-          justify-content: flex-end;
-          gap: 12px;
-          margin-top: 24px;
+          max-height: 320px;
+          overflow-y: auto;
+          border: 1px solid var(--color-gray-200);
+          border-radius: 10px;
         }
 
-        .toast-wrapper {
-          position: fixed;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          z-index: 9999;
+        .mapping-table {
+          width: 100%;
+          border-collapse: collapse;
+        }
+
+        .mapping-table th {
+          background-color: var(--color-header);
+          color: var(--color-black);
+          text-align: center;
+          padding: 12px 16px;
+          font: var(--preSemiBold14);
+          position: sticky;
+          top: 0;
+          z-index: 1;
+        }
+
+        .mapping-table td {
+          padding: 12px 16px;
+          border-bottom: 1px solid var(--color-gray-200);
+          text-align: center;
+          vertical-align: middle;
+          font: var(--preRegular14);
+          background-color: var(--color-white);
+        }
+
+        .mapping-table tr:last-child td {
+          border-bottom: none;
+        }
+
+        .mapping-table tr:hover td {
+          background-color: var(--color-light-blue);
+        }
+
+        .select-cell {
+          width: 72px;
         }
 
         .custom-select-wrapper {
@@ -276,13 +355,29 @@ const FileMappingContent: React.FC<FileMappingContentProps> = ({
         }
 
         .custom-select-wrapper::after {
-          content: '▼';
+          content: '⌄';
           position: absolute;
           right: 12px;
           top: 50%;
           transform: translateY(-50%);
           font-size: 10px;
           color: var(--color-dark-gray);
+        }
+
+        .actions {
+          width: 100%;
+          display: flex;
+          justify-content: flex-end;
+          gap: 12px;
+          margin-top: 24px;
+        }
+
+        .toast-wrapper {
+          position: fixed;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          z-index: 9999;
         }
       `}</style>
     </div>
