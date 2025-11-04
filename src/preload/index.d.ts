@@ -1,4 +1,8 @@
-import { FakerRuleInput, AIRuleInput } from './../main/services/data-generator/types'
+import {
+  FakerRuleInput,
+  AIRuleInput,
+  GenerationResult
+} from './../main/services/data-generator/types'
 import { ElectronAPI } from '@electron-toolkit/preload'
 import type {
   DBMS,
@@ -85,9 +89,10 @@ interface API {
     }
   }
   dataGenerator: {
-    generate: (payload: unknown) => Promise<unknown>
+    generate: (payload: unknown) => Promise<GenerationResult>
     onProgress: (callback: (msg: unknown) => void) => void
     removeProgressListeners: () => void
+    downloadZip: (zipPath: string) => void
   }
 }
 

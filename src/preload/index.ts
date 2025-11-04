@@ -16,7 +16,12 @@ import type {
   DatabaseSchema
 } from '../main/database/types'
 
-import { FakerRuleInput, AIRuleInput, GenerateRequest } from '../main/services/data-generator/types'
+import {
+  FakerRuleInput,
+  AIRuleInput,
+  GenerateRequest,
+  GenerationResult
+} from '../main/services/data-generator/types'
 
 // Custom APIs for renderer
 const api = {
@@ -113,7 +118,8 @@ const api = {
 
   // dataGenerator operations
   dataGenerator: {
-    generate: (payload: GenerateRequest) => ipcRenderer.invoke('gen:dummy:bulk', payload),
+    generate: (payload: GenerateRequest): Promise<GenerationResult> =>
+      ipcRenderer.invoke('gen:dummy:bulk', payload),
     onProgress: (callback: (msg: unknown) => void) => {
       ipcRenderer.on('data-generator:progress', (_, msg) => {
         callback(msg)
@@ -121,6 +127,9 @@ const api = {
     },
     removeProgressListeners: () => {
       ipcRenderer.removeAllListeners('data-generator:progress')
+    },
+    downloadZip: (zipPath: string) => {
+      ipcRenderer.invoke('gen:dummy:download', zipPath)
     }
   }
 }

@@ -23,17 +23,14 @@ export type FileMetaData = {
 }
 
 export type FakerMetaData = {
-  kind: 'faker'
   ruleId: number
 }
 
 export type AIMetaData = {
-  kind: 'ai'
   ruleId: number
 }
 
 export type FixedMetaData = {
-  kind: 'fixed'
   fixedValue: string
 }
 
