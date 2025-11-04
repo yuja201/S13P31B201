@@ -1,13 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react'
 import PageTitle from '@renderer/components/PageTitle'
 import Button from '@renderer/components/Button'
-import { useSchemaStore } from '@renderer/stores/schemaStore'
 import { useProjectStore } from '@renderer/stores/projectStore'
 import { ColumnDetail } from '@renderer/views/CreateDummyView'
 import { RuleResult } from './RuleModal'
-import type { Table } from '@main/database/types'
 
-// [ 1. 신규 ] Preload API 타입 정의
 declare global {
   interface Window {
     api: {
@@ -28,7 +25,6 @@ declare global {
   }
 }
 
-// [ 2. 신규 ] UI 상태를 위한 타입
 type ReferenceStrategy = 'RANDOM_SAMPLE' | 'FIXED_VALUE'
 type SampleState = { status: 'idle' | 'loading' | 'success' | 'error'; value: string }
 type ValidationState = 'idle' | 'loading' | 'valid' | 'invalid'
@@ -45,9 +41,7 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
   onConfirm
 }) => {
   const { selectedProject } = useProjectStore()
-  const schemasMap = useSchemaStore((state) => state.schemas)
 
-  // [ 3. 신규 ] 현재 연결된 DB ID
   const databaseId = selectedProject?.database?.id
 
   // --- FK 참조 정보 ---
@@ -55,13 +49,12 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
   const referencedTableName = schemaRef?.referenced_table || ''
   const referencedColumnName = schemaRef?.referenced_column || ''
 
-  // --- UI를 위한 상태 ---
   const [strategy, setStrategy] = useState<ReferenceStrategy>('RANDOM_SAMPLE')
   const [searchValue, setSearchValue] = useState('')
   const [validationState, setValidationState] = useState<ValidationState>('idle')
   const [samplePreview, setSamplePreview] = useState<SampleState>({ status: 'idle', value: '' })
 
-  // [ 4. 수정 ] 무작위 샘플링 (Electron IPC 호출)
+  // 무작위 샘플링 (Electron IPC 호출)
   useEffect(() => {
     if (strategy === 'RANDOM_SAMPLE' && databaseId) {
       setSamplePreview({ status: 'loading', value: '' })
@@ -82,7 +75,7 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
     }
   }, [strategy, referencedTableName, referencedColumnName, databaseId])
 
-  // [ 5. 수정 ] 고정값 검증 (Electron IPC 호출)
+  //  고정값 검증 (Electron IPC 호출)
   const handleValidateValue = () => {
     if (!searchValue.trim()) {
       alert('검색할 값을 입력하세요.')
@@ -116,7 +109,7 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
     setValidationState('idle')
   }, [searchValue])
 
-  // [ 6. 수정 ] 저장 로직
+  // 저장 로직
   const handleSave = (): void => {
     if (strategy === 'RANDOM_SAMPLE') {
       // 샘플 로딩 실패 시에도 저장은 가능하도록 허용
@@ -172,7 +165,7 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
       />
       <div className="divider" />
       <div className="ref-select__content">
-        {/* --- 1. 참조 정보 (고정) --- */}
+        {/* ---  참조 정보 (고정) --- */}
         <div className="select-group">
           <label className="preSemiBold14">참조 테이블</label>
           <input
@@ -194,7 +187,7 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
           />
         </div>
 
-        {/* --- 2. 생성 방식 선택 (라디오) --- */}
+        {/* ---  생성 방식 선택 (라디오) --- */}
         <div className="select-group">
           <label className="preSemiBold14">생성 방식</label>
           <div className="radio-group">
@@ -229,7 +222,7 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
           </div>
         </div>
 
-        {/* --- 3A. 무작위 샘플링 선택 시: 미리보기 UI --- */}
+        {/* ---  무작위 샘플링 선택 시: 미리보기 UI --- */}
         {strategy === 'RANDOM_SAMPLE' && (
           <div className="select-group">
             <label className="preSemiBold14">미리보기 (실제 값)</label>
@@ -245,7 +238,7 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
           </div>
         )}
 
-        {/* --- 3B. 고정값 선택 시: 검색 UI --- */}
+        {/* ---  고정값 선택 시: 검색 UI --- */}
         {strategy === 'FIXED_VALUE' && (
           <div className="select-group">
             <label className="preSemiBold14">참조값 검색</label>
@@ -268,7 +261,7 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
             </div>
             {/* 검증 상태 메시지 */}
             <div className="validation-message">
-              {validationState === 'valid' && <span className="valid">✅ 유효한 값입니다.</span>}
+              {validationState === 'valid' && <span className="valid"> 유효한 값입니다.</span>}
               {validationState === 'invalid' && (
                 <span className="invalid">
                   ❌ '{searchValue}'는 {referencedTableName} 테이블에 없습니다.
