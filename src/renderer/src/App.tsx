@@ -10,6 +10,7 @@ import CreateDummyView from '@renderer/views/CreateDummyView'
 import TestView from '@renderer/views/TestView'
 import HistoryView from '@renderer/views/HistoryView'
 import SelectMethodView from './views/SelectMethodView'
+import DummyInsertView from './views/DummyInsertView'
 
 const App: React.FC = () => {
   return (
@@ -29,6 +30,7 @@ const App: React.FC = () => {
             <Route path="test/:projectId" element={<TestView />} />
             <Route path="history/:projectId" element={<HistoryView />} />
             <Route path="select-method/:projectId/:tableId" element={<SelectMethodView />} />
+            <Route path="insert/sql/:projectId/:tableId" element={<DummyInsertView />} />
             <Route index element={<Navigate to="dashboard/:projectId" replace />} />
           </Route>
         </Route>

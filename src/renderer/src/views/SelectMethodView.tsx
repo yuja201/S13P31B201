@@ -1,10 +1,11 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import PageTitle from '@renderer/components/PageTitle'
 import { ArrowLeft } from 'react-feather'
 
 const SelectMethodView: React.FC = () => {
   const navigate = useNavigate()
+  const { projectId, tableId } = useParams<{ projectId: string; tableId: string }>()
   const [isHover, setIsHover] = useState(false)
 
   const baseColor = 'var(--color-dark-gray)'
@@ -48,7 +49,7 @@ const SelectMethodView: React.FC = () => {
       <div style={{ display: 'flex', gap: 40 }}>
         {/* INSERT SQL 생성하기 */}
         <div
-          onClick={() => {}}
+          onClick={() => navigate(`/main/insert/sql/${projectId}/${tableId}`)}
           style={{
             width: 500,
             height: 160,
@@ -63,12 +64,8 @@ const SelectMethodView: React.FC = () => {
             justifyContent: 'center',
             transition: 'all 0.25s ease'
           }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'var(--color-light-blue)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'var(--color-white)'
-          }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-light-blue)')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-white)')}
         >
           <p className="preSemiBold20" style={{ color: 'var(--color-black)', marginBottom: 8 }}>
             INSERT SQL 생성하기
@@ -80,7 +77,7 @@ const SelectMethodView: React.FC = () => {
 
         {/* 바로 DB에 삽입하기 */}
         <div
-          onClick={() => {}}
+          onClick={() => navigate(`/main/insert/db/${projectId}/${tableId}`)}
           style={{
             width: 500,
             height: 160,
@@ -95,12 +92,8 @@ const SelectMethodView: React.FC = () => {
             justifyContent: 'center',
             transition: 'all 0.25s ease'
           }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'var(--color-light-blue)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'var(--color-white)'
-          }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-light-blue)')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-white)')}
         >
           <p className="preSemiBold20" style={{ color: 'var(--color-black)', marginBottom: 8 }}>
             바로 DB에 삽입하기
