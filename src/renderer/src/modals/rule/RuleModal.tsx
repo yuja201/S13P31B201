@@ -4,6 +4,7 @@ import RuleSelectContent from '@renderer/modals/rule/RuleSelectContent'
 import RuleCreationContent, { RuleCreationData } from '@renderer/modals/rule/RuleCreationContent'
 import { ColumnDetail } from '@renderer/views/CreateDummyView'
 import EnumSelectContent from '@renderer/modals/rule/EnumSelectContent'
+import ReferenceSelectContent from '@renderer/modals/rule/ReferenceSelectContent'
 
 export type GenerationType = 'Faker.js' | 'AI' | '참조' | '파일 업로드' | '고정값' | 'ENUM'
 
@@ -55,6 +56,7 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, onConfir
   }, [isOpen])
 
   const hasEnumList = column.enumList && column.enumList.length > 0
+  const isForeignKey = column.isForeignKey && column.foreignKeys && column.foreignKeys.length > 0
   const columnType = column.type
   const columnName = column.name
 
@@ -62,7 +64,13 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, onConfir
     <Modal isOpen={isOpen} onClose={onClose} width="720px">
       <div className="rule-modal">
         {mode === 'select' ? (
-          hasEnumList ? (
+          isForeignKey ? (
+            <ReferenceSelectContent
+              column={column}
+              onCancel={onClose}
+              onConfirm={handleConfirmSelect}
+            />
+          ) : hasEnumList ? (
             <EnumSelectContent
               columnName={columnName}
               enumList={column.enumList!}
@@ -70,7 +78,6 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, onConfir
               onConfirm={handleConfirmSelect}
             />
           ) : (
-            // ENUM 목록이 없으면 기존 RuleSelectContent 렌더링
             <RuleSelectContent
               columnType={columnType}
               columnName={columnName}
@@ -80,7 +87,6 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, onConfir
             />
           )
         ) : (
-          // "새로 만들기" 모드
           <RuleCreationContent
             columnType={columnType}
             columnName={columnName}

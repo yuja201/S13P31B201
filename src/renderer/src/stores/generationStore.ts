@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import type { RuleResult } from '@renderer/modals/rule/RuleModal'
 
-export type DataSourceType = 'FAKER' | 'AI' | 'FILE' | 'MANUAL'
+export type DataSourceType = 'FAKER' | 'AI' | 'FILE' | 'MANUAL' | 'REFERENCE'
 
 export type FileMetaData = {
   kind: 'file'
@@ -30,7 +30,18 @@ export type ManualMetaData = {
   fixedValue: string
 }
 
-export type ColumnMetaData = FakerMetaData | AIMetaData | FileMetaData | ManualMetaData
+export type ReferenceMetaData = {
+  kind: 'reference'
+  refTable: string
+  refColumn: string
+}
+
+export type ColumnMetaData =
+  | FakerMetaData
+  | AIMetaData
+  | FileMetaData
+  | ManualMetaData
+  | ReferenceMetaData
 
 export interface ColumnConfig {
   columnName: string
@@ -153,12 +164,22 @@ export const useGenerationStore = create<GenerationState>((set) => ({
       }
       dataSource = 'AI'
       metaData = { kind: 'ai', ruleId }
+    } else if (rule.generation === '참조') {
+      dataSource = 'REFERENCE'
+      const [refTable, refColumn] = rule.setting.split('.')
+      if (!refTable || !refColumn) {
+        console.warn(`유효하지 않은 참조(FK) 설정: ${rule.setting}`)
+        return
+      }
+      metaData = {
+        kind: 'reference',
+        refTable: refTable,
+        refColumn: refColumn
+      }
     } else {
-      // TODO: '참조(REFERENCE)' 등 다른 타입 처리
       console.warn(`Unknown generation type: ${rule.generation}`)
-      return // 알 수 없는 타입이면 중단
+      return
     }
-
     // 새 ColumnConfig 생성
     const newColumnConfig: ColumnConfig = {
       columnName: columnName,

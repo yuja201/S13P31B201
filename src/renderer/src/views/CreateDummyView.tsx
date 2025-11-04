@@ -33,7 +33,6 @@ export type TableInfo = {
 const convertColumn = (col: Column, table: Table): ColumnDetail => {
   const constraints: string[] = []
   if (col.isPrimaryKey) constraints.push('PK')
-  if (col.isForeignKey) constraints.push('FK')
   if (col.notNull) constraints.push('NOT NULL')
   if (col.unique) constraints.push('UNIQUE')
   if (col.autoIncrement) constraints.push('AUTO INCREMENT')
@@ -43,7 +42,11 @@ const convertColumn = (col: Column, table: Table): ColumnDetail => {
   if (col.domain) constraints.push('DOMAIN')
 
   const columnForeignKeys = table.foreignKeys?.filter((fk) => fk.column_name === col.name) || null
+  const isForeignKey = (columnForeignKeys && columnForeignKeys.length > 0) || false
 
+  if (isForeignKey) {
+    constraints.push('FK')
+  }
   // ---  생성 방식 & 설정 자동 채우기 로직 ---
   let generation = ''
   let setting = ''
@@ -54,15 +57,6 @@ const convertColumn = (col: Column, table: Table): ColumnDetail => {
   } else if (col.default) {
     generation = '고정값'
     setting = col.default
-  } else if (col.isForeignKey) {
-    generation = '참조'
-    setting = '테이블.컬럼'
-  }
-
-  if (col.isForeignKey && columnForeignKeys && columnForeignKeys.length > 0) {
-    generation = '참조'
-    const ref = columnForeignKeys[0]
-    setting = `${ref.referenced_table}.${ref.referenced_table}`
   }
 
   return {
@@ -74,7 +68,7 @@ const convertColumn = (col: Column, table: Table): ColumnDetail => {
     defaultValue: col.default || null,
     checkConstraint: col.check || null,
     enumList: col.enum || null,
-    isForeignKey: col.isForeignKey || false,
+    isForeignKey: isForeignKey,
     foreignKeys: columnForeignKeys
   }
 }
@@ -126,22 +120,6 @@ const CreateDummyView: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [tables])
 
-  const handleColumnUpdate = (columnName: string, generation: string, setting: string): void => {
-    if (!focusedTable) return
-
-    const newColumnDetails = focusedTable.columnDetails.map((col) => {
-      if (col.name === columnName) {
-        return { ...col, generation, setting }
-      }
-      return col
-    })
-
-    setFocusedTable({
-      ...focusedTable,
-      columnDetails: newColumnDetails
-    })
-  }
-
   if (isLoading) {
     return <div>스키마 로딩 중...</div>
   }
@@ -159,12 +137,7 @@ const CreateDummyView: React.FC = () => {
             focusedTableId={focusedTable?.id || ''}
             onTableSelect={(table) => setFocusedTable(table)}
           />
-          {focusedTable && (
-            <DBTableDetail
-              table={focusedTable}
-              onColumnUpdate={handleColumnUpdate} // [!] 함수 전달
-            />
-          )}
+          {focusedTable && <DBTableDetail table={focusedTable} />}
         </div>
       </div>
 
