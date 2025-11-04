@@ -1,3 +1,5 @@
+// @renderer/modals/rule/ReferenceSelectContent.tsx
+
 import React, { useState, useMemo } from 'react'
 import PageTitle from '@renderer/components/PageTitle'
 import Button from '@renderer/components/Button'
@@ -6,6 +8,8 @@ import { useProjectStore } from '@renderer/stores/projectStore'
 import { ColumnDetail } from '@renderer/views/CreateDummyView'
 import { RuleResult } from './RuleModal'
 import type { Table } from '@main/database/types'
+
+type ReferenceStrategy = 'RANDOM_SAMPLE' | 'FIXED_VALUE'
 
 interface ReferenceSelectContentProps {
   column: ColumnDetail
@@ -21,55 +25,53 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
   const { selectedProject } = useProjectStore()
   const schemasMap = useSchemaStore((state) => state.schemas)
 
-  // --- (기존 로직 동일) ---
+  // --- (기존 FK 정보 로직은 동일) ---
   const schemaRef = useMemo(() => column.foreignKeys?.[0], [column.foreignKeys])
   const referencedTableName = schemaRef?.referenced_table || ''
+  const referencedColumnName = schemaRef?.referenced_column || ''
 
-  const referencedTableInfo: Table | undefined = useMemo(() => {
-    // ... (기존 로직 동일)
-    const dbId = selectedProject?.database?.id
-    if (!dbId || !referencedTableName) return undefined
-    const allTables = schemasMap.get(dbId)?.tables || []
-    return allTables.find((t) => t.name === referencedTableName)
-  }, [selectedProject?.database?.id, schemasMap, referencedTableName])
-
-  const targetColumns = useMemo(() => {
-    // ... (기존 로직 동일)
-    return referencedTableInfo?.columns.map((c) => c.name) || []
-  }, [referencedTableInfo])
-
-  const [selectedColumn, setSelectedColumn] = useState(schemaRef?.referenced_column || '')
-  // --- [수정 1] 드롭다운 목록을 토글할 상태 추가 ---
-  const [isListOpen, setIsListOpen] = useState(false)
+  const [strategy, setStrategy] = useState<ReferenceStrategy>('RANDOM_SAMPLE')
+  const [fixedValue, setFixedValue] = useState('')
 
   const handleSave = (): void => {
-    // ... (기존 로직 동일)
-    if (!referencedTableName || !selectedColumn) {
-      alert('참조 컬럼을 선택하세요.')
-      return
+    // "무작위 샘플링" 선택 시 (기존 '참조' 로직)
+    if (strategy === 'RANDOM_SAMPLE') {
+      const settingString = `${referencedTableName}.${referencedColumnName}`
+      onConfirm({
+        generation: '참조',
+        setting: settingString
+      })
     }
-    const settingString = `${referencedTableName}.${selectedColumn}`
-    onConfirm({
-      generation: '참조',
-      setting: settingString
-    })
+    // "고정값 지정" 선택 시 ('고정값' 로직)
+    else {
+      if (!fixedValue.trim()) {
+        alert('사용할 고정값을 입력하세요.')
+        return
+      }
+      onConfirm({
+        generation: '고정값',
+        setting: fixedValue
+      })
+    }
   }
 
-  // --- (에러 UI 동일) ---
-  if (!schemaRef || !referencedTableInfo) {
-    return <div className="ref-select">{/* ... (기존 에러 UI) ... */}</div>
+  if (!schemaRef || !referencedTableName) {
+    return (
+      <div className="ref-select">
+        {/* ... (기존 에러 UI) ... */}
+      </div>
+    )
   }
 
   return (
     <div className="ref-select">
       <PageTitle
         title={`참조 설정 - ${column.name}`}
-        description="이 컬럼이 값을 가져올 외부 테이블과 컬럼을 선택하세요."
+        description="참조 컬럼에서 값을 가져올 방식을 선택하세요."
         size="small"
       />
       <div className="divider" />
       <div className="ref-select__content">
-        {/* --- 참조 테이블 (기존과 동일) --- */}
         <div className="select-group">
           <label className="preSemiBold14">참조 테이블</label>
           <input
@@ -77,58 +79,88 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
             value={referencedTableName}
             disabled
             className="custom-select"
-            style={{ backgroundColor: 'var(--color-white)', cursor: 'not-allowed' }}
+          />
+        </div>
+        <div className="select-group">
+          <label className="preSemiBold14">참조 컬럼</label>
+          <input
+            type="text"
+            value={referencedColumnName}
+            disabled
+            className="custom-select"
           />
         </div>
 
-        {/* --- [수정 2] 커스텀 Select로 변경 --- */}
+        {/* ---  생성 방식 선택 UI (라디오 버튼) --- */}
         <div className="select-group">
           <label className="preSemiBold14">
-            참조 컬럼 <span style={{ color: '#ED3F27' }}>*</span>
+            생성 방식 <span style={{ color: '#ED3F27' }}>*</span>
           </label>
-
-          {/* 1. 현재 선택된 값을 보여주는 버튼 */}
-          <button
-            type="button"
-            className="custom-select"
-            onClick={() => setIsListOpen(!isListOpen)}
-          >
-            {/* 선택된 값이 없으면 플레이스홀더 표시 */}
-            <span style={{ color: selectedColumn ? 'var(--color-black)' : '#888' }}>
-              {selectedColumn || '--- 컬럼 선택 ---'}
-            </span>
-            {/* 커스텀 화살표 (CSS로 그림) */}
-            <div className="custom-select-arrow" />
-          </button>
-
-          {/* 2. 클릭하면 나타나는 옵션 목록 (div) */}
-          {isListOpen && (
-            <div className="custom-select-list">
-              {targetColumns.map((colName) => (
-                <div
-                  key={colName}
-                  className={`custom-select-option ${selectedColumn === colName ? 'selected' : ''}`}
-                  onClick={() => {
-                    setSelectedColumn(colName) // 값 변경
-                    setIsListOpen(false) // 목록 닫기
-                  }}
-                >
-                  {colName}
-                </div>
-              ))}
-            </div>
-          )}
+          <div className="radio-group">
+            {/* 옵션 1: 무작위 샘플링 */}
+            <label
+              className={`radio-option ${strategy === 'RANDOM_SAMPLE' ? 'selected' : ''}`}
+            >
+              <input
+                type="radio"
+                name="ref-strategy"
+                value="RANDOM_SAMPLE"
+                checked={strategy === 'RANDOM_SAMPLE'}
+                onChange={() => setStrategy('RANDOM_SAMPLE')}
+              />
+              <div className="radio-label">
+                <span className="preSemiBold16">무작위 샘플링 (권장)</span>
+                <span className="preRegular14">
+                  {referencedTableName} 테이블의 값 중 무작위로 선택
+                </span>
+              </div>
+            </label>
+            {/* 옵션 2: 고정값 지정 */}
+            <label
+              className={`radio-option ${strategy === 'FIXED_VALUE' ? 'selected' : ''}`}
+            >
+              <input
+                type="radio"
+                name="ref-strategy"
+                value="FIXED_VALUE"
+                checked={strategy === 'FIXED_VALUE'}
+                onChange={() => setStrategy('FIXED_VALUE')}
+              />
+              <div className="radio-label">
+                <span className="preSemiBold16">고정값 지정</span>
+                <span className="preRegular14">
+                  참조할 특정 ID를 직접 입력
+                </span>
+              </div>
+            </label>
+          </div>
         </div>
+
+        {strategy === 'FIXED_VALUE' && (
+          <div className="select-group">
+            <label className="preSemiBold14">
+              고정값 <span style={{ color: '#ED3F27' }}>*</span>
+            </label>
+            <input
+              type="text"
+              value={fixedValue}
+              onChange={(e) => setFixedValue(e.target.value)}
+              className="custom-select"
+              placeholder="예: 10 (숫자), 'abc' (문자)"
+            />
+          </div>
+        )}
       </div>
-      {/* --- 하단 버튼 (기존과 동일) --- */}
+      {/* --- 하단 버튼 --- */}
       <div className="footer">
         <Button variant="gray" onClick={onCancel}>
           취소
         </Button>
-        <Button variant="blue" onClick={handleSave} disabled={!selectedColumn}>
+        <Button variant="blue" onClick={handleSave}>
           저장
         </Button>
       </div>
+
       <style>{`
         .ref-select {
           display: flex;
@@ -136,36 +168,27 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
           gap: 25px;
           padding: 0 14px 14px 0;
         }
-
         .divider {
           border: none;
           border-top: 1px solid var(--color-gray-200);
+          margin-top: 12px;
         }
-
         .ref-select__content {
           display: flex;
           flex-direction: column;
-          gap: 40px;
+          gap: 20px;
           overflow: visible;
-          margin-top:20px;
         }
-
         .select-group {
           display: flex;
           flex-direction: column;
           gap: 8px;
-          position: relative;
         }
-
         .select-group label {
           font: var(--preSemiBold14);
           color: var(--color-black);
         }
-
         .custom-select {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
           width: 100%;
           height: 42px;
           border: 1px solid var(--color-gray-200);
@@ -176,67 +199,71 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
           background-color: var(--color-white);
           color: var(--color-black);
           box-sizing: border-box;
-          text-align: left;
         }
-        
-        button.custom-select {
-          cursor: pointer;
-        }
-
         .custom-select:disabled {
-          background-color: var(--color-white);
+          background-color: var(--color-background);
           cursor: not-allowed;
         }
-
         .custom-select:focus {
           border-color: var(--color-main-blue);
           box-shadow: 0 0 0 2px rgba(19, 70, 134, 0.2);
         }
 
-        .custom-select-arrow {
-          width: 0;
-          height: 0;
-          border-left: 5px solid transparent;
-          border-right: 5px solid transparent;
-          border-top: 5px solid #666;
+        /* --- 라디오 버튼 스타일 --- */
+        .radio-group {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
         }
-
-        .custom-select-list {
-          position: absolute;
-          top: 100%; 
-          left: 0;
-          right: 0;
-          background-color: var(--color-white);
-          border: 1px solid var(--color-gray-200);
-          border-top: none; 
-          border-radius: 0 0 10px 10px;
-          box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-          max-height: 210px; 
-          overflow-y: auto; 
-          z-index: 100;     
-        }
-
-        .custom-select-option {
-          padding: 10px 16px;
-          font: var(--preRegular16);
+        .radio-option {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 16px;
+          border: 1.5px solid var(--color-gray-200);
+          border-radius: 10px;
           cursor: pointer;
+          transition: all 0.2s ease;
         }
-
-        .custom-select-option:hover {
+        .radio-option:hover {
+          border-color: var(--color-main-blue);
+        }
+        .radio-option.selected {
+          border-color: var(--color-main-blue);
           background-color: var(--color-light-blue);
+          box-shadow: 0 0 0 2px rgba(19, 70, 134, 0.2);
         }
-
-        .custom-select-option.selected {
+        .radio-option input[type='radio'] {
+          /* 기본 라디오 버튼 숨기기 */
+          appearance: none;
+          -webkit-appearance: none;
+          width: 20px;
+          height: 20px;
+          border: 1.5px solid var(--color-gray-400);
+          border-radius: 50%;
+          transition: all 0.2s ease;
+        }
+        .radio-option input[type='radio']:checked {
           background-color: var(--color-main-blue);
-          color: white;
-          font-weight: var(--fw-semiBold);
+          border-color: var(--color-main-blue);
+          background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="white"%3e%3ccircle cx="8" cy="8" r="4" /%3e%3c/svg%3e');
+          background-position: center;
+          background-repeat: no-repeat;
         }
-
+        .radio-label {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+        }
+        .radio-label .preRegular14 {
+          color: var(--color-dark-gray);
+        }
+        
         .footer {
           display: flex;
           justify-content: flex-end;
           gap: 8px;
-          margin-top: 40px;
+          margin-top: 10px;
         }
       `}</style>
     </div>
