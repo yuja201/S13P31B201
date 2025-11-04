@@ -16,16 +16,16 @@ import { createFileValueStream } from './file-generator.js'
 import { generateFixedStream } from './fixed-generator.js'
 
 function isFileMeta(meta: ColumnMetaData | undefined): meta is FileMetaData {
-  return Boolean(meta && meta.kind === 'file')
+  return Boolean(meta)
 }
 function isAIMeta(meta: ColumnMetaData | undefined): meta is AIMetaData {
-  return Boolean(meta && meta.kind === 'ai')
+  return Boolean(meta)
 }
 function isFakerMeta(meta: ColumnMetaData | undefined): meta is FakerMetaData {
-  return Boolean(meta && meta.kind === 'faker')
+  return Boolean(meta)
 }
 function isFixedMeta(meta: ColumnMetaData | undefined): meta is FixedMetaData {
-  return Boolean(meta && meta.kind === 'fixed')
+  return Boolean(meta)
 }
 
 async function runWorker(task: WorkerTask): Promise<WorkerResult> {
