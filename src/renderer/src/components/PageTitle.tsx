@@ -10,6 +10,13 @@ const PageTitle: React.FC<PageTitleProps> = ({ title, description, size = 'large
   const titleClass = size === 'small' ? 'preSemiBold24' : 'preBold32'
   const descClass = size === 'small' ? 'preRegular16' : 'preLight20'
 
+  const descriptionLines = description ? description.split('\n') : []
+
+  const descStyle: React.CSSProperties = {
+    color: 'var(--color-dark-gray)',
+    lineHeight: '1.0'
+  }
+
   return (
     <div
       style={{
@@ -30,18 +37,12 @@ const PageTitle: React.FC<PageTitleProps> = ({ title, description, size = 'large
       >
         {title}
       </h2>
-      {description && (
-        <p
-          className={descClass}
-          style={{
-            color: 'var(--color-dark-gray)',
-            lineHeight: '1.3',
-            whiteSpace: 'pre-line'
-          }}
-        >
-          {description.replace(/\\n/g, '\n')}
-        </p>
-      )}
+      {descriptionLines.length > 0 &&
+        descriptionLines.map((line, index) => (
+          <p key={index} className={descClass} style={descStyle}>
+            {line}
+          </p>
+        ))}
     </div>
   )
 }

@@ -1,7 +1,7 @@
 import React from 'react'
-import databaseIcon from '@renderer/assets/icons/database.png'
-import personIcon from '@renderer/assets/icons/person.png'
-import clockIcon from '@renderer/assets/icons/clock.png'
+import { BsDatabase } from 'react-icons/bs'
+import { IoPersonOutline } from 'react-icons/io5'
+import { IoTimeOutline } from 'react-icons/io5'
 
 interface CardProps {
   name: string
@@ -13,6 +13,7 @@ interface CardProps {
   lastUpdated: string
   width?: number | string
   height?: number | string
+  onClick?: () => void
 }
 
 const Card: React.FC<CardProps> = ({
@@ -23,8 +24,9 @@ const Card: React.FC<CardProps> = ({
   port,
   username,
   lastUpdated,
-  width = 443,
-  height = 'auto'
+  width = 400,
+  height = 'auto',
+  onClick
 }) => {
   return (
     <>
@@ -37,22 +39,23 @@ const Card: React.FC<CardProps> = ({
             background-color: var(--color-white);
             border: 1px solid rgba(0, 0, 0, 0.1);
             border-radius: 12px;
-            padding: 32px;
+            padding: 24px;
             box-shadow: var(--shadow);
-            transition: box-shadow 0.2s ease;
-            overflow: hidden;
+            transition: box-shadow 0.2s ease, transform 0.2s ease;
+            cursor: pointer;
           }
 
           .card:hover {
             box-shadow: 2px 4px 6px rgba(0, 0, 0, 0.15);
+            transform: translateY(-2px);
           }
 
           .card-header {
             display: flex;
             flex-direction: column;
             align-items: flex-start;
-            gap: 23px;
-            margin-bottom: 23px;
+            gap: 16px;
+            margin-bottom: 16px;
           }
 
           .card-title {
@@ -63,7 +66,7 @@ const Card: React.FC<CardProps> = ({
           .card-badge {
             background-color: var(--color-main-blue);
             color: var(--color-white);
-            padding: 4px 12px;
+            padding: 4px 10px;
             border-radius: 999px;
             font: var(--preSemiBold12);
             box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.15);
@@ -71,19 +74,19 @@ const Card: React.FC<CardProps> = ({
 
           .card-description {
             color: var(--color-dark-gray);
-            margin-bottom: 16px;
+            margin-bottom: 12px;
           }
 
           .card-info {
             display: flex;
             flex-direction: column;
-            gap: 23px;
+            gap: 16px;
           }
 
           .info-group {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 4px;
           }
 
           .card-row {
@@ -93,25 +96,15 @@ const Card: React.FC<CardProps> = ({
             color: var(--color-dark-gray);
           }
 
-          .card-icon {
+          .card-icon, .clock-icon {
             width: 16px;
             height: 16px;
-            flex-shrink: 0;
-            object-fit: contain;
-            opacity: 0.85;
-          }
-
-          .clock-icon {
-            width: 20px;
-            height: 20px;
-            flex-shrink: 0;
-            object-fit: contain;
             opacity: 0.85;
           }
         `}
       </style>
 
-      <div className="card" style={{ width, height }}>
+      <div className="card" style={{ width, height }} onClick={onClick}>
         <div className="card-header">
           <h2 className="card-title">{name}</h2>
           <span className="card-badge">{dbType}</span>
@@ -122,18 +115,18 @@ const Card: React.FC<CardProps> = ({
         <div className="card-info">
           <div className="info-group">
             <div className="card-row">
-              <img src={databaseIcon} alt="database" className="card-icon" />
+              <BsDatabase />
               <span className="preLight14">{`${host}:${port}`}</span>
             </div>
             <div className="card-row">
-              <img src={personIcon} alt="user" className="card-icon" />
+              <IoPersonOutline />
               <span className="preLight14">{username}</span>
             </div>
           </div>
 
           <div className="card-row">
-            <img src={clockIcon} alt="clock" className="clock-icon" />
-            <span className="preLight16">{lastUpdated}</span>
+            <IoTimeOutline size={18} />
+            <span className="preLight14">{lastUpdated}</span>
           </div>
         </div>
       </div>

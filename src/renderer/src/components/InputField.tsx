@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { ReactElement } from 'react'
 
 interface InputFieldProps {
@@ -11,6 +11,7 @@ interface InputFieldProps {
   value?: string
   onChange?: (value: string) => void
   size?: 'md' | 'sm'
+  password?: boolean
 }
 
 const InputField = ({
@@ -22,9 +23,14 @@ const InputField = ({
   titleBold = false,
   value,
   onChange,
-  size = 'md'
+  size = 'md',
+  password = false
 }: InputFieldProps): ReactElement => {
   const [inputValue, setInputValue] = useState(value || '')
+
+  useEffect(() => {
+    setInputValue(value || '')
+  }, [value])
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>): void => {
     const newValue = e.target.value
@@ -93,7 +99,7 @@ const InputField = ({
           {required && <span className="input-field-required">*</span>}
         </div>
         <input
-          type="text"
+          type={password ? 'password' : 'text'}
           className="input-field-input"
           placeholder={placeholder}
           value={inputValue}

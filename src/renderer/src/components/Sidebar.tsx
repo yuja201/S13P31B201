@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate, useLocation } from 'react-router-dom'
+import { LiaExchangeAltSolid } from 'react-icons/lia'
 import { FaDatabase, FaLink, FaChartBar, FaHistory } from 'react-icons/fa'
 import logoIcon from '@renderer/assets/icons/logo.svg'
 import { GrUpdate } from 'react-icons/gr'
@@ -9,18 +10,30 @@ import { BsLayoutSidebar } from 'react-icons/bs'
 
 interface SidebarProps {
   locked?: boolean
+  projectName?: string
+  dbType?: string
+  projectId?: string
 }
-const Sidebar: React.FC<SidebarProps> = ({ locked = false }) => {
+const Sidebar: React.FC<SidebarProps> = ({ locked = false, projectName, dbType, projectId }) => {
   const [collapsed, setCollapsed] = useState(locked)
+  const navigate = useNavigate()
+
   const toggleSidebar = (): void => {
     if (locked) return
     setCollapsed(!collapsed)
+  }
+
+  // --- MainView로 이동하는 함수 ---
+  const goToMainView = (): void => {
+    navigate('/')
   }
 
   // locked prop이 변경될 때
   useEffect(() => {
     setCollapsed(locked)
   }, [locked])
+
+  const location = useLocation()
 
   const currentTime = new Date().toLocaleString('ko-KR', {
     year: 'numeric',
@@ -67,10 +80,14 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false }) => {
 
           {/* 프로젝트 정보 */}
           <div className="sidebar-project">
-            <p className="preRegular16 project-label">현재 프로젝트</p>
+            <div className="project-label-wrapper" onClick={goToMainView}>
+              <p className="preRegular16 project-label">
+                프로젝트 변경 <LiaExchangeAltSolid size={18} />
+              </p>
+            </div>
             <div className="project-box shadow">
-              <div className="project-name preSemiBold20">FORINGKOR</div>
-              <div className="project-db preLight12">PostgreSQL</div>
+              <div className="project-name preSemiBold20">{projectName || '선택 안됨'}</div>
+              <div className="project-db preLight12">{dbType || '-'}</div>
             </div>
             <div className="preLight12 project-time">
               <GrUpdate /> {currentTime}
@@ -80,7 +97,7 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false }) => {
         {/* 메뉴 */}
         <nav className="sidebar-menu">
           <NavLink
-            to="/main/dashboard"
+            to={projectId ? `/main/dashboard/${projectId}` : '#'}
             className={({ isActive }): string =>
               `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
             }
@@ -88,7 +105,7 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false }) => {
             <RxDashboard size={22} /> 프로젝트 대시보드
           </NavLink>
           <NavLink
-            to="/main/info"
+            to={projectId ? `/main/info/${projectId}` : '#'}
             className={({ isActive }): string =>
               `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
             }
@@ -96,15 +113,18 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false }) => {
             <FaLink size={22} /> 프로젝트 정보
           </NavLink>
           <NavLink
-            to="/main/dummy"
-            className={({ isActive }): string =>
-              `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
-            }
+            to={projectId ? `/main/dummy/${projectId}` : '#'}
+            className={(): string => {
+              const isDummyRelated =
+                location.pathname.startsWith(`/main/dummy/${projectId}`) ||
+                location.pathname.startsWith(`/main/select-method/${projectId}`)
+              return `sidebar-link ${isDummyRelated ? 'sidebar-link-active' : ''}`
+            }}
           >
             <FaDatabase size={22} /> 더미데이터 생성
           </NavLink>
           <NavLink
-            to="/main/test"
+            to={projectId ? `/main/test/${projectId}` : '#'}
             className={({ isActive }): string =>
               `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
             }
@@ -112,7 +132,7 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false }) => {
             <FaChartBar size={22} /> DB 성능 테스트
           </NavLink>
           <NavLink
-            to="/main/history"
+            to={projectId ? `/main/history/${projectId}` : '#'}
             className={({ isActive }): string =>
               `sidebar-link ${isActive ? 'sidebar-link-active' : ''}`
             }
@@ -218,13 +238,31 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false }) => {
           overflow: hidden;
           white-space: nowrap;
         }
-
+        .project-label-wrapper {
+          display: flex; 
+          justify-content: center; 
+          width: 100%; 
+          cursor: pointer; 
+          padding: 4px 0; 
+          border-radius: 4px; 
+          transition: background-color 0.2s ease;
+        }
+        .project-label-wrapper:hover {
+        }
         .project-label {
           display: flex;
           align-items: center;
           gap: 8px;
         }
 
+        .project-label svg {
+          transition: transform 0.3s ease-in-out; 
+        }
+
+        .project-label-wrapper:hover .project-label svg {
+          transform: rotate(180deg); 
+        }
+          
         .project-box {
           display: flex;
           flex-direction: column;

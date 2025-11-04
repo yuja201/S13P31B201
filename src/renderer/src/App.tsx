@@ -9,6 +9,7 @@ import SchemaView from '@renderer/views/SchemaView'
 import CreateDummyView from '@renderer/views/CreateDummyView'
 import TestView from '@renderer/views/TestView'
 import HistoryView from '@renderer/views/HistoryView'
+import SelectMethodView from './views/SelectMethodView'
 
 const App: React.FC = () => {
   return (
@@ -21,15 +22,14 @@ const App: React.FC = () => {
 
           {/*  프로젝트 뷰들 (사이드바 활성)*/}
           <Route path="main">
-            <Route path="dashboard" element={<DashboardView />} />
-            <Route path="info" element={<InfoView />} />
-            <Route path="schema" element={<SchemaView />} />
-            <Route path="dummy" element={<CreateDummyView />} />
-            <Route path="test" element={<TestView />} />
-            <Route path="history" element={<HistoryView />} />
-
-            {/* /main 접속 시 대시보드로 자동 이동 */}
-            <Route index element={<Navigate to="dashboard" replace />} />
+            <Route path="dashboard/:projectId" element={<DashboardView />} />
+            <Route path="info/:projectId" element={<InfoView />} />
+            <Route path="schema/:projectId" element={<SchemaView />} />
+            <Route path="dummy/:projectId" element={<CreateDummyView />} />
+            <Route path="test/:projectId" element={<TestView />} />
+            <Route path="history/:projectId" element={<HistoryView />} />
+            <Route path="select-method/:projectId/:tableId" element={<SelectMethodView />} />
+            <Route index element={<Navigate to="dashboard/:projectId" replace />} />
           </Route>
         </Route>
       </Routes>
