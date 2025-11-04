@@ -9,9 +9,11 @@ import {
   type ColumnMetaData,
   AIMetaData,
   FakerMetaData,
-  FileMetaData
+  FileMetaData,
+  FixedMetaData
 } from './types.js'
 import { createFileValueStream } from './file-generator.js'
+import { generateFixedStream } from './fixed-generator.js'
 
 function isFileMeta(meta: ColumnMetaData | undefined): meta is FileMetaData {
   return Boolean(meta && meta.kind === 'file')
@@ -21,6 +23,9 @@ function isAIMeta(meta: ColumnMetaData | undefined): meta is AIMetaData {
 }
 function isFakerMeta(meta: ColumnMetaData | undefined): meta is FakerMetaData {
   return Boolean(meta && meta.kind === 'faker')
+}
+function isFixedMeta(meta: ColumnMetaData | undefined): meta is FixedMetaData {
+  return Boolean(meta && meta.kind === 'fixed')
 }
 
 async function runWorker(task: WorkerTask): Promise<WorkerResult> {
@@ -99,11 +104,16 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
           }
           return createFileValueStream(col.metaData, recordCnt)
 
-        case 'MANUAL':
-          // TODO: 사용자 직접 입력값 반복 처리
-          // 예시:
-          // return generateManualStream(col.metaData.fixedValue)
-          throw new Error(`[미구현] Manual 입력은 아직 지원되지 않습니다. (${col.columnName})`)
+        case 'FIXED':
+          if (!isFixedMeta(col.metaData)) {
+            throw new Error(
+              `[고정값 메타데이터 오류] ${tableName}.${col.columnName} 컬럼의 고정값 설정이 올바르지 않습니다.`
+            )
+          }
+          return generateFixedStream({
+            fixedValue: col.metaData.fixedValue,
+            recordCnt
+          })
 
         default:
           throw new Error(`알 수 없는 데이터 소스: ${dataSource}`)
