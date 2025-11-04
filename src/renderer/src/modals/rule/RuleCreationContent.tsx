@@ -31,8 +31,6 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
   onCancel,
   onSubmit
 }) => {
-  console.log('env check', window.env)
-
   const [selectedSource, setSelectedSource] = useState<'FAKER' | 'AI'>('FAKER')
   const [settingName, setSettingName] = useState('')
   const [apiToken, setApiToken] = useState('')
