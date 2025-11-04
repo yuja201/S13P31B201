@@ -23,6 +23,7 @@ export interface FakerGenerateRequest {
   columnName: string
   recordCnt: number
   metaData: Pick<FakerMetaData, 'ruleId'>
+  domainName: string
 }
 
 /**
@@ -35,7 +36,7 @@ export async function* generateFakeStream({
   tableName,
   columnName,
   recordCnt,
-  metaData
+  domainName
 }: FakerGenerateRequest): AsyncGenerator<string, void, unknown> {
   // --- 제약조건 로딩 (예: min, max, length 등)
   const constraints: ColumnConstraints | null =
@@ -43,15 +44,9 @@ export async function* generateFakeStream({
       ? getColumnConstraints(projectId, tableName, columnName)
       : null
 
-  const ruleId = Number(metaData.ruleId)
-
-  // --- 임시 도메인 rule 매핑 (DB 연결 전용 mock)
-  let rule = { domain_name: '이름' }
-  if (ruleId === 2) rule = { domain_name: '이메일' }
-  if (ruleId === 3) rule = { domain_name: '금액' }
-
-  const fakerPath = fakerMapper[rule.domain_name]
-  if (!fakerPath) throw new Error(`❌ No faker mapping for domain: ${rule.domain_name}`)
+  // domain_name으로 faker 매핑 찾기
+  const fakerPath = fakerMapper[domainName]
+  if (!fakerPath) throw new Error(`❌ No faker mapping for domain: ${domainName}`)
 
   const [category, method] = fakerPath.split('.') as [keyof Faker, string]
   const fakerCategory = faker[category]
