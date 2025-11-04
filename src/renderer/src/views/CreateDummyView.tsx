@@ -5,6 +5,8 @@ import DBTableDetail from '@renderer/components/DBTableDetail'
 import { useSchemaStore } from '@renderer/stores/schemaStore'
 import { useProjectStore } from '@renderer/stores/projectStore'
 import type { Table, Column } from '@main/database/types'
+import { useNavigate, useParams } from 'react-router-dom'
+import { useGenerationStore } from '@renderer/stores/generationStore'
 
 // 컬럼 상세 정보 타입
 export type ColumnDetail = {
@@ -27,7 +29,6 @@ export type TableInfo = {
   columnDetails: ColumnDetail[]
 }
 
-// Store의 Column 타입을 View의 ColumnDetail 타입으로 변환
 const convertColumn = (col: Column): ColumnDetail => {
   const constraints: string[] = []
   if (col.isPrimaryKey) constraints.push('PK')
@@ -40,7 +41,6 @@ const convertColumn = (col: Column): ColumnDetail => {
   if (col.enum) constraints.push('ENUM')
   if (col.domain) constraints.push('DOMAIN')
 
-  // ---  생성 방식 & 설정 자동 채우기 로직 ---
   let generation = ''
   let setting = ''
 
@@ -58,9 +58,9 @@ const convertColumn = (col: Column): ColumnDetail => {
   return {
     name: col.name,
     type: col.type,
-    constraints: constraints,
-    generation: generation,
-    setting: setting,
+    constraints,
+    generation,
+    setting,
     defaultValue: col.default || null,
     checkConstraint: col.check || null,
     enumList: col.enum || null
@@ -88,12 +88,59 @@ const CreateDummyView: React.FC = () => {
         name: table.name,
         columns: table.columns.length,
         rows: table.rowCount || 0,
-        columnDetails: table.columns.map(convertColumn)
+        columnDetails: table.columns.map((col) => convertColumn(col))
       })
     )
   }, [schemasMap, selectedProject])
 
   const [focusedTable, setFocusedTable] = useState<TableInfo | null>(null)
+  const [selectedTables, setSelectedTables] = useState<Set<string>>(new Set())
+  const navigate = useNavigate()
+  const { projectId } = useParams<{ projectId: string }>()
+
+  const setColumnRule = useGenerationStore((s) => s.setColumnRule)
+  const [isInitialized, setIsInitialized] = useState(false)
+
+  useEffect(() => {
+    if (!isInitialized && tables.length > 0) {
+      tables.forEach((table) => {
+        table.columnDetails.forEach((col) => {
+          if (col.setting) {
+            setColumnRule(table.name, col.name, {
+              columnName: col.name,
+              dataSource: 'FIXED',
+              metaData: { fixedValue: col.setting }
+            })
+          }
+        })
+      })
+
+      setIsInitialized(true)
+    }
+  }, [tables, isInitialized, setColumnRule])
+
+  // 체크박스 토글
+  const handleToggleTable = (tableId: string, checked: boolean): void => {
+    setSelectedTables((prev) => {
+      const next = new Set(prev)
+      checked ? next.add(tableId) : next.delete(tableId)
+      return next
+    })
+  }
+
+  const handleGenerateData = (): void => {
+    if (selectedTables.size === 0) {
+      alert('테이블을 1개 이상 선택해주세요.')
+      return
+    }
+
+    const payload = Array.from(selectedTables).map((name) => {
+      const t = tables.find((tbl) => tbl.name === name)!
+      return { id: t.id, name: t.name }
+    })
+
+    navigate(`/main/select-method/${projectId}`, { state: { tables: payload } })
+  }
 
   useEffect(() => {
     if (tables.length > 0) {
@@ -145,12 +192,15 @@ const CreateDummyView: React.FC = () => {
           <DBTableList
             tables={tables}
             focusedTableId={focusedTable?.id || ''}
+            selectedTables={selectedTables}
+            handleCheckboxChange={handleToggleTable}
             onTableSelect={(table) => setFocusedTable({ ...table })}
           />
           {focusedTable && (
             <DBTableDetail
               table={focusedTable}
-              onColumnUpdate={handleColumnUpdate} // [!] 함수 전달
+              onColumnUpdate={handleColumnUpdate}
+              onGenerateData={handleGenerateData}
             />
           )}
         </div>

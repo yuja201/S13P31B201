@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
 import { TableInfo, ColumnDetail } from '@renderer/views/CreateDummyView'
 import Button from '@renderer/components/Button'
 import FileModal from '@renderer/modals/file/FileModal'
@@ -10,18 +9,20 @@ import type { FileModalApplyPayload } from '@renderer/modals/file/types'
 type DBTableDetailProps = {
   table: TableInfo
   onColumnUpdate: (columnName: string, generation: string, setting: string) => void
+  onGenerateData: () => void
 }
 
-const TableDetail: React.FC<DBTableDetailProps> = ({ table, onColumnUpdate }) => {
-  const navigate = useNavigate()
-  const { projectId } = useParams<{ projectId: string }>()
-
+const TableDetail: React.FC<DBTableDetailProps> = ({ table, onColumnUpdate, onGenerateData }) => {
   const tableGenerationConfig = useGenerationStore((state) => state.tables[table.name])
   const applyFileMapping = useGenerationStore((state) => state.applyFileMapping)
 
   const getTableRecordCount = useGenerationStore((s) => s.getTableRecordCount)
   const setTableRecordCount = useGenerationStore((s) => s.setTableRecordCount)
   const [rows, setRows] = useState<number>(() => getTableRecordCount(table.name))
+
+  const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false)
+  const [isRuleModalOpen, setIsRuleModalOpen] = useState(false)
+  const [selectedColumn, setSelectedColumn] = useState<ColumnDetail | null>(null)
 
   useEffect(() => {
     setRows(getTableRecordCount(table.name))
@@ -31,10 +32,6 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table, onColumnUpdate }) =>
     if (!tableGenerationConfig) return
     setTableRecordCount(table.name, rows)
   }, [rows])
-
-  const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false)
-  const [isRuleModalOpen, setIsRuleModalOpen] = useState(false)
-  const [selectedColumn, setSelectedColumn] = useState<ColumnDetail | null>(null)
 
   // ----------------------------
   // File Upload Modal
@@ -77,10 +74,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table, onColumnUpdate }) =>
   }
 
   // ----------------------------
-  // Navigation & Input handlers
-  const handleGenerateData = (): void => {
-    navigate(`/main/select-method/${projectId}/${table.id}`)
-  }
+  // Input handlers
 
   const handleRowsChange = (value: number): void => {
     setRows(value)
@@ -243,7 +237,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table, onColumnUpdate }) =>
             variant="blue"
             size="md"
             style={{ width: '100%', marginTop: '24px', padding: '12px' }}
-            onClick={handleGenerateData}
+            onClick={onGenerateData}
           >
             데이터 생성
           </Button>

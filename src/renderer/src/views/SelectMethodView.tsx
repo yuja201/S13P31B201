@@ -1,12 +1,14 @@
 import React, { useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import PageTitle from '@renderer/components/PageTitle'
 import { ArrowLeft } from 'react-feather'
 
 const SelectMethodView: React.FC = () => {
   const navigate = useNavigate()
-  const { projectId, tableId } = useParams<{ projectId: string; tableId: string }>()
+  const { projectId } = useParams<{ projectId: string; tableId: string }>()
   const [isHover, setIsHover] = useState(false)
+  const location = useLocation()
+  const { tables: selectedTables = [] } = location.state || {}
 
   const baseColor = 'var(--color-dark-gray)'
   const hoverColor = 'var(--color-black)'
@@ -49,7 +51,11 @@ const SelectMethodView: React.FC = () => {
       <div style={{ display: 'flex', gap: 40 }}>
         {/* INSERT SQL 생성하기 */}
         <div
-          onClick={() => navigate(`/main/insert/sql/${projectId}/${tableId}`)}
+          onClick={() =>
+            navigate(`/main/insert/sql/${projectId}`, {
+              state: { tables: selectedTables }
+            })
+          }
           style={{
             width: 500,
             height: 160,
@@ -77,7 +83,7 @@ const SelectMethodView: React.FC = () => {
 
         {/* 바로 DB에 삽입하기 */}
         <div
-          onClick={() => navigate(`/main/insert/db/${projectId}/${tableId}`)}
+          onClick={() => navigate(`/main/insert/db/${projectId}`)}
           style={{
             width: 500,
             height: 160,

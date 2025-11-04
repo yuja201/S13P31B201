@@ -6,6 +6,7 @@ import failureIcon from '@renderer/assets/imgs/failure.svg'
 import Button from '@renderer/components/Button'
 import { useProjectStore } from '@renderer/stores/projectStore'
 import { useGenerationStore } from '@renderer/stores/generationStore'
+import { useLocation } from 'react-router-dom'
 
 type InsertMode = 'sql' | 'db'
 
@@ -37,6 +38,10 @@ const DummyInsertView: React.FC = () => {
   // Store에서 데이터 가져오기
   const { selectedProject } = useProjectStore()
   const { exportAllTables } = useGenerationStore()
+  const location = useLocation()
+  const state = location.state as { tables?: Array<{ id: string; name: string }> } | null
+  const selectedTables = state?.tables ?? []
+  console.log('[DEBUG] selectedTables:', selectedTables)
 
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -91,11 +96,20 @@ const DummyInsertView: React.FC = () => {
           return
         }
 
-        setTables(allTables.map((t) => ({ name: t.tableName, status: 'pending' })))
+        const filteredTables = allTables.filter((t) =>
+          selectedTables.some((sel) => sel.name === t.tableName)
+        )
+
+        if (filteredTables.length === 0) {
+          setErrors(['선택된 테이블 정보가 없습니다.'])
+          return
+        }
+
+        setTables(filteredTables.map((t) => ({ name: t.tableName, status: 'pending' })))
 
         const payload = {
           projectId: selectedProject.id,
-          tables: allTables.map((tableData) => ({
+          tables: filteredTables.map((tableData) => ({
             tableName: tableData.tableName,
             recordCnt: tableData.recordCnt,
             columns: tableData.columns.map((col) => {
