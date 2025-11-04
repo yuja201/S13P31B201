@@ -8,6 +8,7 @@ import { getDBMSById } from '../../database/dbms'
 import { getRuleById } from '../../database/rules'
 import { DBMS_ID_TO_KEY, type SupportedDBMS } from '../../utils/dbms-map'
 import { createZipFromSqlFilesStreaming } from './zip-generator'
+import { getFileCacheRoot } from '../../utils/cache-path'
 import { fetchSchema } from '../../utils/schema-fetch'
 
 const MAX_PARALLEL = Math.max(1, Math.floor(os.cpus().length / 2))
@@ -68,6 +69,7 @@ export async function runDataGenerator(
   const queue = [...tables]
   const running = new Set<ReturnType<typeof spawn>>()
   const results: WorkerResult[] = []
+  const cacheRoot = getFileCacheRoot()
 
   const startNext = async (): Promise<void> => {
     if (queue.length === 0) return
@@ -86,7 +88,11 @@ export async function runDataGenerator(
     const workerPath = path.resolve(app.getAppPath(), 'out/main/worker-runner.js')
     const child = spawn('node', [workerPath], {
       stdio: ['pipe', 'pipe', 'pipe'],
-      env: { ...process.env, TASK: JSON.stringify(task) }
+      env: {
+        ...process.env,
+        TASK: JSON.stringify(task),
+        HERESDUMMY_CACHE_DIR: cacheRoot
+      }
     })
     running.add(child)
 
