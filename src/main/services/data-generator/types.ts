@@ -162,3 +162,14 @@ export interface FakerRuleInput {
   name: string
   domain: number
 }
+
+/**
+ * AI 규칙 입력
+ */
+export interface AIRuleInput {
+  name: string
+  domain: number
+  model_id: number
+  token: string
+  prompt?: string
+}

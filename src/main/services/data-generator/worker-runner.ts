@@ -7,26 +7,13 @@ import { generateAIStream } from './ai-generator.js'
 import {
   DataSourceType,
   type ColumnMetaData,
-  AIMetaData,
   FakerMetaData,
+  AIMetaData,
   FileMetaData,
   FixedMetaData
 } from './types.js'
 import { createFileValueStream } from './file-generator.js'
 import { generateFixedStream } from './fixed-generator.js'
-
-function isFileMeta(meta: ColumnMetaData | undefined): meta is FileMetaData {
-  return Boolean(meta)
-}
-function isAIMeta(meta: ColumnMetaData | undefined): meta is AIMetaData {
-  return Boolean(meta)
-}
-function isFakerMeta(meta: ColumnMetaData | undefined): meta is FakerMetaData {
-  return Boolean(meta)
-}
-function isFixedMeta(meta: ColumnMetaData | undefined): meta is FixedMetaData {
-  return Boolean(meta)
-}
 
 // 컬럼별 스트림 생성 함수
 function createColumnStream(
@@ -43,70 +30,74 @@ function createColumnStream(
   const dataSource = col.dataSource as DataSourceType
 
   switch (dataSource) {
-    case 'FAKER':
-      if (!isFakerMeta(col.metaData) || col.metaData.ruleId == null) {
+    case 'FAKER': {
+      if (!col.metaData || (col.metaData as FakerMetaData).ruleId == null) {
         throw new Error(
           `[Faker 메타데이터 오류] ${tableName}.${col.columnName} 컬럼의 Faker 규칙 설정이 올바르지 않습니다.`
         )
       }
+
+      const meta = col.metaData as FakerMetaData
       return generateFakeStream({
         projectId,
         tableName,
         columnName: col.columnName,
         recordCnt,
-        metaData: {
-          ruleId: col.metaData.ruleId!
-        }
+        metaData: { ruleId: meta.ruleId }
       })
+    }
 
     case 'AI': {
-      if (!isAIMeta(col.metaData) || col.metaData.ruleId == null) {
+      if (!col.metaData || (col.metaData as AIMetaData).ruleId == null) {
         throw new Error(
           `[AI 메타데이터 오류] ${tableName}.${col.columnName} 컬럼의 AI 규칙 설정이 올바르지 않습니다.`
         )
       }
 
-      const aiMeta = col.metaData
-      const rule = rules.find((r) => r.id === aiMeta.ruleId)
-
+      const meta = col.metaData as AIMetaData
+      const rule = rules.find((r) => r.id === meta.ruleId)
       if (!rule) {
-        throw new Error(`Rule ${col.metaData.ruleId} not found in worker task`)
+        throw new Error(`Rule ${meta.ruleId} not found in worker task`)
       }
+
       return generateAIStream({
         projectId,
         tableName,
         columnName: col.columnName,
         recordCnt,
-        metaData: {
-          ruleId: col.metaData.ruleId!
-        },
+        metaData: { ruleId: meta.ruleId },
         schema,
         database,
         rule
       })
     }
 
-    case 'FILE':
-      if (!isFileMeta(col.metaData)) {
+    case 'FILE': {
+      if (!col.metaData) {
         throw new Error(
           `[파일 메타데이터 오류] ${tableName}.${col.columnName} 컬럼의 파일 설정이 올바르지 않습니다.`
         )
       }
-      return createFileValueStream(col.metaData, recordCnt)
+      const meta = col.metaData as FileMetaData
+      return createFileValueStream(meta, recordCnt)
+    }
 
-    case 'FIXED':
-      if (!isFixedMeta(col.metaData)) {
+    case 'FIXED': {
+      if (!col.metaData || (col.metaData as FixedMetaData).fixedValue == null) {
         throw new Error(
           `[고정값 메타데이터 오류] ${tableName}.${col.columnName} 컬럼의 고정값 설정이 올바르지 않습니다.`
         )
       }
+
+      const meta = col.metaData as FixedMetaData
       return generateFixedStream({
-        fixedValue: col.metaData.fixedValue,
+        fixedValue: meta.fixedValue,
         recordCnt
       })
+    }
 
     default:
-      throw new Error(`알 수 없는 데이터 소스: ${dataSource}`)
+      throw new Error(`알 수 없는 데이터 소스: ${col.dataSource}`)
   }
 }
 

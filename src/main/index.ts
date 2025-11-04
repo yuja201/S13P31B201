@@ -1,3 +1,4 @@
+import path from 'path'
 import dotenv from 'dotenv'
 import { app, shell, BrowserWindow, ipcMain } from 'electron'
 import { join } from 'path'
@@ -9,7 +10,7 @@ import './ipc/data-generator-handlers'
 import './ipc/rule-handlers'
 import './ipc/file-handlers'
 
-dotenv.config()
+dotenv.config({ path: path.join(__dirname, '../../.env') })
 
 function createWindow(): void {
   const DIRNAME = import.meta.dirname

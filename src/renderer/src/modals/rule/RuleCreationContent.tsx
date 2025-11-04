@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import SimpleCard from '@renderer/components/SimpleCard'
 import InputField from '@renderer/components/InputField'
 import PageTitle from '@renderer/components/PageTitle'
@@ -35,7 +35,7 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
   const [settingName, setSettingName] = useState('')
   const [apiToken, setApiToken] = useState('')
   const [prompt, setPrompt] = useState('')
-  const [selectedModel, setSelectedModel] = useState('OpenAI GPT-4o')
+  const [selectedModel, setSelectedModel] = useState('1')
   const [selectedDomain, setSelectedDomain] = useState<{ id: number; name: string } | null>(null)
 
   const handleSubmit = async (): Promise<void> => {
@@ -65,7 +65,18 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
           domainName: selectedDomain.name
         })
       } else if (selectedSource === 'AI') {
-        // AI 모드일 땐 단순히 폼 데이터 전달
+        if (!apiToken.trim()) {
+          alert('API 토큰을 입력하세요.')
+          return
+        }
+        // 실제 규칙 생성 API 호출
+        const result = await window.api.rule.createAI({
+          name: settingName,
+          domain: selectedDomain.id,
+          model_id: Number(selectedModel),
+          token: apiToken,
+          prompt
+        })
         onSubmit?.({
           source: selectedSource,
           settingName,
@@ -74,6 +85,7 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
           model: selectedModel,
           columnType,
           columnName,
+          result: result.id,
           domainId: selectedDomain.id,
           domainName: selectedDomain.name
         })
@@ -87,6 +99,21 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
       alert('규칙 저장 중 오류가 발생했습니다.')
     }
   }
+
+  useEffect(() => {
+    // 모델 ID에 따라 자동으로 API 키 채움
+    if (selectedSource === 'AI') {
+      let autoToken = ''
+      if (selectedModel === '1' && window.env?.OPENAI_API_KEY) {
+        autoToken = window.env.OPENAI_API_KEY
+      } else if (selectedModel === '2' && window.env?.ANTHROPIC_API_KEY) {
+        autoToken = window.env.ANTHROPIC_API_KEY
+      } else if (selectedModel === '3' && window.env?.GOOGLE_API_KEY) {
+        autoToken = window.env.GOOGLE_API_KEY
+      }
+      setApiToken(autoToken)
+    }
+  }, [selectedModel, selectedSource])
 
   return (
     <div className="rule-create">
@@ -180,9 +207,9 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
                 boxSizing: 'border-box'
               }}
             >
-              <option value="OpenAI GPT-4o">OpenAI GPT-4o</option>
-              <option value="Claude 3.5">Claude 3.5</option>
-              <option value="Gemini 1.5 Pro">Gemini 1.5 Pro</option>
+              <option value="1">OpenAI GPT-4.1 Mini</option>
+              <option value="2">Claude 3.5 Haiku</option>
+              <option value="3">Gemini 2.0 Flash</option>
             </select>
           </div>
 
