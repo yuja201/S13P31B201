@@ -66,7 +66,6 @@ const Loading: React.FC<LoadingProps> = ({
       >
         <span
           style={{
-            color: 'var(--color-primary)',
             fontSize: '16px',
             fontWeight: 500,
             marginTop: '20px',
