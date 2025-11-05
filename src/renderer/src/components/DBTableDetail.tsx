@@ -3,9 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { TableInfo, ColumnDetail } from '@renderer/views/CreateDummyView'
 import Button from '@renderer/components/Button'
 import FileModal from '@renderer/modals/file/FileModal'
-import RuleModal, { RuleResult } from '@renderer/modals/rule/RuleModal'
-import { useGenerationStore } from '@renderer/stores/generationStore'
+import { useGenerationStore, RuleResult } from '@renderer/stores/generationStore'
 import type { FileModalApplyPayload } from '@renderer/modals/file/types'
+import RuleModal, { RuleResult as ModalRuleResult } from '@renderer/modals/rule/RuleModal'
 
 type DBTableDetailProps = {
   table: TableInfo
@@ -74,10 +74,10 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
     navigate(`/main/select-method/${projectId}/${table.id}`)
   }
 
-  const handleRuleConfirm = (result: RuleResult): void => {
+  const handleRuleConfirm = (result: ModalRuleResult): void => {
     if (!selectedColumn) return
 
-    setColumnRule(table.name, selectedColumn.name, result)
+    setColumnRule(table.name, selectedColumn.name, result as RuleResult)
     closeRuleModal()
   }
 
@@ -89,7 +89,9 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
 
       if (config) {
         let generation = '',
-          setting = ''
+          setting = '',
+          previewValue = null
+
         switch (config.dataSource) {
           case 'FILE':
             generation = '파일 업로드'
@@ -121,14 +123,16 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
             break
           case 'REFERENCE':
             generation = '참조'
-            setting =
-              config.metaData.kind === 'reference'
-                ? `${config.metaData.refTable}.${config.metaData.refColumn}`
-                : '참조 설정됨'
+            if (config.metaData.kind === 'reference') {
+              setting = `${config.metaData.refTable}.${config.metaData.refColumn}`
+              previewValue = config.metaData.previewValue
+            } else {
+              setting = '참조 설정됨'
+            }
             break
         }
 
-        return { ...col, generation, setting }
+        return { ...col, generation, setting, previewValue }
       }
 
       return col

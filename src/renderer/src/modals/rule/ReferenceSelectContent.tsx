@@ -5,8 +5,6 @@ import { useProjectStore } from '@renderer/stores/projectStore'
 import { ColumnDetail } from '@renderer/views/CreateDummyView'
 import { RuleResult } from './RuleModal'
 
-
-
 type ReferenceStrategy = 'RANDOM_SAMPLE' | 'FIXED_VALUE'
 type SampleState = { status: 'idle' | 'loading' | 'success' | 'error'; value: string }
 type ValidationState = 'idle' | 'loading' | 'valid' | 'invalid'
@@ -52,13 +50,21 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
     return 'idle'
   })
 
-  const [samplePreview, setSamplePreview] = useState<SampleState>({ status: 'idle', value: '' })
+  const [samplePreview, setSamplePreview] = useState<SampleState>(() => {
+    if (column.generation === '참조' && column.previewValue) {
+      return { status: 'success', value: String(column.previewValue) }
+    }
+    return { status: 'idle', value: '' }
+  })
 
   // 무작위 샘플링 
   useEffect(() => {
     if (strategy === 'RANDOM_SAMPLE' && databaseId) {
-      setSamplePreview({ status: 'loading', value: '' })
+      if (column.generation === '참조' && column.previewValue) {
+        return
+      }
 
+      setSamplePreview({ status: 'loading', value: '' })
       window.api.schema
         .getRandomSample({
           databaseId,
@@ -73,7 +79,8 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
           setSamplePreview({ status: 'error', value: '샘플 로딩 실패' })
         })
     }
-  }, [strategy, referencedTableName, referencedColumnName, databaseId])
+
+  }, [strategy, referencedTableName, referencedColumnName, databaseId, column.generation, column.previewValue])
 
   //  고정값 검증 
   const handleValidateValue = () => {
@@ -112,16 +119,18 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
   // 저장 로직
   const handleSave = (): void => {
     if (strategy === 'RANDOM_SAMPLE') {
-      // 샘플 로딩 실패 시에도 저장은 가능하도록 허용
+
       if (samplePreview.status === 'error') {
         alert('샘플 로딩에 실패했지만, "무작위 샘플링" 규칙은 저장됩니다.')
       }
       onConfirm({
         generation: '참조',
-        setting: `${referencedTableName}.${referencedColumnName}`
-      })
+        setting: `${referencedTableName}.${referencedColumnName}`,
+        previewValue: samplePreview.value
+      } as RuleResult)
+
     } else {
-      // 고정값 모드일 땐, "검증 성공" 상태일 때만 저장
+
       if (validationState !== 'valid') {
         alert('유효한 값을 입력하고 "검증하기"를 완료해야 합니다.')
         return

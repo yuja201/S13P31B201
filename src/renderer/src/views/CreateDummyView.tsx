@@ -18,6 +18,7 @@ export type ColumnDetail = {
   enumList: string[] | null
   isForeignKey: boolean
   foreignKeys: ForeignKey[] | null
+  previewValue?: any
 }
 
 // 테이블 전체 정보 타입

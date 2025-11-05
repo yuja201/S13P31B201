@@ -1,5 +1,9 @@
 import { create } from 'zustand'
-import type { RuleResult } from '@renderer/modals/rule/RuleModal'
+import type { RuleResult as ModalRuleResult } from '@renderer/modals/rule/RuleModal'
+
+export type RuleResult = ModalRuleResult & {
+  previewValue?: any
+}
 
 export type DataSourceType = 'FAKER' | 'AI' | 'FILE' | 'MANUAL' | 'REFERENCE'
 
@@ -34,6 +38,7 @@ export type ReferenceMetaData = {
   kind: 'reference'
   refTable: string
   refColumn: string
+  previewValue?: any
 }
 
 export type ColumnMetaData =
@@ -141,7 +146,7 @@ export const useGenerationStore = create<GenerationState>((set) => ({
       }
     })
   },
-  setColumnRule: (tableName, columnName, rule) => {
+  setColumnRule: (tableName, columnName, rule: RuleResult) => {
     let dataSource: DataSourceType
     let metaData: ColumnMetaData
 
@@ -174,7 +179,8 @@ export const useGenerationStore = create<GenerationState>((set) => ({
       metaData = {
         kind: 'reference',
         refTable: refTable,
-        refColumn: refColumn
+        refColumn: refColumn,
+        previewValue: rule.previewValue
       }
     } else {
       console.warn(`Unknown generation type: ${rule.generation}`)
