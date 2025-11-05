@@ -45,6 +45,8 @@ export interface ColumnConfig {
 /**
  * 테이블 설정
  */
+export type GenerationMode = 'SQL_FILE' | 'DIRECT_DB'
+
 export interface TableConfig {
   tableName: string
   recordCnt: number
@@ -58,6 +60,7 @@ export interface TableConfig {
 export interface GenerateRequest {
   projectId: number
   tables: TableConfig[]
+  mode?: GenerationMode
 }
 
 /**
@@ -72,10 +75,11 @@ export interface GenerateResult {
  * 여러 테이블 생성 후 최종 결과
  */
 export interface GenerationResult {
-  zipPath: string
+  zipPath: string | null
   successCount: number
   failCount: number
   success: boolean
+  executedTables?: string[]
   errors?: string[]
 }
 
@@ -96,12 +100,21 @@ export interface WorkerTask {
     domain_name: string
     model_id: number | null
   }>
+  mode?: GenerationMode
+  connection?: {
+    host: string
+    port: number
+    username: string
+    password: string
+    database: string
+  }
 }
 
 export interface WorkerResult {
   tableName: string
   sqlPath: string
   success: boolean
+  directInserted?: boolean
   error?: string
 }
 

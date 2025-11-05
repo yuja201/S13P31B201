@@ -21,20 +21,44 @@ export const fakerMapper: Record<string, string> = {
   계좌번호: 'finance.accountNumber',
   금액: 'finance.amount',
   카드번호: 'finance.creditCardNumber',
+  거래유형: 'finance.transactionType',
 
   상품명: 'commerce.productName',
   카테고리: 'commerce.department',
   가격: 'commerce.price',
   설명: 'lorem.sentence',
 
+  제조사: 'vehicle.manufacturer',
+  모델명: 'vehicle.model',
+  '차량 타입': 'vehicle.type',
+
+  '과거 날짜': 'date.past',
+  '미래 날짜': 'date.future',
+  '최근 날짜': 'date.recent',
+
   UUID: 'string.uuid',
+  파일명: 'system.fileName',
+  버전: 'system.semver',
+  '커밋 메시지': 'git.commitMessage',
+
   정수: 'number.int',
   실수: 'number.float',
   불리언: 'datatype.boolean',
+  '랜덤 문자열': 'string.alphanumeric',
+
   문장: 'lorem.sentence',
   문단: 'lorem.paragraph',
   단어: 'lorem.word',
+
+  '화학 원소': 'science.chemicalElement',
+  단위: 'science.unit',
+
   색상명: 'color.human',
+  'RGB 값': 'color.rgb',
   'HEX 코드': 'color.hex',
-  '이미지 URL': 'image.url'
+  '이미지 URL': 'image.url',
+
+  '음악 장르': 'music.genre',
+  '노래 이름': 'music.songName',
+  '동물 이름': 'animal.type'
 }
