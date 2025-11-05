@@ -51,9 +51,9 @@ ANTHROPIC_API_KEY=
 GOOGLE_API_KEY=
 
 # AI 서비스 엔드포인트
-OPENAI_BASE_URL=https://gms.ssafy.io/gmsapi/api.openai.com/v1
-ANTHROPIC_BASE_URL=https://gms.ssafy.io/gmsapi/api.anthropic.com
-GOOGLE_BASE_URL=https://gms.ssafy.io/gmsapi/gemini.googleapis.com
+OPENAI_BASE_URL=https://api.openai.com/v1
+ANTHROPIC_BASE_URL=https://api.anthropic.com
+GOOGLE_BASE_URL=https://generativelanguage.googleapis.com
 
 # 타임아웃 설정
 OPENAI_TIMEOUT=60000
