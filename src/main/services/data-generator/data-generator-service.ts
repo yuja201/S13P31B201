@@ -99,7 +99,9 @@ export async function runDataGenerator(
       connection: connectionInfo
     }
 
-    const workerPath = path.resolve(app.getAppPath(), 'out/main/worker-runner.js')
+    const workerPath = app.isPackaged
+      ? path.join(process.resourcesPath, 'app.asar.unpacked', 'out', 'main', 'worker-runner.js')
+      : path.resolve(app.getAppPath(), 'out/main/worker-runner.js')
     const child = spawn('node', [workerPath], {
       stdio: ['pipe', 'pipe', 'pipe'],
       env: {
