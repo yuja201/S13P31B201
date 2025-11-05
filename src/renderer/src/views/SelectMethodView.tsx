@@ -1,30 +1,21 @@
-//SelectMethodView.tsx
-import React, { useMemo, useState } from 'react'
+import React, { useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import PageTitle from '@renderer/components/PageTitle'
 import { ArrowLeft } from 'react-feather'
 import { useGenerationStore } from '@renderer/stores/generationStore'
-import type { ColumnMetaData, DataSourceType } from '@main/services/data-generator/types'
 
 const SelectMethodView: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { projectId } = useParams<{ projectId: string }>()
-  const exportRulesForTable = useGenerationStore((state) => state.exportRulesForTable)
+  useGenerationStore() // ✅ Store는 여전히 유지하지만 별도 추출 없음
 
   const selectedTables =
     (location.state as { tables?: Array<{ id: string; name: string }> } | undefined)?.tables ?? []
 
-  const tableId = selectedTables[0]?.id
-
   const [isHover, setIsHover] = useState(false)
   const baseColor = 'var(--color-dark-gray)'
   const hoverColor = 'var(--color-black)'
-
-  const tableConfig = useMemo(
-    () => (tableId ? exportRulesForTable(tableId) : undefined),
-    [exportRulesForTable, tableId]
-  )
 
   return (
     <div className="flex flex-col">

@@ -7,7 +7,12 @@ import Button from '@renderer/components/Button'
 import { useProjectStore } from '@renderer/stores/projectStore'
 import { useGenerationStore } from '@renderer/stores/generationStore'
 import { useLocation, useNavigate } from 'react-router-dom'
-import type { ColumnMetaData, DataSourceType } from '@main/services/data-generator/types'
+import type {
+  ColumnMetaData,
+  DataSourceType,
+  GenerationMode,
+  GenerateRequest
+} from '@main/services/data-generator/types'
 
 type InsertMode = 'sql' | 'db'
 
@@ -98,9 +103,11 @@ const DummyInsertView: React.FC = () => {
 
       setTables(filteredTables.map((t) => ({ name: t.tableName, status: 'pending' })))
 
-      const payload = {
+      const generationMode: GenerationMode = mode === 'db' ? 'DIRECT_DB' : 'SQL_FILE'
+
+      const payload: GenerateRequest = {
         projectId: selectedProject.id,
-        mode: mode === 'db' ? 'DIRECT_DB' : 'SQL_FILE', // ✅ 핵심 추가
+        mode: generationMode,
         tables: filteredTables.map((tableData) => ({
           tableName: tableData.tableName,
           recordCnt: tableData.recordCnt,
@@ -119,7 +126,7 @@ const DummyInsertView: React.FC = () => {
     }
 
     startGeneration()
-  }, [selectedProject, exportAllTables])
+  }, [selectedProject, exportAllTables, mode])
 
   const getStatusIcon = (status: string): string => {
     switch (status) {
@@ -135,8 +142,6 @@ const DummyInsertView: React.FC = () => {
   }
 
   return (
-    /* UI 그대로, 기존 코드 전체 동일 (생략 없음) */
-    // ✅ 아래 UI 코드는 질문에서 주신 그대로라 그대로 유지됩니다.
     <div
       style={{
         position: 'relative',
