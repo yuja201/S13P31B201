@@ -193,6 +193,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
                   const isFK = col.constraints.includes('FK')
                   const needsSelection = !col.generation || col.generation === '-'
                   const hasSetting = col.setting && col.setting !== '-'
+                  const isEditableSetting = col.generation !== 'Auto Increment'
                   return (
                     <tr
                       key={col.name}
@@ -232,20 +233,36 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
                       </td>
                       <td>
                         {hasSetting ? (
-                          <Button
-                            variant="gray"
-                            size="sm"
-                            onClick={() => handleSelectGenerationClick(col)}
-                            style={{
-                              whiteSpace: 'nowrap',
-                              backgroundColor: 'var(--color-sky-blue)',
-                              color: 'var(--color-main-blue)',
-                              borderRadius: '10px',
-                              padding: '4px 12px'
-                            }}
-                          >
-                            {col.setting} 🖊️
-                          </Button>
+                          isEditableSetting ? (
+                            <Button
+                              variant="gray"
+                              size="sm"
+                              onClick={() => handleSelectGenerationClick(col)}
+                              style={{
+                                whiteSpace: 'nowrap',
+                                backgroundColor: 'var(--color-sky-blue)',
+                                color: 'var(--color-main-blue)',
+                                borderRadius: '10px',
+                                padding: '4px 12px'
+                              }}
+                            >
+                              {col.setting} 🖊️
+                            </Button>
+                          ) : (
+                            <span
+                              style={{
+                                display: 'inline-block',
+                                whiteSpace: 'nowrap',
+                                backgroundColor: 'var(--color-gray-200)',
+                                color: 'var(--color-dark-gray)',
+                                borderRadius: '10px',
+                                padding: '4px 12px',
+                                font: 'var(--preRegular14)'
+                              }}
+                            >
+                              {col.setting}
+                            </span>
+                          )
                         ) : (
                           '-'
                         )}
