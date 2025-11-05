@@ -1,5 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
+import mysql from 'mysql2/promise'
+import { Client as PgClient } from 'pg'
 import type { WorkerTask, WorkerResult } from './types.js'
 import { DBMS_MAP } from '../../utils/dbms-map.js'
 import { generateFakeStream } from './faker-generator.js'
@@ -15,7 +17,7 @@ import {
 import { createFileValueStream } from './file-generator.js'
 import { generateFixedStream } from './fixed-generator.js'
 
-// ì»¬ëŸ¼ë³„ ìŠ¤íŠ¸ë¦¼ ìƒì„± í•¨ìˆ˜
+// ÄÃ·³º° ½ºÆ®¸² »ı¼º ÇÔ¼ö
 function createColumnStream(
   col: {
     columnName: string
@@ -33,7 +35,7 @@ function createColumnStream(
     case 'FAKER': {
       if (!col.metaData || (col.metaData as FakerMetaData).ruleId == null) {
         throw new Error(
-          `[Faker ë©”íƒ€ë°ì´í„° ì˜¤ë¥˜] ${tableName}.${col.columnName} ì»¬ëŸ¼ì˜ Faker ê·œì¹™ ì„¤ì •ì´ ì˜¬ë°”ë¥´ì§€ ì•ŠìŠµë‹ˆë‹¤.`
+          `[Faker ¸ŞÅ¸µ¥ÀÌÅÍ ¿À·ù] ${tableName}.${col.columnName} ÄÃ·³ÀÇ Faker ±ÔÄ¢ ¼³Á¤ÀÌ ¿Ã¹Ù¸£Áö ¾Ê½À´Ï´Ù.`
         )
       }
 
@@ -56,7 +58,7 @@ function createColumnStream(
     case 'AI': {
       if (!col.metaData || (col.metaData as AIMetaData).ruleId == null) {
         throw new Error(
-          `[AI ë©”íƒ€ë°ì´í„° ì˜¤ë¥˜] ${tableName}.${col.columnName} ì»¬ëŸ¼ì˜ AI ê·œì¹™ ì„¤ì •ì´ ì˜¬ë°”ë¥´ì§€ ì•ŠìŠµë‹ˆë‹¤.`
+          `[AI ¸ŞÅ¸µ¥ÀÌÅÍ ¿À·ù] ${tableName}.${col.columnName} ÄÃ·³ÀÇ AI ±ÔÄ¢ ¼³Á¤ÀÌ ¿Ã¹Ù¸£Áö ¾Ê½À´Ï´Ù.`
         )
       }
 
@@ -81,7 +83,7 @@ function createColumnStream(
     case 'FILE': {
       if (!col.metaData) {
         throw new Error(
-          `[íŒŒì¼ ë©”íƒ€ë°ì´í„° ì˜¤ë¥˜] ${tableName}.${col.columnName} ì»¬ëŸ¼ì˜ íŒŒì¼ ì„¤ì •ì´ ì˜¬ë°”ë¥´ì§€ ì•ŠìŠµë‹ˆë‹¤.`
+          `[ÆÄÀÏ ¸ŞÅ¸µ¥ÀÌÅÍ ¿À·ù] ${tableName}.${col.columnName} ÄÃ·³ÀÇ ÆÄÀÏ ¼³Á¤ÀÌ ¿Ã¹Ù¸£Áö ¾Ê½À´Ï´Ù.`
         )
       }
       const meta = col.metaData as FileMetaData
@@ -91,7 +93,7 @@ function createColumnStream(
     case 'FIXED': {
       if (!col.metaData || (col.metaData as FixedMetaData).fixedValue == null) {
         throw new Error(
-          `[ê³ ì •ê°’ ë©”íƒ€ë°ì´í„° ì˜¤ë¥˜] ${tableName}.${col.columnName} ì»¬ëŸ¼ì˜ ê³ ì •ê°’ ì„¤ì •ì´ ì˜¬ë°”ë¥´ì§€ ì•ŠìŠµë‹ˆë‹¤.`
+          `[°íÁ¤°ª ¸ŞÅ¸µ¥ÀÌÅÍ ¿À·ù] ${tableName}.${col.columnName} ÄÃ·³ÀÇ °íÁ¤°ª ¼³Á¤ÀÌ ¿Ã¹Ù¸£Áö ¾Ê½À´Ï´Ù.`
         )
       }
 
@@ -103,11 +105,11 @@ function createColumnStream(
     }
 
     default:
-      throw new Error(`ì•Œ ìˆ˜ ì—†ëŠ” ë°ì´í„° ì†ŒìŠ¤: ${col.dataSource}`)
+      throw new Error(`¾Ë ¼ö ¾ø´Â µ¥ÀÌÅÍ ¼Ò½º: ${col.dataSource}`)
   }
 }
 
-// AI ì»¬ëŸ¼ê³¼ non-AI ì»¬ëŸ¼ ë¶„ë¦¬
+// AI ÄÃ·³°ú non-AI ÄÃ·³ ºĞ¸®
 function separateColumnsByType(columns: { dataSource: DataSourceType }[]): {
   aiColumns: number[]
   nonAiColumns: number[]
@@ -126,60 +128,107 @@ function separateColumnsByType(columns: { dataSource: DataSourceType }[]): {
   return { aiColumns, nonAiColumns }
 }
 
+type DirectContext = {
+  execute: (sql: string) => Promise<void>
+  commit: () => Promise<void>
+  rollback: () => Promise<void>
+  close: () => Promise<void>
+}
+
+async function createDirectContext(
+  dbType: keyof typeof DBMS_MAP,
+  connection: NonNullable<WorkerTask['connection']>
+): Promise<DirectContext> {
+  if (dbType === 'mysql') {
+    const client = await mysql.createConnection({
+      host: connection.host,
+      port: connection.port,
+      user: connection.username,
+      password: connection.password,
+      database: connection.database
+    })
+    await client.beginTransaction()
+    return {
+      execute: async (sql: string) => {
+        await client.query(sql)
+      },
+      commit: () => client.commit(),
+      rollback: () => client.rollback(),
+      close: () => client.end()
+    }
+  }
+
+  const client = new PgClient({
+    host: connection.host,
+    port: connection.port,
+    user: connection.username,
+    password: connection.password,
+    database: connection.database
+  })
+  await client.connect()
+  await client.query('BEGIN')
+  return {
+    execute: async (sql: string) => {
+      await client.query(sql)
+    },
+    commit: () => client.query('COMMIT'),
+    rollback: () => client.query('ROLLBACK'),
+    close: () => client.end()
+  }
+}
+
 async function runWorker(task: WorkerTask): Promise<WorkerResult> {
-  const { table, dbType } = task
+  const { table, dbType, mode, connection } = task
   const { tableName, recordCnt, columns } = table
 
-  const dir = path.join(process.cwd(), 'generated_sql')
-  await fs.promises.mkdir(dir, { recursive: true })
+  const outputDir = path.join(process.cwd(), 'generated_sql')
+  await fs.promises.mkdir(outputDir, { recursive: true })
 
-  const sqlPath = path.join(dir, `${tableName}.sql`)
+  const sqlPath = path.join(outputDir, `${tableName}.sql`)
   await fs.promises.writeFile(sqlPath, `-- SQL for ${tableName}\n\n`, 'utf8')
 
   const { quote } = DBMS_MAP[dbType]
   const columnNames = columns.map((c) => `${quote}${c.columnName}${quote}`).join(', ')
   const CHUNK_SIZE = 1000
   const LOG_INTERVAL = 100_000
-  const MAX_AI_CONCURRENT = 2 // AI ë™ì‹œ í˜¸ì¶œ ì œí•œ
+  const MAX_AI_CONCURRENT = 2
+
+  const directMode = mode === 'DIRECT_DB' && Boolean(connection)
+  let directContext: DirectContext | null = null
 
   try {
-    console.log(`[${tableName}] ì‹œì‘: ${recordCnt.toLocaleString()}í–‰ Ã— ${columns.length}ì»¬ëŸ¼`)
+    if (directMode && connection) {
+      directContext = await createDirectContext(dbType, connection)
+    }
+
+    console.log(`[${tableName}] ½ÃÀÛ: ${recordCnt.toLocaleString()}Çà, ${columns.length}ÄÃ·³`)
     const startTime = Date.now()
-
     let totalProcessed = 0
-    const numChunks = Math.ceil(recordCnt / CHUNK_SIZE)
+    const numChunks = Math.max(1, Math.ceil(recordCnt / CHUNK_SIZE))
 
-    // ì²­í¬ ë‹¨ìœ„ë¡œ ì²˜ë¦¬
     for (let chunkIdx = 0; chunkIdx < numChunks; chunkIdx++) {
       const chunkStart = chunkIdx * CHUNK_SIZE
       const chunkEnd = Math.min(chunkStart + CHUNK_SIZE, recordCnt)
       const chunkSize = chunkEnd - chunkStart
+      if (chunkSize <= 0) {
+        continue
+      }
 
-      console.log(`\n[${tableName}] ì²­í¬ ${chunkIdx + 1}/${numChunks} ì²˜ë¦¬ ì¤‘ (${chunkSize}í–‰)`)
+      console.log(`\n[${tableName}] Ã»Å© ${chunkIdx + 1}/${numChunks} Ã³¸® Áß (${chunkSize}Çà)`)
       const chunkStartTime = Date.now()
 
-      // ì»¬ëŸ¼ë³„ ìŠ¤íŠ¸ë¦¼ ìƒì„±
       const columnStreams = columns.map((col) => createColumnStream(col, task, chunkSize))
-
-      // AI ì»¬ëŸ¼ê³¼ non-AI ì»¬ëŸ¼ ë¶„ë¦¬
       const { aiColumns, nonAiColumns } = separateColumnsByType(columns)
-
-      console.log(
-        `[${tableName}] AI ì»¬ëŸ¼: ${aiColumns.length}ê°œ, Non-AI ì»¬ëŸ¼: ${nonAiColumns.length}ê°œ`
-      )
-
-      // ê²°ê³¼ ì €ì¥ìš© ë°°ì—´ (ì»¬ëŸ¼ ìˆœì„œ ìœ ì§€)
       const chunkColumnValues: string[][] = new Array(columns.length)
 
-      // 1. Non-AI ì»¬ëŸ¼ ë¨¼ì € ë³‘ë ¬ ì²˜ë¦¬ (ë¹ ë¦„)
       if (nonAiColumns.length > 0) {
-        console.log(`[${tableName}] Non-AI ì»¬ëŸ¼ ìƒì„± ì‹œì‘ (ë³‘ë ¬):`)
+        console.log(`[${tableName}] Non-AI ÄÃ·³ µ¿½Ã Ã³¸®:`)
         const nonAiResults = await Promise.all(
           nonAiColumns.map(async (colIdx) => {
             const col = columns[colIdx]
             const stream = columnStreams[colIdx]
             const colStart = Date.now()
-            console.log(`  â†’ [${col.columnName}] ì‹œì‘ (${col.dataSource})`)
+            console.log(`  ¢º [${col.columnName}] Ã³¸® (${col.dataSource})`)
 
             const values: string[] = []
             for (let i = 0; i < chunkSize; i++) {
@@ -191,7 +240,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
             }
 
             const colDuration = ((Date.now() - colStart) / 1000).toFixed(2)
-            console.log(`  âœ“ [${col.columnName}] ì™„ë£Œ (${colDuration}ì´ˆ)`)
+            console.log(`  ? [${col.columnName}] ¿Ï·á (${colDuration}ÃÊ)`)
 
             return { colIdx, values }
           })
@@ -202,9 +251,8 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
         })
       }
 
-      // 2. AI ì»¬ëŸ¼ì„ ì œí•œëœ ë™ì‹œì„±ìœ¼ë¡œ ì²˜ë¦¬
       if (aiColumns.length > 0) {
-        console.log(`[${tableName}] AI ì»¬ëŸ¼ ìƒì„± ì‹œì‘ (ë™ì‹œ ${MAX_AI_CONCURRENT}ê°œ):`)
+        console.log(`[${tableName}] AI ÄÃ·³ Ã³¸® (µ¿½Ã ${MAX_AI_CONCURRENT}°³):`)
 
         for (let i = 0; i < aiColumns.length; i += MAX_AI_CONCURRENT) {
           const batch = aiColumns.slice(i, i + MAX_AI_CONCURRENT)
@@ -214,7 +262,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
               const col = columns[colIdx]
               const stream = columnStreams[colIdx]
               const colStart = Date.now()
-              console.log(`  â†’ [${col.columnName}] ì‹œì‘ (${col.dataSource})`)
+              console.log(`  ¢º [${col.columnName}] Ã³¸® (${col.dataSource})`)
 
               const values: string[] = []
               for (let j = 0; j < chunkSize; j++) {
@@ -226,7 +274,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
               }
 
               const colDuration = ((Date.now() - colStart) / 1000).toFixed(2)
-              console.log(`  âœ“ [${col.columnName}] ì™„ë£Œ (${colDuration}ì´ˆ)`)
+              console.log(`  ? [${col.columnName}] ¿Ï·á (${colDuration}ÃÊ)`)
 
               return { colIdx, values }
             })
@@ -236,15 +284,48 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
             chunkColumnValues[colIdx] = values
           })
 
-          // AI ë°°ì¹˜ ê°„ ëŒ€ê¸° (rate limit ë°©ì§€)
           if (i + MAX_AI_CONCURRENT < aiColumns.length) {
-            console.log(`  â³ ë‹¤ìŒ AI ë°°ì¹˜ ì „ ëŒ€ê¸° (1ì´ˆ)...`)
+            console.log(`  ? ´ÙÀ½ AI ÄÃ·³ ´ë±â (1ÃÊ)...`)
             await new Promise((res) => setTimeout(res, 1000))
           }
         }
       }
 
-      // ì»¬ëŸ¼ ì™„ë£Œ ì§„í–‰ë¥  (ë§ˆì§€ë§‰ ì²­í¬ì—ì„œë§Œ)
+      const rows: string[] = []
+      for (let rowIdx = 0; rowIdx < chunkSize; rowIdx++) {
+        const rowValues = columns.map((_, colIdx) => {
+          const columnValues = chunkColumnValues[colIdx]
+          return columnValues?.[rowIdx] ?? 'NULL'
+        })
+        rows.push(`(${rowValues.join(', ')})`)
+        totalProcessed++
+
+        if (totalProcessed % LOG_INTERVAL === 0 || totalProcessed === recordCnt) {
+          const progress = recordCnt === 0 ? 100 : Math.round((totalProcessed / recordCnt) * 100)
+          process.stdout.write(
+            JSON.stringify({
+              type: 'row-progress',
+              tableName,
+              progress,
+              currentRow: totalProcessed
+            }) + '\n'
+          )
+        }
+      }
+
+      if (rows.length > 0) {
+        const sql = `INSERT INTO ${quote}${tableName}${quote} (${columnNames}) VALUES\n${rows.join(',\n')};\n`
+        if (directMode && directContext) {
+          await directContext.execute(sql)
+        }
+        await fs.promises.appendFile(sqlPath, sql, 'utf8')
+      }
+
+      const chunkDuration = ((Date.now() - chunkStartTime) / 1000).toFixed(2)
+      console.log(`\n[${tableName}] Ã»Å© ${chunkIdx + 1} ¿Ï·á (${chunkDuration}ÃÊ)`)
+
+      await new Promise((res) => setTimeout(res, 100))
+
       if (chunkEnd === recordCnt) {
         columns.forEach((col) => {
           process.stdout.write(
@@ -257,46 +338,18 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
           )
         })
       }
-
-      const chunkDuration = ((Date.now() - chunkStartTime) / 1000).toFixed(2)
-      console.log(`\n[${tableName}] ì²­í¬ ${chunkIdx + 1} ì™„ë£Œ (${chunkDuration}ì´ˆ)`)
-
-      // ì²­í¬ ë‚´ í–‰ ì¡°í•© ë° ì¦‰ì‹œ ë””ìŠ¤í¬ ì“°ê¸°
-      const rows: string[] = []
-      for (let i = 0; i < chunkSize; i++) {
-        const rowValues = columns.map((_, j) => chunkColumnValues[j][i])
-        rows.push(`(${rowValues.join(', ')})`)
-        totalProcessed++
-
-        // ì§„í–‰ë¥  ë¡œê·¸
-        if (totalProcessed % LOG_INTERVAL === 0 || totalProcessed === recordCnt) {
-          const progress = Math.round((totalProcessed / recordCnt) * 100)
-          process.stdout.write(
-            JSON.stringify({
-              type: 'row-progress',
-              tableName,
-              progress,
-              currentRow: totalProcessed
-            }) + '\n'
-          )
-        }
-      }
-
-      // ì²­í¬ ë‹¨ìœ„ë¡œ ë””ìŠ¤í¬ì— flush
-      const sql = `INSERT INTO ${quote}${tableName}${quote} (${columnNames}) VALUES\n${rows.join(',\n')};\n`
-      await fs.promises.appendFile(sqlPath, sql, 'utf8')
-
-      // ì²­í¬ ê°„ ëŒ€ê¸° (ë©”ëª¨ë¦¬ ì •ë¦¬)
-      await new Promise((res) => setTimeout(res, 100))
     }
 
     const totalDuration = ((Date.now() - startTime) / 1000).toFixed(2)
     console.log(
-      `\n[${tableName}] ì „ì²´ ì™„ë£Œ (${totalDuration}ì´ˆ, ${totalProcessed.toLocaleString()}í–‰)`
+      `\n[${tableName}] ÀüÃ¼ ¿Ï·á (${totalDuration}ÃÊ, ${totalProcessed.toLocaleString()}Çà)`
     )
 
-    // flush ì™„ë£Œ í›„ ì•½ê°„ ëŒ€ê¸° (I/O ì•ˆì •í™”)
-    await new Promise((res) => setTimeout(res, 100))
+    if (directContext) {
+      await directContext.commit()
+      await directContext.close()
+      directContext = null
+    }
 
     process.stdout.write(
       JSON.stringify({
@@ -305,10 +358,21 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
       }) + '\n'
     )
 
-    const result: WorkerResult = { tableName, sqlPath, success: true }
+    const result: WorkerResult = {
+      tableName,
+      sqlPath,
+      success: true,
+      directInserted: directMode ? true : undefined
+    }
     console.log(JSON.stringify(result))
     return result
   } catch (err) {
+    if (directContext) {
+      await directContext.rollback().catch(() => {})
+      await directContext.close().catch(() => {})
+      directContext = null
+    }
+
     const result: WorkerResult = {
       tableName,
       sqlPath,
@@ -320,11 +384,10 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
     return result
   }
 }
-
 async function main(): Promise<void> {
   const taskEnv = process.env.TASK
   if (!taskEnv) {
-    console.error('TASK í™˜ê²½ë³€ìˆ˜ê°€ ì—†ìŠµë‹ˆë‹¤.')
+    console.error('TASK environment variable is missing.')
     process.exit(1)
   }
 
@@ -332,22 +395,18 @@ async function main(): Promise<void> {
   const result = await runWorker(task)
 
   try {
-    // (1) write ê¶Œí•œìœ¼ë¡œ ì—´ê¸°
     const fd = await fs.promises.open(result.sqlPath, 'r+')
-
-    // (2) ë””ìŠ¤í¬ flush ê°•ì œ
     await fd.sync()
     await fd.close()
-    console.log(`[FLUSH] ${result.tableName} flush ì™„ë£Œ`)
+    console.log(`[FLUSH] ${result.tableName} flush complete`)
   } catch (e) {
-    console.warn('fsync ì‹¤íŒ¨:', e)
+    console.warn('fsync failed:', e)
   }
 
-  // (3) flush í›„ 0.5ì´ˆ ëŒ€ê¸° (Windows I/O ì•ˆì •í™”)
   await new Promise((res) => setTimeout(res, 500))
 
-  // (4) ì´ì œ ì§„ì§œ ì¢…ë£Œ
   process.exit(result.success ? 0 : 1)
 }
 
 main()
+
