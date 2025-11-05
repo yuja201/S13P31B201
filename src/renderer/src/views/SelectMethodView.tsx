@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import PageTitle from '@renderer/components/PageTitle'
 import { ArrowLeft } from 'react-feather'
 import { useGenerationStore } from '@renderer/stores/generationStore'
@@ -7,17 +7,7 @@ import type { GenerateRequest, GenerationResult } from '@main/services/data-gene
 
 const SelectMethodView: React.FC = () => {
   const navigate = useNavigate()
-  const { projectId, tableId } = useParams<{ projectId: string; tableId: string }>()
   const [isHover, setIsHover] = useState(false)
-  const [isProcessing, setIsProcessing] = useState(false)
-  const [statusMessage, setStatusMessage] = useState<string | null>(null)
-
-  const tableConfig = useGenerationStore((state) => (tableId ? state.tables[tableId] : undefined))
-
-  const mappedColumns = useMemo(
-    () => (tableConfig ? Object.values(tableConfig.columns) : []),
-    [tableConfig]
-  )
 
   const baseColor = 'var(--color-dark-gray)'
   const hoverColor = 'var(--color-black)'
@@ -103,11 +93,11 @@ const SelectMethodView: React.FC = () => {
 
       <div style={{ display: 'flex', gap: 40 }}>
         <div
-          onClick={() => {
-            if (projectId) {
-              navigate(`/main/test/${projectId}`)
-            }
-          }}
+          onClick={() =>
+            navigate(`/main/insert/sql/${projectId}`, {
+              state: { tables: selectedTables }
+            })
+          }
           style={{
             width: 500,
             height: 160,
@@ -122,12 +112,8 @@ const SelectMethodView: React.FC = () => {
             justifyContent: 'center',
             transition: 'all 0.25s ease'
           }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'var(--color-light-blue)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'var(--color-white)'
-          }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-light-blue)')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-white)')}
         >
           <p className="preSemiBold20" style={{ color: 'var(--color-black)', marginBottom: 8 }}>
             INSERT SQL 생성하기
@@ -138,7 +124,7 @@ const SelectMethodView: React.FC = () => {
         </div>
 
         <div
-          onClick={handleDirectInsert}
+          onClick={() => navigate(`/main/insert/db/${projectId}`)}
           style={{
             width: 500,
             height: 160,
@@ -153,12 +139,8 @@ const SelectMethodView: React.FC = () => {
             justifyContent: 'center',
             transition: 'all 0.25s ease'
           }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'var(--color-light-blue)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'var(--color-white)'
-          }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-light-blue)')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-white)')}
         >
           <p className="preSemiBold20" style={{ color: 'var(--color-black)', marginBottom: 8 }}>
             바로 DB에 삽입하기

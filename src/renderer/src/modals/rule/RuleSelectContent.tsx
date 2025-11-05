@@ -1,12 +1,12 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Button from '@renderer/components/Button'
 import InputField from '@renderer/components/InputField'
 import PageTitle from '@renderer/components/PageTitle'
 import Label from '@renderer/components/Label'
-import { RuleResult } from '@renderer/modals/rule/RuleModal'
+import { Rule } from '@main/database/types'
 
 export interface RuleCreationData {
-  source: 'faker' | 'ai'
+  source: 'Faker' | 'AI'
   settingName: string
   apiToken?: string
   prompt?: string
@@ -15,11 +15,25 @@ export interface RuleCreationData {
   columnType?: string
 }
 
+export interface RuleSelection {
+  columnName: string
+  dataSource: 'FAKER' | 'AI' | 'FILE' | 'FIXED' | 'ENUM'
+  metaData: {
+    ruleId?: number
+    ruleName?: string
+    domainId?: number
+    domainName?: string
+    filePath?: string
+    columnIdx?: number
+    fixedValue?: string
+  }
+}
+
 interface RuleSelectContentProps {
   columnName: string
   columnType: string
   onCancel: () => void
-  onConfirm?: (result: RuleResult) => void
+  onConfirm: (selection: RuleSelection) => void
   onCreateNew?: () => void
 }
 
@@ -31,11 +45,45 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
   onCreateNew
 }) => {
   const [fixedValue, setFixedValue] = useState('')
+  const [rules, setRules] = useState<Rule[]>([])
 
-  const handleConfirm = (): void => {
-    onConfirm?.({
-      generation: '고정값',
-      setting: fixedValue
+  const handleSelectRule = (rule: Rule): void => {
+    // 선택한 rule을 부모로 전달
+    onConfirm({
+      columnName,
+      dataSource: rule.data_source as 'FAKER' | 'AI' | 'FILE' | 'FIXED',
+      metaData: {
+        ruleId: rule.id,
+        ruleName: rule.name,
+        domainId: rule.domain_id,
+        domainName: rule.domain_name
+      }
+    })
+  }
+
+  useEffect(() => {
+    const fetchRules = async (): Promise<void> => {
+      try {
+        const data = await window.api.rule.getAll()
+        setRules(data)
+      } catch (err) {
+        console.error('규칙 불러오기 실패:', err)
+      }
+    }
+
+    fetchRules()
+  }, [columnName])
+
+  const handleConfirmFixed = (): void => {
+    if (!fixedValue.trim()) {
+      return
+    }
+
+    // Fixed value를 부모로 전달
+    onConfirm({
+      columnName,
+      dataSource: 'FIXED',
+      metaData: { fixedValue }
     })
   }
 
@@ -78,25 +126,23 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
         </div>
 
         <div className="rule-select__rules">
-          <div className="rule-select__rule">
-            <div className="rule-select__rule-top">
-              <span className="rule-select__rule-title">나이 (20~60)</span>
-              <Label text="Faker.js" />
-            </div>
-            <span className="rule-select__rule-desc">숫자</span>
-          </div>
-
-          <div className="rule-select__rule">
-            <div className="rule-select__rule-top">
-              <span className="rule-select__rule-title">출생년도</span>
-              <Label text="AI" />
-            </div>
-            <span className="rule-select__rule-desc">
-              연도
-              <br />
-              2000년대 이상을 80% 해주고 나머지 20%는 2000년대 이하로 해줘
-            </span>
-          </div>
+          {rules.length === 0 ? (
+            <span className="rule-select__rule-desc">저장된 규칙이 없습니다.</span>
+          ) : (
+            rules.map((rule) => (
+              <div
+                key={rule.id}
+                className="rule-select__rule"
+                onClick={() => handleSelectRule(rule)}
+              >
+                <div className="rule-select__rule-top">
+                  <span className="rule-select__rule-title">{rule.name}</span>
+                  <Label text={rule.data_source === 'FAKER' ? 'Faker.js' : 'AI'} />
+                </div>
+                <span className="rule-select__rule-desc">{rule.domain_name ?? '—'}</span>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
@@ -105,7 +151,7 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
         <Button variant="gray" onClick={onCancel}>
           취소
         </Button>
-        <Button variant="orange" onClick={handleConfirm}>
+        <Button variant="orange" onClick={handleConfirmFixed}>
           확인
         </Button>
       </div>

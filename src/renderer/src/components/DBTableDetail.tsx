@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
 import { TableInfo, ColumnDetail } from '@renderer/views/CreateDummyView'
 import Button from '@renderer/components/Button'
 import FileModal from '@renderer/modals/file/FileModal'
@@ -10,37 +9,32 @@ import type { FileModalApplyPayload } from '@renderer/modals/file/types'
 type DBTableDetailProps = {
   table: TableInfo
   onColumnUpdate: (columnName: string, generation: string, setting: string) => void
+  onGenerateData: () => void
 }
 
-const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
-  const navigate = useNavigate()
-  const { projectId } = useParams<{ projectId: string }>()
-
+const TableDetail: React.FC<DBTableDetailProps> = ({ table, onColumnUpdate, onGenerateData }) => {
   const tableGenerationConfig = useGenerationStore((state) => state.tables[table.name])
-  const setTableRecordCount = useGenerationStore((state) => state.setTableRecordCount)
   const applyFileMapping = useGenerationStore((state) => state.applyFileMapping)
-  const setColumnRule = useGenerationStore((state) => state.setColumnRule)
 
-  const [rows, setRows] = useState(1000)
-
-  useEffect(() => {
-    if (
-      tableGenerationConfig?.recordCnt !== undefined &&
-      tableGenerationConfig.recordCnt !== rows
-    ) {
-      setRows(tableGenerationConfig.recordCnt)
-    }
-  }, [tableGenerationConfig?.recordCnt, rows])
-
-  useEffect(() => {
-    setTableRecordCount(table.name, rows)
-  }, [rows, setTableRecordCount, table.name])
+  const getTableRecordCount = useGenerationStore((s) => s.getTableRecordCount)
+  const setTableRecordCount = useGenerationStore((s) => s.setTableRecordCount)
+  const [rows, setRows] = useState<number>(() => getTableRecordCount(table.name))
 
   const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false)
   const [isRuleModalOpen, setIsRuleModalOpen] = useState(false)
   const [selectedColumn, setSelectedColumn] = useState<ColumnDetail | null>(null)
 
-  // FileUploadModal
+  useEffect(() => {
+    setRows(getTableRecordCount(table.name))
+  }, [table.name])
+
+  useEffect(() => {
+    if (!tableGenerationConfig) return
+    setTableRecordCount(table.name, rows)
+  }, [rows])
+
+  // ----------------------------
+  // File Upload Modal
   const openFileUploadModal = (): void => {
     setIsFileUploadModalOpen(true)
   }
@@ -50,18 +44,18 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
   }
 
   const handleFileMappingApply = useCallback(
-    (payload: FileModalApplyPayload) => {
+    (payload: FileModalApplyPayload): void => {
       applyFileMapping(table.name, payload)
       if (payload.recordCount !== undefined) {
         setRows(payload.recordCount)
-        // setTableRecordCount(table.name, payload.recordCount) // setRows -> useEffect가 호출해줌
       }
       closeFileUploadModal()
     },
     [applyFileMapping, table.name]
   )
 
-  // 생성방식 선택 버튼
+  // ----------------------------
+  // Rule Modal
   const handleSelectGenerationClick = (column: ColumnDetail): void => {
     setSelectedColumn(column)
     setIsRuleModalOpen(true)
@@ -72,15 +66,19 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
     setSelectedColumn(null)
   }
 
-  const handleGenerateData = (): void => {
-    navigate(`/main/select-method/${projectId}/${table.id}`)
-  }
-
   const handleRuleConfirm = (result: RuleResult): void => {
     if (!selectedColumn) return
 
-    setColumnRule(table.name, selectedColumn.name, result)
+    onColumnUpdate(selectedColumn.name, result.generation, result.setting)
     closeRuleModal()
+  }
+
+  // ----------------------------
+  // Input handlers
+
+  const handleRowsChange = (value: number): void => {
+    setRows(value)
+    setTableRecordCount(table.name, value)
   }
 
   const displayColumnDetails = useMemo(() => {
@@ -150,7 +148,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
               <input
                 type="number"
                 value={rows}
-                onChange={(e) => setRows(Number(e.target.value))}
+                onChange={(e) => handleRowsChange(Number(e.target.value))}
                 placeholder="e.g., 1,000"
                 className="preMedium16 shadow"
                 step="100"
@@ -201,18 +199,16 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
                     </td>
                     {/* --- 생성 방식 셀 --- */}
                     <td className="generation-method-cell preSemiBold14">
-                      {!col.generation || col.generation === '-' ? (
-                        <button
-                          className="select-generation-link "
-                          // [!] 6. col 객체 전체를 핸들러에 전달
-                          onClick={() => handleSelectGenerationClick(col)}
-                        >
-                          생성방식 선택
-                        </button>
-                      ) : (
-                        col.generation
-                      )}
+                      <button
+                        className="select-generation-link"
+                        onClick={() => handleSelectGenerationClick(col)}
+                      >
+                        {col.generation && col.generation !== '-'
+                          ? col.generation
+                          : '생성방식 선택'}
+                      </button>
                     </td>
+
                     <td>
                       <Button
                         variant="gray"
@@ -225,7 +221,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
                           padding: '4px 12px'
                         }}
                       >
-                        {col.setting} 🖊️
+                        {col.setting || '-'} 🖊️
                       </Button>
                     </td>
                   </tr>
@@ -238,7 +234,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
             variant="blue"
             size="md"
             style={{ width: '100%', marginTop: '24px', padding: '12px' }}
-            onClick={handleGenerateData}
+            onClick={onGenerateData}
           >
             데이터 생성
           </Button>
@@ -257,6 +253,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
       />
       {isRuleModalOpen && selectedColumn && (
         <RuleModal
+          tableName={table.name}
           isOpen={isRuleModalOpen}
           onClose={closeRuleModal}
           column={selectedColumn}
@@ -264,6 +261,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
         />
       )}
 
+      {/* --- 스타일 그대로 유지 --- */}
       <style>{`
         .table-detail-container{
           flex-grow: 1;
@@ -380,7 +378,6 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
         .badge-auto { background-color: #F0FDFA; color: #0F766E; } 
         .badge-default { background-color: #F3F4F6; color: #4B5563; }
         .badge-domain { background-color: #FFF7ED; color: #EA580C; } 
-        
       `}</style>
     </>
   )

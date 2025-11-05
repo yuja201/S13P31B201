@@ -55,6 +55,18 @@ export async function runDataGenerator(
   }
 
   const rules = Array.from(ruleIds)
+    .map((id) => {
+      const rule = getRuleById(id)
+      if (!rule) return undefined
+
+      return {
+        id: rule.id,
+        domain_id: rule.domain_id,
+        domain_name: rule.domain_name,
+        model_id: rule.model_id
+      }
+    })
+    .filter((rule) => rule !== undefined)
     .map((id) => getRuleById(id))
     .filter((rule): rule is NonNullable<typeof rule> => Boolean(rule))
     .map((rule) => ({
@@ -110,21 +122,32 @@ export async function runDataGenerator(
     running.add(child)
 
     let stdout = ''
+    let stdoutBuffer = ''
     let stderr = ''
 
     child.stdout.on('data', (data) => {
-      const text = data.toString().trim()
-      if (text.startsWith('{') && text.endsWith('}')) {
-        try {
-          const msg = JSON.parse(text)
-          if (msg.type) {
-            mainWindow.webContents.send('data-generator:progress', msg)
+      const chunk = data.toString()
+      process.stdout.write(chunk)
+      stdout += chunk
+
+      stdoutBuffer += chunk
+      let newlineIndex: number
+      while ((newlineIndex = stdoutBuffer.indexOf('\n')) !== -1) {
+        const line = stdoutBuffer.slice(0, newlineIndex).trim()
+        stdoutBuffer = stdoutBuffer.slice(newlineIndex + 1)
+        if (!line) continue
+
+        if (line.startsWith('{') && line.endsWith('}')) {
+          try {
+            const msg = JSON.parse(line)
+            if (msg.type) {
+              mainWindow.webContents.send('data-generator:progress', msg)
+            }
+          } catch {
+            // JSON 파싱 실패 시 무시 (불완전 청크일 가능성)
           }
-        } catch {
-          // ignore non-JSON stdout content
         }
       }
-      stdout += text + '\n'
     })
 
     child.stderr.on('data', (data) => {

@@ -15,7 +15,13 @@ import type {
   RuleUpdate,
   DatabaseSchema
 } from '../main/database/types'
-import { GenerateRequest, GenerationResult } from '../main/services/data-generator/types'
+
+import {
+  FakerRuleInput,
+  AIRuleInput,
+  GenerateRequest,
+  GenerationResult
+} from '../main/services/data-generator/types'
 
 // Custom APIs for renderer
 const api = {
@@ -65,7 +71,10 @@ const api = {
     create: (data: RuleInput): Promise<Rule> => ipcRenderer.invoke('db:rule:create', data),
     update: (data: RuleUpdate): Promise<Rule | undefined> =>
       ipcRenderer.invoke('db:rule:update', data),
-    delete: (id: number): Promise<boolean> => ipcRenderer.invoke('db:rule:delete', id)
+    delete: (id: number): Promise<boolean> => ipcRenderer.invoke('db:rule:delete', id),
+    createFaker: (data: FakerRuleInput): Promise<Rule> =>
+      ipcRenderer.invoke('db:rule:createFaker', data),
+    createAI: (data: AIRuleInput): Promise<Rule> => ipcRenderer.invoke('db:rule:createAI', data)
   },
 
   // Database connection test
@@ -112,10 +121,15 @@ const api = {
     generate: (payload: GenerateRequest): Promise<GenerationResult> =>
       ipcRenderer.invoke('gen:dummy:bulk', payload),
     onProgress: (callback: (msg: unknown) => void) => {
-      ipcRenderer.on('data-generator:progress', (_, msg) => callback(msg))
+      ipcRenderer.on('data-generator:progress', (_, msg) => {
+        callback(msg)
+      })
     },
     removeProgressListeners: () => {
       ipcRenderer.removeAllListeners('data-generator:progress')
+    },
+    downloadZip: (zipPath: string) => {
+      ipcRenderer.invoke('gen:dummy:download', zipPath)
     }
   }
 }
@@ -127,6 +141,11 @@ if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)
     contextBridge.exposeInMainWorld('api', api)
+    contextBridge.exposeInMainWorld('env', {
+      OPENAI_API_KEY: process.env.OPENAI_API_KEY || null,
+      ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || null,
+      GOOGLE_API_KEY: process.env.GOOGLE_API_KEY || null
+    })
   } catch (error) {
     console.error(error)
   }
