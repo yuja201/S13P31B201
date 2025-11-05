@@ -1,1 +1,23 @@
 * text eol=lf
+
+# 이미지 파일은 텍스트 처리 금지
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.bmp binary
+
+# 기타 바이너리 파일들
+*.zip binary
+*.exe binary
+*.db binary
+*.sqlite binary
+*.mp4 binary
+*.mp3 binary
+
+# 폰트, 문서 등 추가 보호 (선택)
+*.ttf binary
+*.woff binary
+*.woff2 binary
+*.pdf binary
