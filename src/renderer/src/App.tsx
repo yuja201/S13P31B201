@@ -11,6 +11,7 @@ import TestView from '@renderer/views/TestView'
 import HistoryView from '@renderer/views/HistoryView'
 import SelectMethodView from './views/SelectMethodView'
 import DummyInsertView from './views/DummyInsertView'
+import ErrorView from './views/ErrorView'
 
 const App: React.FC = () => {
   return (
@@ -20,6 +21,7 @@ const App: React.FC = () => {
         <Route path="/" element={<MainLayout />}>
           {/*  MainView (사이드바 잠김) */}
           <Route index element={<MainView />} />
+          <Route path="error" element={<ErrorView />} />
 
           {/*  프로젝트 뷰들 (사이드바 활성)*/}
           <Route path="main">
