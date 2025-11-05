@@ -1,16 +1,46 @@
 import React, { useMemo, useState } from 'react'
-import { useNavigate, useParams, useLocation } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import PageTitle from '@renderer/components/PageTitle'
 import { ArrowLeft } from 'react-feather'
 import { useGenerationStore } from '@renderer/stores/generationStore'
-import type { GenerateRequest, GenerationResult } from '@main/services/data-generator/types'
+import type {
+  GenerateRequest,
+  GenerationResult,
+  ColumnMetaData,
+  DataSourceType
+} from '@main/services/data-generator/types'
 
 const SelectMethodView: React.FC = () => {
   const navigate = useNavigate()
+  const location = useLocation()
+  const { projectId } = useParams<{ projectId: string }>()
+  const exportRulesForTable = useGenerationStore((state) => state.exportRulesForTable)
+  const selectedTables =
+    (location.state as { tables?: Array<{ id: string; name: string }> } | undefined)?.tables ?? []
+  const tableId = selectedTables[0]?.id
+  const [statusMessage, setStatusMessage] = useState<string>('')
+  const [isProcessing, setIsProcessing] = useState(false)
   const [isHover, setIsHover] = useState(false)
 
   const baseColor = 'var(--color-dark-gray)'
   const hoverColor = 'var(--color-black)'
+
+  const tableConfig = useMemo(
+    () => (tableId ? exportRulesForTable(tableId) : undefined),
+    [exportRulesForTable, tableId]
+  )
+
+  const mappedColumns = useMemo<
+    Array<{ columnName: string; dataSource: DataSourceType; metaData: ColumnMetaData }>
+  >(
+    () =>
+      tableConfig?.columns.map((col) => ({
+        columnName: col.columnName,
+        dataSource: col.dataSource as DataSourceType,
+        metaData: col.metaData as ColumnMetaData
+      })) ?? [],
+    [tableConfig]
+  )
 
   const handleDirectInsert = async (): Promise<void> => {
     if (isProcessing) return
@@ -124,7 +154,7 @@ const SelectMethodView: React.FC = () => {
         </div>
 
         <div
-          onClick={() => navigate(`/main/insert/db/${projectId}`)}
+          onClick={handleDirectInsert}
           style={{
             width: 500,
             height: 160,

@@ -55,18 +55,6 @@ export async function runDataGenerator(
   }
 
   const rules = Array.from(ruleIds)
-    .map((id) => {
-      const rule = getRuleById(id)
-      if (!rule) return undefined
-
-      return {
-        id: rule.id,
-        domain_id: rule.domain_id,
-        domain_name: rule.domain_name,
-        model_id: rule.model_id
-      }
-    })
-    .filter((rule) => rule !== undefined)
     .map((id) => getRuleById(id))
     .filter((rule): rule is NonNullable<typeof rule> => Boolean(rule))
     .map((rule) => ({

@@ -7,6 +7,7 @@ import Button from '@renderer/components/Button'
 import { useProjectStore } from '@renderer/stores/projectStore'
 import { useGenerationStore } from '@renderer/stores/generationStore'
 import { useLocation, useNavigate } from 'react-router-dom'
+import type { ColumnMetaData, DataSourceType } from '@main/services/data-generator/types'
 
 type InsertMode = 'sql' | 'db'
 
@@ -166,8 +167,8 @@ const DummyInsertView: React.FC = () => {
 
               return {
                 columnName: col.columnName,
-                dataSource: col.dataSource,
-                metaData: cleanedMeta
+                dataSource: col.dataSource as DataSourceType,
+                metaData: cleanedMeta as ColumnMetaData
               }
             })
           }))
