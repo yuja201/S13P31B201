@@ -11,7 +11,6 @@ const MainLayout: React.FC = () => {
   const selectProjectById = useProjectStore((state) => state.selectProjectById)
   const fetchSchema = useSchemaStore((state) => state.fetchSchema)
   const isLocked = location.pathname === '/'
-  const showSidebar = location.pathname.startsWith('/main/') // main/*에서만 표시
 
   useEffect(() => {
     if (projectId) {
@@ -28,15 +27,12 @@ const MainLayout: React.FC = () => {
 
   return (
     <div className="layout">
-      {showSidebar && (
-        <Sidebar
-          locked={false}
-          projectName={selectedProject?.name}
-          dbType={selectedProject?.dbms?.name}
-          projectId={projectId}
-        />
-      )}
-
+      <Sidebar
+        locked={isLocked}
+        projectName={selectedProject?.name}
+        dbType={selectedProject?.dbms?.name}
+        projectId={projectId}
+      />
       <main className="main-content">
         <div className="content-wrapper">
           <Outlet />
