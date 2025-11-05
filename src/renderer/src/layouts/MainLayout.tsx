@@ -10,7 +10,7 @@ const MainLayout: React.FC = () => {
   const selectedProject = useProjectStore((state) => state.selectedProject)
   const selectProjectById = useProjectStore((state) => state.selectProjectById)
   const fetchSchema = useSchemaStore((state) => state.fetchSchema)
-  const isLocked = location.pathname === '/'
+  const isLocked = location.pathname === '/' || location.pathname === '/error'
 
   useEffect(() => {
     if (projectId) {

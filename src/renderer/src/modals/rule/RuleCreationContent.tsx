@@ -176,7 +176,7 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
 
       {/* 도메인 선택 */}
       <div style={{ width: '100%', overflow: 'hidden' }}>
-        <SelectDomain onChange={(value) => setSelectedDomain(value)} />
+        <SelectDomain source={selectedSource} onChange={(value) => setSelectedDomain(value)} />
       </div>
 
       {/* AI 생성 선택 시에만 표시되는 섹션 */}
