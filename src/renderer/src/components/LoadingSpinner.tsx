@@ -1,5 +1,5 @@
 import React from 'react'
-import yujaIcon from '@renderer/assets/icons/yuja.png'
+import yujaIcon from '@renderer/assets/icons/yuja.svg'
 
 interface LoadingProps {
   text?: string
