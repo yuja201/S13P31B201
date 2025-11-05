@@ -17,7 +17,7 @@ import {
 import { createFileValueStream } from './file-generator.js'
 import { generateFixedStream } from './fixed-generator.js'
 
-// ÄÃ·³º° ½ºÆ®¸² »ı¼º ÇÔ¼ö
+// ì»¬ëŸ¼ë³„ ìŠ¤íŠ¸ë¦¼ ìƒì„± í•¨ìˆ˜
 function createColumnStream(
   col: {
     columnName: string
@@ -35,7 +35,7 @@ function createColumnStream(
     case 'FAKER': {
       if (!col.metaData || (col.metaData as FakerMetaData).ruleId == null) {
         throw new Error(
-          `[Faker ¸ŞÅ¸µ¥ÀÌÅÍ ¿À·ù] ${tableName}.${col.columnName} ÄÃ·³ÀÇ Faker ±ÔÄ¢ ¼³Á¤ÀÌ ¿Ã¹Ù¸£Áö ¾Ê½À´Ï´Ù.`
+          `[Faker ë©”íƒ€ë°ì´í„° ì˜¤ë¥˜] ${tableName}.${col.columnName} ì»¬ëŸ¼ì˜ Faker ê·œì¹™ ì„¤ì •ì´ ì˜¬ë°”ë¥´ì§€ ì•ŠìŠµë‹ˆë‹¤.`
         )
       }
 
@@ -51,14 +51,15 @@ function createColumnStream(
         columnName: col.columnName,
         recordCnt,
         metaData: { ruleId: meta.ruleId },
-        domainName: rule.domain_name
+        domainName: rule.domain_name,
+        schema
       })
     }
 
     case 'AI': {
       if (!col.metaData || (col.metaData as AIMetaData).ruleId == null) {
         throw new Error(
-          `[AI ¸ŞÅ¸µ¥ÀÌÅÍ ¿À·ù] ${tableName}.${col.columnName} ÄÃ·³ÀÇ AI ±ÔÄ¢ ¼³Á¤ÀÌ ¿Ã¹Ù¸£Áö ¾Ê½À´Ï´Ù.`
+          `[AI ë©”íƒ€ë°ì´í„° ì˜¤ë¥˜] ${tableName}.${col.columnName} ì»¬ëŸ¼ì˜ AI ê·œì¹™ ì„¤ì •ì´ ì˜¬ë°”ë¥´ì§€ ì•ŠìŠµë‹ˆë‹¤.`
         )
       }
 
@@ -83,7 +84,7 @@ function createColumnStream(
     case 'FILE': {
       if (!col.metaData) {
         throw new Error(
-          `[ÆÄÀÏ ¸ŞÅ¸µ¥ÀÌÅÍ ¿À·ù] ${tableName}.${col.columnName} ÄÃ·³ÀÇ ÆÄÀÏ ¼³Á¤ÀÌ ¿Ã¹Ù¸£Áö ¾Ê½À´Ï´Ù.`
+          `[íŒŒì¼ ë©”íƒ€ë°ì´í„° ì˜¤ë¥˜] ${tableName}.${col.columnName} ì»¬ëŸ¼ì˜ íŒŒì¼ ì„¤ì •ì´ ì˜¬ë°”ë¥´ì§€ ì•ŠìŠµë‹ˆë‹¤.`
         )
       }
       const meta = col.metaData as FileMetaData
@@ -93,7 +94,7 @@ function createColumnStream(
     case 'FIXED': {
       if (!col.metaData || (col.metaData as FixedMetaData).fixedValue == null) {
         throw new Error(
-          `[°íÁ¤°ª ¸ŞÅ¸µ¥ÀÌÅÍ ¿À·ù] ${tableName}.${col.columnName} ÄÃ·³ÀÇ °íÁ¤°ª ¼³Á¤ÀÌ ¿Ã¹Ù¸£Áö ¾Ê½À´Ï´Ù.`
+          `[ê³ ì •ê°’ ë©”íƒ€ë°ì´í„° ì˜¤ë¥˜] ${tableName}.${col.columnName} ì»¬ëŸ¼ì˜ ê³ ì •ê°’ ì„¤ì •ì´ ì˜¬ë°”ë¥´ì§€ ì•ŠìŠµë‹ˆë‹¤.`
         )
       }
 
@@ -105,11 +106,11 @@ function createColumnStream(
     }
 
     default:
-      throw new Error(`¾Ë ¼ö ¾ø´Â µ¥ÀÌÅÍ ¼Ò½º: ${col.dataSource}`)
+      throw new Error(`ì•Œ ìˆ˜ ì—†ëŠ” ë°ì´í„° ì†ŒìŠ¤: ${col.dataSource}`)
   }
 }
 
-// AI ÄÃ·³°ú non-AI ÄÃ·³ ºĞ¸®
+// AI ì»¬ëŸ¼ê³¼ non-AI ì»¬ëŸ¼ ë¶„ë¦¬
 function separateColumnsByType(columns: { dataSource: DataSourceType }[]): {
   aiColumns: number[]
   nonAiColumns: number[]
@@ -201,7 +202,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
       directContext = await createDirectContext(dbType, connection)
     }
 
-    console.log(`[${tableName}] ½ÃÀÛ: ${recordCnt.toLocaleString()}Çà, ${columns.length}ÄÃ·³`)
+    console.log(`[${tableName}] ì‹œì‘: ${recordCnt.toLocaleString()}í–‰, ${columns.length}ì»¬ëŸ¼`)
     const startTime = Date.now()
     let totalProcessed = 0
     const numChunks = Math.max(1, Math.ceil(recordCnt / CHUNK_SIZE))
@@ -214,7 +215,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
         continue
       }
 
-      console.log(`\n[${tableName}] Ã»Å© ${chunkIdx + 1}/${numChunks} Ã³¸® Áß (${chunkSize}Çà)`)
+      console.log(`\n[${tableName}] ì²­í¬ ${chunkIdx + 1}/${numChunks} ì²˜ë¦¬ ì¤‘ (${chunkSize}í–‰)`)
       const chunkStartTime = Date.now()
 
       const columnStreams = columns.map((col) => createColumnStream(col, task, chunkSize))
@@ -222,13 +223,13 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
       const chunkColumnValues: string[][] = new Array(columns.length)
 
       if (nonAiColumns.length > 0) {
-        console.log(`[${tableName}] Non-AI ÄÃ·³ µ¿½Ã Ã³¸®:`)
+        console.log(`[${tableName}] Non-AI ì»¬ëŸ¼ ë™ì‹œ ì²˜ë¦¬:`)
         const nonAiResults = await Promise.all(
           nonAiColumns.map(async (colIdx) => {
             const col = columns[colIdx]
             const stream = columnStreams[colIdx]
             const colStart = Date.now()
-            console.log(`  ¢º [${col.columnName}] Ã³¸® (${col.dataSource})`)
+            console.log(`  â–¶ [${col.columnName}] ì²˜ë¦¬ (${col.dataSource})`)
 
             const values: string[] = []
             for (let i = 0; i < chunkSize; i++) {
@@ -240,7 +241,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
             }
 
             const colDuration = ((Date.now() - colStart) / 1000).toFixed(2)
-            console.log(`  ? [${col.columnName}] ¿Ï·á (${colDuration}ÃÊ)`)
+            console.log(`  ? [${col.columnName}] ì™„ë£Œ (${colDuration}ì´ˆ)`)
 
             return { colIdx, values }
           })
@@ -252,7 +253,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
       }
 
       if (aiColumns.length > 0) {
-        console.log(`[${tableName}] AI ÄÃ·³ Ã³¸® (µ¿½Ã ${MAX_AI_CONCURRENT}°³):`)
+        console.log(`[${tableName}] AI ì»¬ëŸ¼ ì²˜ë¦¬ (ë™ì‹œ ${MAX_AI_CONCURRENT}ê°œ):`)
 
         for (let i = 0; i < aiColumns.length; i += MAX_AI_CONCURRENT) {
           const batch = aiColumns.slice(i, i + MAX_AI_CONCURRENT)
@@ -262,7 +263,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
               const col = columns[colIdx]
               const stream = columnStreams[colIdx]
               const colStart = Date.now()
-              console.log(`  ¢º [${col.columnName}] Ã³¸® (${col.dataSource})`)
+              console.log(`  â–¶ [${col.columnName}] ì²˜ë¦¬ (${col.dataSource})`)
 
               const values: string[] = []
               for (let j = 0; j < chunkSize; j++) {
@@ -274,7 +275,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
               }
 
               const colDuration = ((Date.now() - colStart) / 1000).toFixed(2)
-              console.log(`  ? [${col.columnName}] ¿Ï·á (${colDuration}ÃÊ)`)
+              console.log(`  ? [${col.columnName}] ì™„ë£Œ (${colDuration}ì´ˆ)`)
 
               return { colIdx, values }
             })
@@ -285,7 +286,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
           })
 
           if (i + MAX_AI_CONCURRENT < aiColumns.length) {
-            console.log(`  ? ´ÙÀ½ AI ÄÃ·³ ´ë±â (1ÃÊ)...`)
+            console.log(`  ? ë‹¤ìŒ AI ì»¬ëŸ¼ ëŒ€ê¸° (1ì´ˆ)...`)
             await new Promise((res) => setTimeout(res, 1000))
           }
         }
@@ -322,7 +323,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
       }
 
       const chunkDuration = ((Date.now() - chunkStartTime) / 1000).toFixed(2)
-      console.log(`\n[${tableName}] Ã»Å© ${chunkIdx + 1} ¿Ï·á (${chunkDuration}ÃÊ)`)
+      console.log(`\n[${tableName}] ì²­í¬ ${chunkIdx + 1} ì™„ë£Œ (${chunkDuration}ì´ˆ)`)
 
       await new Promise((res) => setTimeout(res, 100))
 
@@ -342,7 +343,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
 
     const totalDuration = ((Date.now() - startTime) / 1000).toFixed(2)
     console.log(
-      `\n[${tableName}] ÀüÃ¼ ¿Ï·á (${totalDuration}ÃÊ, ${totalProcessed.toLocaleString()}Çà)`
+      `\n[${tableName}] ì „ì²´ ì™„ë£Œ (${totalDuration}ì´ˆ, ${totalProcessed.toLocaleString()}í–‰)`
     )
 
     if (directContext) {
@@ -409,4 +410,3 @@ async function main(): Promise<void> {
 }
 
 main()
-
