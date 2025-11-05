@@ -1,9 +1,10 @@
 import React from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useRouteError } from 'react-router-dom'
 import yujaSweating from '../assets/imgs/yuja_sweating.png'
 
 const ErrorView: React.FC = () => {
   const navigate = useNavigate()
+  const error = useRouteError()
 
   const handleBack = (): void => {
     // 히스토리가 있는지 확인
@@ -13,6 +14,10 @@ const ErrorView: React.FC = () => {
       // 히스토리가 없으면 메인 페이지로
       navigate('/')
     }
+  }
+
+  if (error) {
+    console.error('Route error:', error)
   }
 
   return (
@@ -29,7 +34,9 @@ const ErrorView: React.FC = () => {
           flex-direction: column;
           align-items: center;
           justify-content: center;
+          width: 100%;
           height: 100%;
+          background-color: var(--color-background);
           text-align: center;
         }
 

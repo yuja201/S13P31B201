@@ -1,5 +1,5 @@
 import React from 'react'
-import { HashRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { createHashRouter, RouterProvider } from 'react-router-dom'
 import LandingView from '@renderer/views/LandingView'
 import MainView from '@renderer/views/MainView'
 import MainLayout from '@renderer/layouts/MainLayout'
@@ -12,44 +12,74 @@ import HistoryView from '@renderer/views/HistoryView'
 import SelectMethodView from './views/SelectMethodView'
 import DummyInsertView from './views/DummyInsertView'
 import ErrorView from './views/ErrorView'
-import ErrorBoundary from '@renderer/components/ErrorBoundary'
 
-const AppRoutes: React.FC = () => {
-  const navigate = useNavigate()
-
-  return (
-    <ErrorBoundary navigate={navigate}>
-      <Routes>
-        <Route path="/landing" element={<LandingView />} />
-        <Route path="/" element={<MainLayout />}>
-          {/*  MainView (사이드바 잠김) */}
-          <Route index element={<MainView />} />
-          <Route path="error" element={<ErrorView />} />
-
-          {/*  프로젝트 뷰들 (사이드바 활성)*/}
-          <Route path="main">
-            <Route path="dashboard/:projectId" element={<DashboardView />} />
-            <Route path="info/:projectId" element={<InfoView />} />
-            <Route path="schema/:projectId" element={<SchemaView />} />
-            <Route path="dummy/:projectId" element={<CreateDummyView />} />
-            <Route path="test/:projectId" element={<TestView />} />
-            <Route path="history/:projectId" element={<HistoryView />} />
-            <Route path="select-method/:projectId" element={<SelectMethodView />} />
-            <Route path="insert/sql/:projectId" element={<DummyInsertView />} />
-            <Route index element={<Navigate to="dashboard/:projectId" replace />} />
-          </Route>
-        </Route>
-      </Routes>
-    </ErrorBoundary>
-  )
-}
+const router = createHashRouter([
+  {
+    path: '/landing',
+    element: <LandingView />,
+    errorElement: <ErrorView />
+  },
+  {
+    path: '/',
+    element: <MainLayout />,
+    children: [
+      // MainView (사이드바 잠김)
+      {
+        index: true,
+        element: <MainView />,
+        errorElement: <ErrorView />
+      },
+      {
+        path: 'error',
+        element: <ErrorView />
+      },
+      // 프로젝트 뷰들 (사이드바 활성)
+      {
+        path: 'main/dashboard/:projectId',
+        element: <DashboardView />,
+        errorElement: <ErrorView />
+      },
+      {
+        path: 'main/info/:projectId',
+        element: <InfoView />,
+        errorElement: <ErrorView />
+      },
+      {
+        path: 'main/schema/:projectId',
+        element: <SchemaView />,
+        errorElement: <ErrorView />
+      },
+      {
+        path: 'main/dummy/:projectId',
+        element: <CreateDummyView />,
+        errorElement: <ErrorView />
+      },
+      {
+        path: 'main/test/:projectId',
+        element: <TestView />,
+        errorElement: <ErrorView />
+      },
+      {
+        path: 'main/history/:projectId',
+        element: <HistoryView />,
+        errorElement: <ErrorView />
+      },
+      {
+        path: 'main/select-method/:projectId',
+        element: <SelectMethodView />,
+        errorElement: <ErrorView />
+      },
+      {
+        path: 'main/insert/sql/:projectId',
+        element: <DummyInsertView />,
+        errorElement: <ErrorView />
+      }
+    ]
+  }
+])
 
 const App: React.FC = () => {
-  return (
-    <HashRouter>
-      <AppRoutes />
-    </HashRouter>
-  )
+  return <RouterProvider router={router} />
 }
 
 export default App
