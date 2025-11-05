@@ -13,11 +13,15 @@ interface DomainCategory {
 }
 
 interface SelectDomainProps {
+  source: 'FAKER' | 'AI'
   onChange: (domain: { id: number; name: string }) => void
 }
 
-const SelectDomain: React.FC<SelectDomainProps> = ({ onChange }) => {
+const SelectDomain: React.FC<SelectDomainProps> = ({ source, onChange }) => {
   const [selected, setSelected] = useState<string | null>(null)
+
+  // faker가 지원하지 않는 도메인 ID 목록
+  const excludedForFaker = ['15', '27', '32', '44', '47', '48']
 
   const handleSelect = (id: string): void => {
     setSelected(id)
@@ -159,6 +163,17 @@ const SelectDomain: React.FC<SelectDomainProps> = ({ onChange }) => {
     }
   ]
 
+  // Faker일 때 제외 처리
+  const filteredCategories =
+    source === 'FAKER'
+      ? categories
+          .map((category) => ({
+            ...category,
+            items: category.items.filter((item) => !excludedForFaker.includes(item.id))
+          }))
+          .filter((c) => c.items.length > 0)
+      : categories
+
   return (
     <>
       <div className="select-domain-wrapper">
@@ -169,7 +184,7 @@ const SelectDomain: React.FC<SelectDomainProps> = ({ onChange }) => {
 
         <div className="select-domain">
           <div className="select-domain__scroll">
-            {categories.map((category) => (
+            {filteredCategories.map((category) => (
               <div key={category.category} className="select-domain__group">
                 <h3 className="select-domain__category">{category.category}</h3>
                 <div className="select-domain__grid">
