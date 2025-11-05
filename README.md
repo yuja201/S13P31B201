@@ -216,3 +216,9 @@ Copyright (c) 2025 yuja
 ---
 
 ⭐ 이 프로젝트가 유용하다면 Star를 많이 많이 눌러주세요!
+
+## ☕ 후원하기
+
+만약 저희의 서비스가 도움이 되셨다면, 아래 버튼으로 커피 한 잔 부탁드립니다. 😄
+
+[![커피 한 잔 사기](https://img.shields.io/badge/-Buy%20Me%20a%20Coffee-orange?logo=buy-me-a-coffee&logoColor=white&style=for-the-badge)](https://www.buymeacoffee.com/heresdummy)
