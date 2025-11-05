@@ -1,5 +1,5 @@
 import React from 'react'
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { HashRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import LandingView from '@renderer/views/LandingView'
 import MainView from '@renderer/views/MainView'
 import MainLayout from '@renderer/layouts/MainLayout'
@@ -12,10 +12,13 @@ import HistoryView from '@renderer/views/HistoryView'
 import SelectMethodView from './views/SelectMethodView'
 import DummyInsertView from './views/DummyInsertView'
 import ErrorView from './views/ErrorView'
+import ErrorBoundary from '@renderer/components/ErrorBoundary'
 
-const App: React.FC = () => {
+const AppRoutes: React.FC = () => {
+  const navigate = useNavigate()
+
   return (
-    <HashRouter>
+    <ErrorBoundary navigate={navigate}>
       <Routes>
         <Route path="/landing" element={<LandingView />} />
         <Route path="/" element={<MainLayout />}>
@@ -37,6 +40,14 @@ const App: React.FC = () => {
           </Route>
         </Route>
       </Routes>
+    </ErrorBoundary>
+  )
+}
+
+const App: React.FC = () => {
+  return (
+    <HashRouter>
+      <AppRoutes />
     </HashRouter>
   )
 }
