@@ -78,8 +78,16 @@
 
 - 사전 정의된 데이터 타입 선택
 - Claude, GPT, OpenAI 중 선택
-- API 키 입력
+- API 키 입력(UI에서 입력하면 앱을 재실행할 때 자동 완성됩니다)
 - 컨텍스트에 맞는 데이터 자동 생성
+
+##### API 키 발급 방법
+
+- **OpenAI (GPT)**: [OpenAI Platform](https://platform.openai.com/api-keys)에서 발급
+- **Anthropic (Claude)**: [Anthropic Console](https://console.anthropic.com/)에서 발급
+- **Google (Gemini)**: [Google AI Studio](https://makersuite.google.com/app/apikey)에서 발급
+
+API 키는 한 번 입력하면 앱에 안전하게 저장되어 다음에도 자동으로 불러옵니다.
 
 #### 파일 업로드
 
@@ -94,6 +102,51 @@
 3. SQL문을 출력하거나 바로 DB에 삽입하기
    ![alt text](docs/images/insert_method.png)
    ![alt text](docs/images/insert_result.png)
+
+## ⚙️ 고급 설정
+
+### API 엔드포인트 및 타임아웃 설정
+
+AI 생성 기능의 고급 설정(BASE_URL, TIMEOUT 등)을 변경하려면:
+
+**Windows**
+
+```
+C:\Users\{사용자명}\AppData\Roaming\heresdummy\.env
+```
+
+**macOS**
+
+```
+~/Library/Application Support/heresdummy/.env
+```
+
+**Linux**
+
+```
+~/.config/heresdummy/.env
+```
+
+위 경로의 `.env` 파일을 텍스트 에디터로 열어 다음 설정을 수정할 수 있습니다:
+
+```properties
+# API 엔드포인트
+OPENAI_BASE_URL=https://api.openai.com/v1
+ANTHROPIC_BASE_URL=https://api.anthropic.com
+GOOGLE_BASE_URL=https://generativelanguage.googleapis.com
+
+# 타임아웃 설정 (밀리초)
+OPENAI_TIMEOUT=60000
+ANTHROPIC_TIMEOUT=60000
+GOOGLE_TIMEOUT=60000
+
+# 최대 재시도 횟수
+OPENAI_MAX_RETRIES=2
+ANTHROPIC_MAX_RETRIES=2
+GOOGLE_MAX_RETRIES=2
+```
+
+설정 변경 후 애플리케이션을 재시작하면 적용됩니다.
 
 ## 🛠️ 기술 스택
 
@@ -151,6 +204,22 @@ npm run lint
 npm run format
 ```
 
+### 환경 변수 설정 (개발 모드)
+
+개발 모드에서는 프로젝트 루트에 `.env` 파일을 생성하세요:
+
+```bash
+cp .env.example .env
+```
+
+그리고 API 키를 입력하세요:
+
+```properties
+OPENAI_API_KEY=your_openai_api_key_here
+ANTHROPIC_API_KEY=your_anthropic_api_key_here
+GOOGLE_API_KEY=your_google_api_key_here
+```
+
 ### 빌드
 
 ```bash
@@ -188,6 +257,12 @@ heresdummy/
 ### 버그 리포트 및 기능 제안
 
 [Issues](https://github.com/yuja201/here-is-dummy/issues)에서 버그 리포트나 기능 제안을 남겨주세요.
+
+## 🔒 개인정보 보호
+
+- API 키는 로컬 디바이스에만 저장되며 외부로 전송되지 않습니다
+- 생성된 더미 데이터는 사용자가 지정한 데이터베이스에만 저장됩니다
+- 애플리케이션은 사용자 데이터를 수집하지 않습니다
 
 ## 📝 라이선스
 
