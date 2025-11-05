@@ -3,6 +3,7 @@ import SimpleCard from '@renderer/components/SimpleCard'
 import InputField from '@renderer/components/InputField'
 import PageTitle from '@renderer/components/PageTitle'
 import SelectDomain from '@renderer/components/SelectDomain'
+import Toast from '@renderer/components/Toast'
 import Button from '@renderer/components/Button'
 
 export interface RuleCreationData {
@@ -33,26 +34,50 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
 }) => {
   const [selectedSource, setSelectedSource] = useState<'FAKER' | 'AI'>('FAKER')
   const [settingName, setSettingName] = useState('')
+  const [showToast, setShowToast] = useState(false)
+  const [toastType, setToastType] = useState<'success' | 'warning' | 'error'>('success')
+  const [toastMessage, setToastMessage] = useState('')
   const [apiToken, setApiToken] = useState('')
   const [prompt, setPrompt] = useState('')
   const [selectedModel, setSelectedModel] = useState('1')
   const [selectedDomain, setSelectedDomain] = useState<{ id: number; name: string } | null>(null)
 
-  const handleSubmit = async (): Promise<void> => {
+  const showToastMsg = (type: 'success' | 'warning' | 'error', message: string): void => {
+    setToastType(type)
+    setToastMessage(message)
+    setShowToast(true)
+  }
+
+  const validateRequiredFields = (): boolean => {
     if (!settingName.trim()) {
-      alert('설정 이름을 입력하세요.')
-      return
+      showToastMsg('warning', '설정 이름을 입력하세요.')
+      return false
     }
     if (!selectedDomain) {
-      alert('도메인을 선택하세요.')
-      return
+      showToastMsg('warning', '도메인을 선택하세요.')
+      return false
     }
+    if (selectedSource === 'AI') {
+      if (!apiToken.trim()) {
+        showToastMsg('warning', 'API 토큰을 입력하세요.')
+        return false
+      }
+      if (prompt.length > 500) {
+        showToastMsg('warning', '프롬프트는 500자 이내로 입력하세요.')
+        return false
+      }
+    }
+    return true
+  }
+
+  const handleSubmit = async (): Promise<void> => {
+    if (!validateRequiredFields()) return
+
     try {
       if (selectedSource === 'FAKER') {
-        // 실제 규칙 생성 API 호출
         const result = await window.api.rule.createFaker({
           name: settingName,
-          domain: selectedDomain.id
+          domain: selectedDomain!.id
         })
 
         onSubmit?.({
@@ -61,22 +86,20 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
           columnType,
           columnName,
           result: result.id,
-          domainId: selectedDomain.id,
-          domainName: selectedDomain.name
+          domainId: selectedDomain!.id,
+          domainName: selectedDomain!.name
         })
+
+        showToastMsg('success', 'Faker 규칙이 저장되었습니다.')
       } else if (selectedSource === 'AI') {
-        if (!apiToken.trim()) {
-          alert('API 토큰을 입력하세요.')
-          return
-        }
-        // 실제 규칙 생성 API 호출
         const result = await window.api.rule.createAI({
           name: settingName,
-          domain: selectedDomain.id,
+          domain: selectedDomain!.id,
           model_id: Number(selectedModel),
           token: apiToken,
           prompt
         })
+
         onSubmit?.({
           source: selectedSource,
           settingName,
@@ -86,22 +109,21 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
           columnType,
           columnName,
           result: result.id,
-          domainId: selectedDomain.id,
-          domainName: selectedDomain.name
+          domainId: selectedDomain!.id,
+          domainName: selectedDomain!.name
         })
+
+        showToastMsg('success', 'AI 규칙이 저장되었습니다.')
       }
 
       onCancel()
-
-      // AI 선택 시 로직은 추후 추가
     } catch (err) {
       console.error(err)
-      alert('규칙 저장 중 오류가 발생했습니다.')
+      showToastMsg('error', '규칙 저장 중 오류가 발생했습니다.')
     }
   }
 
   useEffect(() => {
-    // 모델 ID에 따라 자동으로 API 키 채움
     if (selectedSource === 'AI') {
       let autoToken = ''
       if (selectedModel === '1' && window.env?.OPENAI_API_KEY) {
@@ -112,6 +134,9 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
         autoToken = window.env.GOOGLE_API_KEY
       }
       setApiToken(autoToken)
+    } else {
+      setApiToken('')
+      setPrompt('')
     }
   }, [selectedModel, selectedSource])
 
@@ -247,6 +272,29 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
           확인
         </Button>
       </div>
+
+      {/* Toast 표시 */}
+      {showToast && (
+        <div
+          style={{
+            position: 'fixed',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            zIndex: 9999
+          }}
+        >
+          <Toast
+            type={toastType}
+            title={
+              toastType === 'success' ? '성공' : toastType === 'warning' ? '입력 오류' : '실패'
+            }
+            onClose={() => setShowToast(false)}
+          >
+            <div className="toast-text">{toastMessage}</div>
+          </Toast>
+        </div>
+      )}
 
       <style>{`
         .rule-create {
