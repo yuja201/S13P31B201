@@ -131,6 +131,13 @@ const api = {
     downloadZip: (zipPath: string) => {
       ipcRenderer.invoke('gen:dummy:download', zipPath)
     }
+  },
+  env: {
+    updateApiKey: (key: string, value: string) =>
+      ipcRenderer.invoke('env:update-api-key', { key, value }),
+    load: () => ipcRenderer.invoke('env:load'),
+    getPath: () => ipcRenderer.invoke('env:get-path'),
+    openFolder: () => ipcRenderer.invoke('env:open-folder')
   }
 }
 

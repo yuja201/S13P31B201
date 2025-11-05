@@ -73,6 +73,20 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
   const handleSubmit = async (): Promise<void> => {
     if (!validateRequiredFields()) return
 
+    if (selectedSource === 'AI' && apiToken.trim()) {
+      let envKey = ''
+      if (selectedModel === '1') envKey = 'OPENAI_API_KEY'
+      else if (selectedModel === '2') envKey = 'ANTHROPIC_API_KEY'
+      else if (selectedModel === '3') envKey = 'GOOGLE_API_KEY'
+
+      if (envKey) {
+        const result = await window.api.env.updateApiKey(envKey, apiToken)
+        if (!result.success) {
+          console.error('Failed to save API key:', result.error)
+        }
+      }
+    }
+
     try {
       if (selectedSource === 'FAKER') {
         const result = await window.api.rule.createFaker({
