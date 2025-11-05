@@ -95,6 +95,12 @@ interface API {
     removeProgressListeners: () => void
     downloadZip: (zipPath: string) => void
   }
+  env: {
+    updateApiKey: (key: string, value: string) => Promise<{ success: boolean; error?: string }>
+    load: () => Promise<Record<string, string>>
+    getPath: () => Promise<string>
+    openFolder: () => Promise<void>
+  }
 }
 
 declare global {
