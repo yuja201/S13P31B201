@@ -5,7 +5,7 @@ import { FaDatabase, FaLink, FaChartBar, FaHistory } from 'react-icons/fa'
 import logoIcon from '@renderer/assets/icons/logo.svg'
 import { GrUpdate } from 'react-icons/gr'
 import { RxDashboard } from 'react-icons/rx'
-import { IoSettingsSharp } from 'react-icons/io5'
+// import { IoSettingsSharp } from 'react-icons/io5'
 import { BsLayoutSidebar } from 'react-icons/bs'
 
 interface SidebarProps {
@@ -55,7 +55,10 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false, projectName, dbType, 
             <div
               className="logo-hover-wrapper"
               // locked가 아닐 때만 toggleSidebar 실행
-              onClick={collapsed && !locked ? toggleSidebar : undefined}
+              onClick={() => {
+                if (collapsed && !locked) toggleSidebar()
+                else goToMainView()
+              }}
             >
               <img
                 src={logoIcon}
@@ -141,9 +144,9 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false, projectName, dbType, 
           </NavLink>
         </nav>
         {/* footer */}
-        <div className={`sidebar-footer ${collapsed ? 'footer-collapsed' : ''}`}>
+        {/* <div className={`sidebar-footer ${collapsed ? 'footer-collapsed' : ''}`}>
           <IoSettingsSharp size={24} />
-        </div>
+        </div> */}
       </aside>
 
       <style>
