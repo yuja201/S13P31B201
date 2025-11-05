@@ -21,7 +21,7 @@ const SelectDomain: React.FC<SelectDomainProps> = ({ source, onChange }) => {
   const [selected, setSelected] = useState<string | null>(null)
 
   // faker가 지원하지 않는 도메인 ID 목록
-  const excludedForFaker = ['15', '27', '32', '44', '47', '48']
+  const excludedForFaker = ['16', '27', '32', '44', '47', '48']
 
   const handleSelect = (id: string): void => {
     setSelected(id)
