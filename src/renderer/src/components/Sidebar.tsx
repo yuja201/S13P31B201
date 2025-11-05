@@ -55,7 +55,10 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false, projectName, dbType, 
             <div
               className="logo-hover-wrapper"
               // locked가 아닐 때만 toggleSidebar 실행
-              onClick={collapsed && !locked ? toggleSidebar : undefined}
+              onClick={() => {
+                if (collapsed && !locked) toggleSidebar()
+                else goToMainView()
+              }}
             >
               <img
                 src={logoIcon}
