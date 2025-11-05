@@ -38,12 +38,18 @@ function createColumnStream(
       }
 
       const meta = col.metaData as FakerMetaData
+      const rule = rules.find((r) => r.id === meta.ruleId)
+      if (!rule) {
+        throw new Error(`Rule ${meta.ruleId} not found in worker task`)
+      }
+
       return generateFakeStream({
         projectId,
         tableName,
         columnName: col.columnName,
         recordCnt,
-        metaData: { ruleId: meta.ruleId }
+        metaData: { ruleId: meta.ruleId },
+        domainName: rule.domain_name
       })
     }
 

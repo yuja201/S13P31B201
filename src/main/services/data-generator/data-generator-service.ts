@@ -52,13 +52,18 @@ export async function runDataGenerator(
   }
 
   const rules = Array.from(ruleIds)
-    .map((id) => getRuleById(id))
+    .map((id) => {
+      const rule = getRuleById(id)
+      if (!rule) return undefined
+
+      return {
+        id: rule.id,
+        domain_id: rule.domain_id,
+        domain_name: rule.domain_name,
+        model_id: rule.model_id
+      }
+    })
     .filter((rule) => rule !== undefined)
-    .map((rule) => ({
-      id: rule!.id,
-      domain_name: rule!.domain_name,
-      model_id: rule!.model_id
-    }))
 
   // 5. Database 정보 간소화
   const databaseInfo = {
