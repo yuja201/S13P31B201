@@ -8,7 +8,7 @@ const SelectMethodView: React.FC = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { projectId } = useParams<{ projectId: string }>()
-  useGenerationStore() // ✅ Store는 여전히 유지하지만 별도 추출 없음
+  useGenerationStore()
 
   const selectedTables =
     (location.state as { tables?: Array<{ id: string; name: string }> } | undefined)?.tables ?? []

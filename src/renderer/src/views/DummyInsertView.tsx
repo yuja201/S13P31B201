@@ -36,6 +36,7 @@ const DummyInsertView: React.FC = () => {
   } | null
 
   const selectedTables = state?.tables ?? []
+  const selectedTablesRef = useRef(selectedTables) // ✅ 중요 코드: deps 안정화
   const mode: InsertMode = state?.mode ?? 'sql'
 
   const [progress, setProgress] = useState<number>(0)
@@ -98,7 +99,7 @@ const DummyInsertView: React.FC = () => {
 
       const allTables = exportAllTables()
       const filteredTables = allTables.filter((t) =>
-        selectedTables.some((sel) => sel.name === t.tableName)
+        selectedTablesRef.current.some((sel) => sel.name === t.tableName)
       )
 
       setTables(filteredTables.map((t) => ({ name: t.tableName, status: 'pending' })))
@@ -126,7 +127,7 @@ const DummyInsertView: React.FC = () => {
     }
 
     startGeneration()
-  }, [selectedProject, exportAllTables, mode])
+  }, [selectedProject, exportAllTables, mode]) // ✅ selectedTables 제거 (ref 사용으로 경고 없음)
 
   const getStatusIcon = (status: string): string => {
     switch (status) {
@@ -176,17 +177,16 @@ const DummyInsertView: React.FC = () => {
         />
       </div>
 
-      {/* 좌우 영역 */}
+      {/* 좌우 레이아웃 */}
       <div
         style={{
           display: 'flex',
           gap: 16,
           flex: 1,
-          minHeight: 0,
-          overflow: 'visible'
+          minHeight: 0
         }}
       >
-        {/* 왼쪽 테이블 리스트 */}
+        {/* 테이블 목록 */}
         <div
           style={{
             width: 260,
@@ -196,11 +196,10 @@ const DummyInsertView: React.FC = () => {
             boxShadow: 'var(--shadow)',
             padding: '28px 24px',
             display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden'
+            flexDirection: 'column'
           }}
         >
-          <div style={{ marginBottom: 12, flexShrink: 0 }}>
+          <div style={{ marginBottom: 12 }}>
             <p style={{ font: 'var(--preBold18)', color: 'var(--color-black)' }}>Table List</p>
             <p style={{ font: 'var(--preRegular14)', color: 'var(--color-gray-500)' }}>
               {tables.length} table
@@ -241,53 +240,24 @@ const DummyInsertView: React.FC = () => {
           </ul>
         </div>
 
-        {/* 오른쪽 카드 영역 */}
-        <div
-          style={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            minWidth: 0,
-            minHeight: 0,
-            overflow: 'visible'
-          }}
-        >
+        {/* 우측 로그 + 완료 화면 */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
           <div
             style={{
               flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
               backgroundColor: 'var(--color-white)',
               border: '1px solid var(--color-gray-200)',
               borderRadius: 16,
               boxShadow: 'var(--shadow)',
               padding: '30px 40px',
-              boxSizing: 'border-box',
-              minHeight: 0,
-              overflow: 'hidden'
+              display: 'flex',
+              flexDirection: 'column'
             }}
           >
             {!isCompleted ? (
               <>
-                <p
-                  style={{
-                    font: 'var(--preBold20)',
-                    color: 'var(--color-black)',
-                    marginBottom: 16
-                  }}
-                >
-                  더미데이터 생성 중
-                </p>
-
-                <p
-                  style={{
-                    font: 'var(--preSemiBold16)',
-                    color: 'var(--color-dark-gray)',
-                    marginBottom: 8
-                  }}
-                >
-                  진행률: {progress}%
-                </p>
+                <p style={{ font: 'var(--preBold20)', marginBottom: 16 }}>더미데이터 생성 중</p>
+                <p style={{ marginBottom: 8 }}>진행률: {progress}%</p>
 
                 <div
                   style={{
@@ -295,8 +265,8 @@ const DummyInsertView: React.FC = () => {
                     height: 25,
                     backgroundColor: 'var(--color-gray-200)',
                     borderRadius: 12,
-                    overflow: 'hidden',
-                    marginBottom: 20
+                    marginBottom: 20,
+                    overflow: 'hidden'
                   }}
                 >
                   <div
@@ -315,38 +285,21 @@ const DummyInsertView: React.FC = () => {
                     border: '1px solid var(--color-gray-blue)',
                     borderRadius: 12,
                     padding: '20px 30px',
-                    overflowY: 'auto',
-                    color: 'var(--color-dark-gray)',
-                    font: 'var(--preRegular16)'
+                    overflowY: 'auto'
                   }}
                 >
-                  {logs.map((log, idx) => (
-                    <div key={idx}>{log}</div>
+                  {logs.map((log, i) => (
+                    <div key={i}>{log}</div>
                   ))}
                   <div ref={logEndRef} />
                 </div>
               </>
             ) : (
               <>
-                <p
-                  style={{
-                    font: 'var(--preBold20)',
-                    color: 'var(--color-black)',
-                    marginBottom: 16
-                  }}
-                >
-                  더미데이터 삽입 완료
-                </p>
-
-                <p
-                  style={{
-                    font: 'var(--preSemiBold16)',
-                    color: 'var(--color-dark-gray)',
-                    marginBottom: 20
-                  }}
-                >
-                  전체 {totalCount.toLocaleString()}개의 데이터 중 총{' '}
-                  {insertedCount.toLocaleString()}개 삽입 완료
+                <p style={{ font: 'var(--preBold20)', marginBottom: 16 }}>더미데이터 삽입 완료</p>
+                <p style={{ marginBottom: 20 }}>
+                  전체 {totalCount.toLocaleString()}개 중 {insertedCount.toLocaleString()}개 삽입
+                  완료
                 </p>
 
                 <div
@@ -356,7 +309,6 @@ const DummyInsertView: React.FC = () => {
                     borderRadius: 12,
                     padding: '20px 30px',
                     overflowY: 'auto',
-                    font: 'var(--preRegular16)',
                     marginBottom: 20
                   }}
                 >
@@ -375,14 +327,11 @@ const DummyInsertView: React.FC = () => {
                   )}
                 </div>
 
-                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px' }}>
+                <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
                   {mode === 'sql' && (
                     <Button
                       variant="blue"
-                      onClick={() => {
-                        if (!zipPath) return
-                        window.api.dataGenerator.downloadZip(zipPath)
-                      }}
+                      onClick={() => zipPath && window.api.dataGenerator.downloadZip(zipPath)}
                     >
                       SQL문 다운로드
                     </Button>

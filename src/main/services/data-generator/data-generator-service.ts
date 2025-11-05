@@ -10,6 +10,7 @@ import { DBMS_ID_TO_KEY, type SupportedDBMS } from '../../utils/dbms-map'
 import { createZipFromSqlFilesStreaming } from './zip-generator'
 import { getFileCacheRoot } from '../../utils/cache-path'
 import { fetchSchema } from '../../utils/schema-fetch'
+import fs from 'node:fs'
 
 const MAX_PARALLEL = Math.max(1, Math.floor(os.cpus().length / 2))
 
@@ -131,8 +132,8 @@ export async function runDataGenerator(
             if (msg.type) {
               mainWindow.webContents.send('data-generator:progress', msg)
             }
-          } catch {
-            // JSON 파싱 실패 시 무시 (불완전 청크일 가능성)
+          } catch (err) {
+            void err
           }
         }
       }
@@ -182,8 +183,20 @@ export async function runDataGenerator(
   const successResults = results.filter((r) => r.success)
   const failedResults = results.filter((r) => !r.success)
 
-  const files = successResults.map((r) => ({ filename: r.tableName, path: r.sqlPath }))
-  const zipPath = files.length > 0 ? await createZipFromSqlFilesStreaming(files, projectId) : null
+  //DIRECT_DB 모드에서 sqlPath 없는 항목 제외
+  const fileResults = successResults.filter(
+    (r): r is WorkerResult & { sqlPath: string } =>
+      typeof r.sqlPath === 'string' && r.sqlPath.length > 0 && fs.existsSync(r.sqlPath)
+  )
+
+  //파일 있는 경우에만 zip 생성
+  const zipPath =
+    fileResults.length > 0
+      ? await createZipFromSqlFilesStreaming(
+          fileResults.map((r) => ({ filename: r.tableName, path: r.sqlPath })),
+          projectId
+        )
+      : null
 
   const executedTables = successResults.filter((r) => r.directInserted).map((r) => r.tableName)
 
@@ -206,11 +219,29 @@ export async function runDataGenerator(
 }
 
 function parseDatabaseUrl(rawUrl: string, dbType: SupportedDBMS): { host: string; port: number } {
-  const [hostPart, portPart] = rawUrl.split(':')
   const defaultPort = dbType === 'mysql' ? 3306 : 5432
-  const parsed = Number(portPart)
-  return {
-    host: hostPart || 'localhost',
-    port: Number.isFinite(parsed) ? parsed : defaultPort
+
+  // URL 스킴이 없다면 자동 보완 (예: localhost:5432 → postgres://localhost:5432)
+  const maybeUrl = rawUrl.includes('://') ? rawUrl : `${dbType}://${rawUrl}`
+
+  try {
+    const parsedUrl = new URL(maybeUrl)
+
+    const port = parsedUrl.port ? Number(parsedUrl.port) : defaultPort
+
+    return {
+      host: parsedUrl.hostname || 'localhost',
+      port: Number.isFinite(port) ? port : defaultPort
+    }
+  } catch {
+    // fallback: IPv6 & host:port 최소 지원
+    const cleaned = rawUrl.replace(/^\[|\]$/g, '') // IPv6 bracket 제거
+    const [hostPart, portPart] = cleaned.split(':')
+    const port = Number(portPart)
+
+    return {
+      host: hostPart || 'localhost',
+      port: Number.isFinite(port) ? port : defaultPort
+    }
   }
 }
