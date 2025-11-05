@@ -1,5 +1,5 @@
 import React from 'react'
-import yujaWorking from '../assets/imgs/yuja_working.png'
+import yujaWorking from '@renderer/assets/imgs/yuja_working.png'
 
 const PreparationView: React.FC = () => {
   return (

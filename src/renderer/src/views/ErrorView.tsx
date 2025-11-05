@@ -1,6 +1,6 @@
 import React from 'react'
 import { useNavigate, useRouteError } from 'react-router-dom'
-import yujaSweating from '../assets/imgs/yuja_sweating.png'
+import yujaSweating from '@renderer/assets/imgs/yuja_sweating.png'
 
 const ErrorView: React.FC = () => {
   const navigate = useNavigate()
