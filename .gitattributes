@@ -16,7 +16,7 @@
 *.mp4 binary
 *.mp3 binary
 
-# 폰트, 문서 등 추가 보호 (선택)
+# 폰트, 문서 등 추가 보호
 *.ttf binary
 *.woff binary
 *.woff2 binary
