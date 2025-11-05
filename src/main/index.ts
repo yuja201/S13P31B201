@@ -23,6 +23,7 @@ function createWindow(): void {
     minHeight: 800,
     show: false,
     autoHideMenuBar: true,
+    title: "Here's Dummy",
     ...(process.platform === 'linux' ? { icon } : {}),
     webPreferences: {
       preload: join(DIRNAME, '../preload/index.js'),
