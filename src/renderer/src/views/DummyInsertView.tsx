@@ -43,7 +43,6 @@ const DummyInsertView: React.FC = () => {
   const location = useLocation()
   const state = location.state as { tables?: Array<{ id: string; name: string }> } | null
   const selectedTables = state?.tables ?? []
-  console.log('[DEBUG] selectedTables:', selectedTables)
 
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: 'smooth' })

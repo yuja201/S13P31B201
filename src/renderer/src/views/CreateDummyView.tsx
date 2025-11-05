@@ -105,7 +105,7 @@ const CreateDummyView: React.FC = () => {
     if (!isInitialized && tables.length > 0) {
       tables.forEach((table) => {
         table.columnDetails.forEach((col) => {
-          if (col.setting) {
+          if (col.generation === '고정값') {
             setColumnRule(table.name, col.name, {
               columnName: col.name,
               dataSource: 'FIXED',
