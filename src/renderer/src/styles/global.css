@@ -252,3 +252,38 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+/* ==============================
+        Keyframe Animations
+   ============================== */
+@keyframes spinYuja {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes moveYuja {
+  0% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  70% {
+    transform: translateX(var(--travel-distance));
+    opacity: 1;
+  }
+  85% {
+    transform: translateX(var(--travel-distance));
+    opacity: 0;
+  }
+  90% {
+    transform: translateX(0);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
