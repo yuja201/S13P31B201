@@ -30,7 +30,6 @@ const FilePreviewContent: React.FC<FilePreviewContentProps> = ({
   onNext
 }) => {
   const showToast = useToastStore((s) => s.showToast)
-
   const columns: Column[] = parseResult?.columns ?? []
   const rows: Row[] = parseResult?.rows ?? []
   const totalRows = parseResult?.totalRows ?? 0

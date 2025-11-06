@@ -1,8 +1,8 @@
 import React, { useCallback, useState } from 'react'
 import { CgSoftwareDownload } from 'react-icons/cg'
 import PageTitle from '@renderer/components/PageTitle'
-import Toast from '@renderer/components/Toast'
 import LoadingSpinner from '@renderer/components/LoadingSpinner'
+import { useToastStore } from '@renderer/stores/toastStore'
 
 export type FileType = 'csv' | 'json' | 'txt'
 
@@ -19,28 +19,15 @@ export interface FileUploadResult {
 interface FileUploadContentProps {
   tableName: string
   onNext: (result: FileUploadResult) => void
-  onError: (msg: string) => void
 }
 
 const SUPPORTED_EXTENSIONS: FileType[] = ['csv', 'json', 'txt']
 const MAX_PREVIEW_CHARS = 200_000 // 약 200KB 미리보기
 
-const FileUploadContent: React.FC<FileUploadContentProps> = ({ tableName, onNext, onError }) => {
+const FileUploadContent: React.FC<FileUploadContentProps> = ({ tableName, onNext }) => {
   const [isDragging, setIsDragging] = useState(false)
-  const [showToast, setShowToast] = useState(false)
-  const [toastMessage, setToastMessage] = useState('')
   const [isLoading, setIsLoading] = useState(false)
-
-  const notifyError = useCallback(
-    (msg: string): void => {
-      setToastMessage(msg)
-      setShowToast(true)
-      setTimeout(() => setShowToast(false), 2500)
-      onError(msg)
-      setIsLoading(false)
-    },
-    [onError]
-  )
+  const showToast = useToastStore((s) => s.showToast)
 
   const streamFileToCache = useCallback(async (file: File, ext: FileType) => {
     if (!window.api?.file?.cache?.stream?.open) {
@@ -100,31 +87,31 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ tableName, onNext
       throw error
     }
   }, [])
-
   const handleFile = async (file: File): Promise<void> => {
     if (!file) return
 
-    setIsLoading(true) // 업로드 시작 → 로딩 표시
-
-    const ext = (file.name.split('.').pop() || '').toLowerCase() as FileType | ''
-    if (!SUPPORTED_EXTENSIONS.includes(ext as FileType)) {
-      notifyError('지원하지 않는 파일 형식입니다. (csv, json, txt만 지원)')
-      return
-    }
-
-    if (file.size === 0) {
-      notifyError('파일이 비어 있습니다.')
-      return
-    }
+    setIsLoading(true)
 
     try {
+      const ext = (file.name.split('.').pop() || '').toLowerCase() as FileType | ''
+
+      if (!SUPPORTED_EXTENSIONS.includes(ext as FileType)) {
+        showToast('지원하지 않는 파일 형식입니다. (csv, json, txt만 지원)', 'warning', '파일 오류')
+        return
+      }
+
+      if (file.size === 0) {
+        showToast('파일이 비어 있습니다.', 'warning', '파일 오류')
+        return
+      }
+
       const { filePath, preview, previewTruncated, lineCount } = await streamFileToCache(
         file,
         ext as FileType
       )
 
       if (!preview.trim()) {
-        notifyError('파일에서 유효한 데이터를 찾지 못했습니다.')
+        showToast('파일에서 유효한 데이터를 찾지 못했습니다.', 'warning', '파일 오류')
         return
       }
 
@@ -137,11 +124,10 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ tableName, onNext
         lineCount,
         fileSize: file.size
       })
-
-      setIsLoading(false) // 성공 → 로딩 해제
     } catch (error) {
       console.error('파일 처리 실패:', error)
-      notifyError('파일을 처리하는 중 오류가 발생했습니다.')
+      showToast('파일을 처리하는 중 오류가 발생했습니다.', 'warning', '파일 오류')
+    } finally {
       setIsLoading(false)
     }
   }
@@ -191,12 +177,6 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ tableName, onNext
               onChange={(e) => e.target.files && void handleFile(e.target.files[0])}
             />
           </div>
-
-          {showToast && (
-            <Toast type="warning" title="파일 오류">
-              {toastMessage}
-            </Toast>
-          )}
         </>
       )}
 
