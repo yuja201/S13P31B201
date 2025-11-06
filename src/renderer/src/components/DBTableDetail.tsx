@@ -246,21 +246,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
           </div>
           {/* 데이터 생성 버튼 위 경고문 */}
           {hasMissing && warningMessage && (
-            <div
-              style={{
-                backgroundColor: 'var(--color-light-yellow)',
-                color: 'var(--color-black)',
-                border: '1px solid var(--color-orange)',
-                borderRadius: '8px',
-                padding: '10px 12px',
-                textAlign: 'center',
-                font: 'var(--preMedium14)',
-                marginTop: '16px',
-                marginBottom: '20px'
-              }}
-            >
-              {warningMessage}
-            </div>
+            <div className="validation-warning">{warningMessage}</div>
           )}
 
           <Button
@@ -402,6 +388,17 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
           font-size: 12px;
           font-weight: 600;
 
+        }
+        .validation-warning {
+          background-color: var(--color-light-yellow);
+          color: var(--color-black);
+          border: 1px solid var(--color-orange);
+          border-radius: 8px;
+          padding: 10px 12px;
+          text-align: center;
+          font: var(--preMedium14);
+          margin-top: 16px;
+          margin-bottom: 20px;
         }
         .badge-pk { background-color: #FFFBEB; color: #B45309; }
         .badge-fk { background-color: #EFF6FF; color: #1D4ED8; }
