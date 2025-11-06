@@ -102,6 +102,13 @@ interface API {
     getPath: () => Promise<string>
     openFolder: () => Promise<void>
   }
+  logger: {
+    debug: (...args: unknown[]) => void
+    info: (...args: unknown[]) => void
+    warn: (...args: unknown[]) => void
+    error: (...args: unknown[]) => void
+    verbose: (...args: unknown[]) => void
+  }
 }
 
 declare global {

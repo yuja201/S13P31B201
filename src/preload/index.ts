@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import log from 'electron-log/renderer'
 import type {
   DBMS,
   DBMSInput,
@@ -140,6 +141,13 @@ const api = {
     load: () => ipcRenderer.invoke('env:load'),
     getPath: () => ipcRenderer.invoke('env:get-path'),
     openFolder: () => ipcRenderer.invoke('env:open-folder')
+  },
+  logger: {
+    debug: (...args: unknown[]) => log.debug(...args),
+    info: (...args: unknown[]) => log.info(...args),
+    warn: (...args: unknown[]) => log.warn(...args),
+    error: (...args: unknown[]) => log.error(...args),
+    verbose: (...args: unknown[]) => log.verbose(...args)
   }
 }
 
