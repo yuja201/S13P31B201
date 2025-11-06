@@ -42,7 +42,10 @@ const DBTableList: React.FC<DBTableListProps> = ({
               <input
                 type="checkbox"
                 checked={selectedTables.has(table.id)}
-                onChange={(e) => handleCheckboxChange(table.id, e.target.checked)}
+                onChange={(e) => {
+                  handleCheckboxChange(table.id, e.target.checked)
+                  onTableSelect(table)
+                }}
                 onClick={(e) => e.stopPropagation()}
               />
               <div className="table-item-info">
