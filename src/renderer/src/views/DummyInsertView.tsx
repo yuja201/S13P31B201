@@ -59,6 +59,7 @@ const DummyInsertView: React.FC = () => {
 
   const { selectedProject } = useProjectStore()
   const { exportAllTables } = useGenerationStore()
+  const { clearAll, clearSelectedTables } = useGenerationStore()
 
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -290,7 +291,14 @@ const DummyInsertView: React.FC = () => {
                     SQL문 다운로드
                   </Button>
                 )}
-                <Button variant="gray" onClick={() => navigate('/')}>
+                <Button
+                  variant="gray"
+                  onClick={() => {
+                    clearAll()
+                    clearSelectedTables()
+                    navigate(`/main/dashboard/${selectedProject?.id}`)
+                  }}
+                >
                   완료
                 </Button>
               </div>

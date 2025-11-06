@@ -10,9 +10,19 @@ type DBTableDetailProps = {
   table: TableInfo
   onColumnUpdate: (columnName: string, generation: string, setting: string) => void
   onGenerateData: () => void
+  isAllReady: boolean
+  hasMissing?: boolean
+  warningMessage?: string
 }
 
-const TableDetail: React.FC<DBTableDetailProps> = ({ table, onColumnUpdate, onGenerateData }) => {
+const TableDetail: React.FC<DBTableDetailProps> = ({
+  table,
+  onColumnUpdate,
+  onGenerateData,
+  isAllReady,
+  hasMissing,
+  warningMessage
+}) => {
   const tableGenerationConfig = useGenerationStore((state) => state.tables[table.name])
   const applyFileMapping = useGenerationStore((state) => state.applyFileMapping)
 
@@ -77,8 +87,11 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table, onColumnUpdate, onGe
   // Input handlers
 
   const handleRowsChange = (value: number): void => {
-    setRows(value)
-    setTableRecordCount(table.name, value)
+    const MAX_ROWS = 50_000_000
+    const normalized = Number.isFinite(value) ? Math.trunc(value) : 1
+    const safeValue = Math.min(Math.max(1, normalized), MAX_ROWS)
+    setRows(safeValue)
+    setTableRecordCount(table.name, safeValue)
   }
 
   const displayColumnDetails = useMemo(() => {
@@ -152,6 +165,8 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table, onColumnUpdate, onGe
                 placeholder="e.g., 1,000"
                 className="preMedium16 shadow"
                 step="100"
+                min={1}
+                max={50000000}
               />
             </div>
             <Button
@@ -229,12 +244,17 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table, onColumnUpdate, onGe
               </tbody>
             </table>
           </div>
+          {/* 데이터 생성 버튼 위 경고문 */}
+          {hasMissing && warningMessage && (
+            <div className="validation-warning">{warningMessage}</div>
+          )}
 
           <Button
             variant="blue"
             size="md"
-            style={{ width: '100%', marginTop: '24px', padding: '12px' }}
+            style={{ width: '100%', marginTop: '8px', padding: '12px' }}
             onClick={onGenerateData}
+            disabled={!isAllReady}
           >
             데이터 생성
           </Button>
@@ -368,6 +388,17 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table, onColumnUpdate, onGe
           font-size: 12px;
           font-weight: 600;
 
+        }
+        .validation-warning {
+          background-color: var(--color-light-yellow);
+          color: var(--color-black);
+          border: 1px solid var(--color-orange);
+          border-radius: 8px;
+          padding: 10px 12px;
+          text-align: center;
+          font: var(--preMedium14);
+          margin-top: 16px;
+          margin-bottom: 20px;
         }
         .badge-pk { background-color: #FFFBEB; color: #B45309; }
         .badge-fk { background-color: #EFF6FF; color: #1D4ED8; }
