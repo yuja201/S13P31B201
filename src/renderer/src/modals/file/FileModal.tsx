@@ -1,10 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import Modal from '@renderer/components/Modal'
-import Toast from '@renderer/components/Toast'
 import type { Column, Row } from '@renderer/components/Table'
 import FileUploadContent, { type FileUploadResult, type FileType } from './FileUploadContent'
 import FilePreviewContent from './FilePreviewContent'
 import FileMappingContent from './FileMappingContent'
+import { useToastStore } from '@renderer/stores/toastStore'
 import type {
   FileModalApplyPayload,
   ParseOptions,
@@ -40,11 +40,6 @@ const FileModal: React.FC<FileModalProps> = ({
   const [step, setStep] = useState<Step>('upload')
   const [uploaded, setUploaded] = useState<FileUploadResult | null>(null)
   const [parseOptions, setParseOptions] = useState<ParseOptions>(DEFAULT_PARSE_OPTIONS)
-  const [toast, setToast] = useState<{ show: boolean; type: 'warning' | 'success'; msg: string }>({
-    show: false,
-    type: 'warning',
-    msg: ''
-  })
   const [preserveOnClose, setPreserveOnClose] = useState(false)
 
   const parsedResult = useMemo<ParsedFileResult | null>(() => {
@@ -70,7 +65,6 @@ const FileModal: React.FC<FileModalProps> = ({
       setStep('upload')
       setUploaded(null)
       setParseOptions(DEFAULT_PARSE_OPTIONS)
-      setToast({ show: false, type: 'warning', msg: '' })
       setPreserveOnClose(false)
     },
     [cleanupCachedFile, preserveOnClose, uploaded]
@@ -82,17 +76,7 @@ const FileModal: React.FC<FileModalProps> = ({
     }
   }, [isOpen, resetState])
 
-  useEffect(() => {
-    if (toast.show) {
-      const timer = setTimeout(() => setToast((prev) => ({ ...prev, show: false })), 2500)
-      return () => clearTimeout(timer)
-    }
-    return undefined
-  }, [toast.show])
-
-  const showToast = useCallback((msg: string, type: 'warning' | 'success' = 'warning') => {
-    setToast({ show: true, type, msg })
-  }, [])
+  const showToast = useToastStore((s) => s.showToast)
 
   const handleUploadSuccess = (result: FileUploadResult): void => {
     if (uploaded?.filePath && uploaded.filePath !== result.filePath) {
@@ -105,12 +89,12 @@ const FileModal: React.FC<FileModalProps> = ({
 
   const handleNextToMapping = (): void => {
     if (!parsedResult || parsedResult.error) {
-      showToast(parsedResult?.error ?? '파일을 먼저 불러와주세요.')
+      showToast(parsedResult?.error ?? '파일을 먼저 불러와주세요.', 'warning', '입력 오류')
       return
     }
 
     if (parsedResult.rows.length === 0) {
-      showToast('파일에서 추출된 데이터가 없습니다.')
+      showToast('파일에서 추출된 데이터가 없습니다.', 'warning', '데이터 없음')
       return
     }
 
@@ -122,7 +106,7 @@ const FileModal: React.FC<FileModalProps> = ({
 
     const activeMappings = payload.mappings.filter((m) => m.selected && m.mappedTo)
     if (activeMappings.length === 0) {
-      showToast('매핑할 컬럼을 1개 이상 선택해주세요.')
+      showToast('매핑할 컬럼을 1개 이상 선택해주세요.', 'warning', '매핑 오류')
       return
     }
 
@@ -139,7 +123,7 @@ const FileModal: React.FC<FileModalProps> = ({
       .filter((item): item is NonNullable<typeof item> => item !== null)
 
     if (!columnMappings.length) {
-      showToast('선택한 파일 컬럼 정보를 찾지 못했습니다.')
+      showToast('선택한 파일 컬럼 정보를 찾지 못했습니다.', 'warning', '매핑 오류')
       return
     }
 
@@ -164,7 +148,7 @@ const FileModal: React.FC<FileModalProps> = ({
 
     onApply(applyPayload)
     setPreserveOnClose(true)
-    showToast('파일 데이터 매핑이 완료되었습니다.', 'success')
+    showToast('파일 데이터 매핑이 완료되었습니다.', 'success', '매핑 성공')
     setTimeout(() => {
       onClose()
       resetState({ preserveFile: true })
@@ -185,11 +169,7 @@ const FileModal: React.FC<FileModalProps> = ({
     <>
       <Modal isOpen={isOpen} onClose={handleCloseRequest} width="740px">
         {step === 'upload' && (
-          <FileUploadContent
-            tableName={tableName}
-            onNext={handleUploadSuccess}
-            onError={showToast}
-          />
+          <FileUploadContent tableName={tableName} onNext={handleUploadSuccess} />
         )}
 
         {step === 'preview' && uploaded && (
@@ -218,12 +198,6 @@ const FileModal: React.FC<FileModalProps> = ({
           />
         )}
       </Modal>
-
-      {toast.show && (
-        <Toast type={toast.type} title={toast.type === 'success' ? '성공' : '알림'}>
-          {toast.msg}
-        </Toast>
-      )}
     </>
   )
 }
