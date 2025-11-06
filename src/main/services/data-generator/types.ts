@@ -61,6 +61,7 @@ export interface GenerateRequest {
   projectId: number
   tables: TableConfig[]
   mode?: GenerationMode
+  skipInvalidRows?: boolean
 }
 
 /**

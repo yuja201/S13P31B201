@@ -33,7 +33,10 @@ const DummyInsertView: React.FC = () => {
   const state = location.state as {
     tables?: Array<{ id: string; name: string }>
     mode?: InsertMode
+    skipInvalidRows?: boolean
   } | null
+
+  const skipInvalidRows = state?.skipInvalidRows ?? true
 
   const selectedTables = React.useMemo(() => state?.tables ?? [], [state?.tables])
 
@@ -116,6 +119,7 @@ const DummyInsertView: React.FC = () => {
       const payload: GenerateRequest = {
         projectId: selectedProject.id,
         mode: generationMode,
+        skipInvalidRows,
         tables: filteredTables.map((tableData) => ({
           tableName: tableData.tableName,
           recordCnt: tableData.recordCnt,
@@ -134,7 +138,7 @@ const DummyInsertView: React.FC = () => {
     }
 
     startGeneration()
-  }, [selectedProject, exportAllTables, mode])
+  }, [selectedProject, exportAllTables, mode, skipInvalidRows])
 
   const getStatusIcon = (status: string): string => {
     switch (status) {
