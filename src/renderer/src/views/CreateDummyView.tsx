@@ -7,6 +7,8 @@ import { useProjectStore } from '@renderer/stores/projectStore'
 import type { Table, Column } from '@main/database/types'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useGenerationStore } from '@renderer/stores/generationStore'
+import { validateTable } from '@renderer/utils/validateTable'
+import type { TableGenerationConfig } from '@renderer/stores/generationStore'
 
 // 컬럼 상세 정보 타입
 export type ColumnDetail = {
@@ -100,6 +102,7 @@ const CreateDummyView: React.FC = () => {
 
   const setColumnRule = useGenerationStore((s) => s.setColumnRule)
   const [isInitialized, setIsInitialized] = useState(false)
+  const generationTables = useGenerationStore((s) => s.tables)
 
   useEffect(() => {
     if (!isInitialized && tables.length > 0) {
@@ -119,6 +122,40 @@ const CreateDummyView: React.FC = () => {
     }
   }, [tables, isInitialized, setColumnRule])
 
+  // NOT NULL 컬럼 검증 로직
+  const validationResults = useMemo(() => {
+    return tables
+      .filter((t) => selectedTables.has(t.name))
+      .map((t) => ({
+        table: t,
+        ...validateTable(t, generationTables as Record<string, TableGenerationConfig>)
+      }))
+  }, [tables, selectedTables, generationTables])
+
+  // 선택된 테이블이 없으면 false
+  const hasSelectedTables = selectedTables.size > 0
+
+  // 각 테이블에 최소 1개 이상 생성 규칙 존재하는지 확인
+  const hasAnyRule = validationResults.some((v) => {
+    const config = generationTables[v.table.name]
+    return config && Object.keys(config.columns).length > 0
+  })
+
+  // 모든 테이블이 NOT NULL 조건 통과했는지 확인
+  const allPass = validationResults.every((v) => v.isReady)
+
+  let warningMessage = ''
+  if (!hasSelectedTables) {
+    warningMessage = '⚠️ 테이블을 1개 이상 선택해주세요.'
+  } else if (!hasAnyRule) {
+    warningMessage = '⚠️ 선택된 테이블에 생성 방식이 지정된 컬럼이 없습니다.'
+  } else if (!allPass) {
+    warningMessage = '⚠️ 필수 컬럼(NOT NULL)의 생성 방식이 지정되지 않았습니다.'
+  }
+
+  const allReady = hasSelectedTables && hasAnyRule && allPass
+  const hasMissing = !!warningMessage
+
   // 체크박스 토글
   const handleToggleTable = (tableId: string, checked: boolean): void => {
     setSelectedTables((prev) => {
@@ -129,10 +166,8 @@ const CreateDummyView: React.FC = () => {
   }
 
   const handleGenerateData = (): void => {
-    if (selectedTables.size === 0) {
-      alert('테이블을 1개 이상 선택해주세요.')
-      return
-    }
+    if (selectedTables.size === 0) return
+    if (!allReady) return // 불완전한 테이블 있으면 차단
 
     const payload = Array.from(selectedTables).map((name) => {
       const t = tables.find((tbl) => tbl.name === name)!
@@ -201,6 +236,9 @@ const CreateDummyView: React.FC = () => {
               table={focusedTable}
               onColumnUpdate={handleColumnUpdate}
               onGenerateData={handleGenerateData}
+              isAllReady={allReady}
+              hasMissing={hasMissing}
+              warningMessage={warningMessage}
             />
           )}
         </div>

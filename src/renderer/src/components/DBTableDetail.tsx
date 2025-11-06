@@ -10,9 +10,19 @@ type DBTableDetailProps = {
   table: TableInfo
   onColumnUpdate: (columnName: string, generation: string, setting: string) => void
   onGenerateData: () => void
+  isAllReady: boolean
+  hasMissing?: boolean
+  warningMessage?: string
 }
 
-const TableDetail: React.FC<DBTableDetailProps> = ({ table, onColumnUpdate, onGenerateData }) => {
+const TableDetail: React.FC<DBTableDetailProps> = ({
+  table,
+  onColumnUpdate,
+  onGenerateData,
+  isAllReady,
+  hasMissing,
+  warningMessage
+}) => {
   const tableGenerationConfig = useGenerationStore((state) => state.tables[table.name])
   const applyFileMapping = useGenerationStore((state) => state.applyFileMapping)
 
@@ -233,12 +243,31 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table, onColumnUpdate, onGe
               </tbody>
             </table>
           </div>
+          {/* 데이터 생성 버튼 위 경고문 */}
+          {hasMissing && warningMessage && (
+            <div
+              style={{
+                backgroundColor: 'var(--color-light-yellow)',
+                color: 'var(--color-black)',
+                border: '1px solid var(--color-orange)',
+                borderRadius: '8px',
+                padding: '10px 12px',
+                textAlign: 'center',
+                font: 'var(--preMedium14)',
+                marginTop: '16px',
+                marginBottom: '20px'
+              }}
+            >
+              {warningMessage}
+            </div>
+          )}
 
           <Button
             variant="blue"
             size="md"
-            style={{ width: '100%', marginTop: '24px', padding: '12px' }}
+            style={{ width: '100%', marginTop: '8px', padding: '12px' }}
             onClick={onGenerateData}
+            disabled={!isAllReady}
           >
             데이터 생성
           </Button>
