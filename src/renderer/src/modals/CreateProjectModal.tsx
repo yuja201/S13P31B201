@@ -3,7 +3,7 @@ import InputField from '@renderer/components/InputField'
 import Modal from '@renderer/components/Modal'
 import PageTitle from '@renderer/components/PageTitle'
 import RadioButton from '@renderer/components/RadioButton'
-import Toast from '@renderer/components/Toast'
+import { useToastStore } from '@renderer/stores/toastStore'
 import React, { useState } from 'react'
 
 interface CreateProjectModalProps {
@@ -36,47 +36,33 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
   })
 
   const [selected, setSelected] = useState('MySQL')
-  const [showToast, setShowToast] = useState(false)
-  const [toastType, setToastType] = useState<'success' | 'warning' | 'error'>('success')
-  const [toastMessage, setToastMessage] = useState('')
+  const showToast = useToastStore((s) => s.showToast)
   const [isConnectionTested, setIsConnectionTested] = useState(false)
   const [isTestingConnection, setIsTestingConnection] = useState(false)
 
   const validateRequiredFields = (): boolean => {
     if (!formData.projectName.trim()) {
-      setToastType('warning')
-      setToastMessage('프로젝트명을 입력해주세요.')
-      setShowToast(true)
+      showToast('프로젝트명을 입력해주세요.', 'warning', '입력 오류')
       return false
     }
     if (!formData.host.trim()) {
-      setToastType('warning')
-      setToastMessage('호스트를 입력해주세요.')
-      setShowToast(true)
+      showToast('호스트를 입력해주세요.', 'warning', '입력 오류')
       return false
     }
     if (!formData.port.trim()) {
-      setToastType('warning')
-      setToastMessage('포트를 입력해주세요.')
-      setShowToast(true)
+      showToast('포트를 입력해주세요.', 'warning', '입력 오류')
       return false
     }
     if (!formData.username.trim()) {
-      setToastType('warning')
-      setToastMessage('사용자명을 입력해주세요.')
-      setShowToast(true)
+      showToast('사용자명을 입력해주세요.', 'warning', '입력 오류')
       return false
     }
     if (!formData.password.trim()) {
-      setToastType('warning')
-      setToastMessage('비밀번호를 입력해주세요.')
-      setShowToast(true)
+      showToast('비밀번호를 입력해주세요.', 'warning', '입력 오류')
       return false
     }
     if (!formData.databaseName.trim()) {
-      setToastType('warning')
-      setToastMessage('데이터베이스명을 입력해주세요.')
-      setShowToast(true)
+      showToast('데이터베이스명을 입력해주세요.', 'warning', '입력 오류')
       return false
     }
     return true
@@ -101,21 +87,16 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
       })
 
       if (result.success) {
-        setToastType('success')
-        setToastMessage('데이터베이스 연결에 성공했습니다.')
+        showToast('데이터베이스 연결에 성공했습니다.', 'success', '연결 성공')
         setIsConnectionTested(true)
       } else {
-        setToastType('error')
-        setToastMessage(result.message)
+        showToast(result.message, 'error')
         setIsConnectionTested(false)
       }
-      setShowToast(true)
     } catch (error) {
       console.error('연결 테스트 중 오류:', error)
-      setToastType('warning')
-      setToastMessage('연결 테스트 중 오류가 발생했습니다.')
+      showToast('연결 테스트 중 오류가 발생했습니다.', 'error', '연결 실패')
       setIsConnectionTested(false)
-      setShowToast(true)
     } finally {
       setIsTestingConnection(false)
     }
@@ -139,9 +120,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
     }
 
     if (!isConnectionTested) {
-      setToastType('error')
-      setToastMessage('연결 테스트를 먼저 진행해주세요.')
-      setShowToast(true)
+      showToast('연결 테스트를 먼저 진행해주세요.', 'error', '연결 실패')
       return
     }
 
@@ -183,9 +162,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
       onClose()
     } catch (error) {
       console.error('프로젝트 생성 중 오류 발생:', error)
-      setToastType('error')
-      setToastMessage('프로젝트 생성에 실패했습니다.')
-      setShowToast(true)
+      showToast('프로젝트 생성에 실패했습니다.', 'error', '연결 실패')
     }
   }
 
@@ -358,32 +335,6 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
             생성
           </Button>
         </div>
-
-        {showToast && (
-          <div
-            style={{
-              position: 'fixed',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              zIndex: 9999
-            }}
-          >
-            <Toast
-              type={toastType}
-              title={
-                toastType === 'success'
-                  ? '연결 성공'
-                  : toastType === 'warning'
-                    ? '입력 오류'
-                    : '연결 실패'
-              }
-              onClose={() => setShowToast(false)}
-            >
-              <div className="toast-text">{toastMessage}</div>
-            </Toast>
-          </div>
-        )}
       </Modal>
     </>
   )
