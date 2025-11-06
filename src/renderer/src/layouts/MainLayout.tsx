@@ -14,7 +14,13 @@ const MainLayout: React.FC = () => {
 
   useEffect(() => {
     if (projectId) {
-      selectProjectById(projectId)
+      ;(async () => {
+        try {
+          await selectProjectById(projectId)
+        } catch (error) {
+          console.error('Failed to select project:', error)
+        }
+      })()
     }
   }, [projectId, selectProjectById])
 
