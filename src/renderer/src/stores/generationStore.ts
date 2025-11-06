@@ -71,6 +71,10 @@ interface GenerationState {
   applyFileMapping: (tableName: string, payload: FileMappingApplyPayload) => void
   setColumnRule: (tableName: string, columnName: string, rule: RuleSelection) => void
 
+  selectedTables: Set<string>
+  setSelectedTables: (tables: Set<string>) => void
+  clearSelectedTables: () => void
+
   resetTable: (tableName: string) => void
   clearAll: () => void
 
@@ -115,6 +119,10 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
     const table = get().tables[tableName]
     return table?.recordCnt ?? 1000
   },
+
+  selectedTables: new Set(),
+  setSelectedTables: (tables) => set({ selectedTables: tables }),
+  clearSelectedTables: () => set({ selectedTables: new Set() }),
 
   // ------------------------
   // 파일 매핑

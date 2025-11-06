@@ -96,13 +96,15 @@ const CreateDummyView: React.FC = () => {
   }, [schemasMap, selectedProject])
 
   const [focusedTable, setFocusedTable] = useState<TableInfo | null>(null)
-  const [selectedTables, setSelectedTables] = useState<Set<string>>(new Set())
   const navigate = useNavigate()
   const { projectId } = useParams<{ projectId: string }>()
 
   const setColumnRule = useGenerationStore((s) => s.setColumnRule)
   const [isInitialized, setIsInitialized] = useState(false)
   const generationTables = useGenerationStore((s) => s.tables)
+
+  const selectedTables = useGenerationStore((s) => s.selectedTables)
+  const setSelectedTables = useGenerationStore((s) => s.setSelectedTables)
 
   useEffect(() => {
     if (!isInitialized && tables.length > 0) {
@@ -158,11 +160,10 @@ const CreateDummyView: React.FC = () => {
 
   // 체크박스 토글
   const handleToggleTable = (tableId: string, checked: boolean): void => {
-    setSelectedTables((prev) => {
-      const next = new Set(prev)
-      checked ? next.add(tableId) : next.delete(tableId)
-      return next
-    })
+    const prev = useGenerationStore.getState().selectedTables
+    const next = new Set(prev)
+    checked ? next.add(tableId) : next.delete(tableId)
+    setSelectedTables(next)
   }
 
   const handleGenerateData = (): void => {
