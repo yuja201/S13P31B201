@@ -11,7 +11,7 @@ interface ProjectState {
   selectedProject: ProjectWithDetails | null
 
   setProjects: (project: ProjectWithDetails[]) => void
-  selectProjectById: (projectId: string | number) => void
+  selectProjectById: (projectId: string | number) => Promise<void>
   updateProjectInList: (projectId: number, updatedProject: ProjectWithDetails) => void
 
   setSelectedProject: (project: ProjectWithDetails | null) => void
@@ -24,10 +24,18 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
   setProjects: (projects) => set({ projects }),
 
-  selectProjectById: (projectId) => {
+  selectProjectById: async (projectId) => {
     const idAsNumber = typeof projectId === 'string' ? parseInt(projectId, 10) : projectId
     const project = get().projects.find((p) => p.id === idAsNumber)
     set({ selectedProject: project || null })
+
+    if (project) {
+      const updatedProject = await window.api.project.updateAccessedAt(idAsNumber)
+      if (updatedProject) {
+        get().updateProjectInList(idAsNumber, { ...project, ...updatedProject })
+        set({ selectedProject: { ...project, ...updatedProject } })
+      }
+    }
   },
 
   updateProjectInList: (projectId, updatedProject) => {

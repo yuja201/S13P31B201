@@ -76,6 +76,24 @@ export function updateProject(data: ProjectUpdate): Project | undefined {
 }
 
 /**
+ * 프로젝트 수정 시간 갱신
+ */
+export function updateProjectAccessedAt(id: number): Project | undefined {
+  const db = getDatabase()
+  const now = Math.floor(Date.now() / 1000)
+
+  const stmt = db.prepare(`
+    UPDATE projects
+    SET updated_at = ?
+    WHERE id = ?
+  `)
+
+  stmt.run(now, id)
+
+  return getProjectById(id)
+}
+
+/**
  * 프로젝트 삭제
  */
 export function deleteProject(id: number): boolean {
