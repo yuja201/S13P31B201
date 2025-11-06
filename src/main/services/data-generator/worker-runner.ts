@@ -233,10 +233,23 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
 
             const values: string[] = []
             for (let i = 0; i < chunkSize; i++) {
-              const { value } = await stream.next()
-              if (value !== undefined) {
-                const escaped = String(value).replace(/'/g, "''")
-                values.push(`'${escaped}'`)
+              try {
+                const { value } = await stream.next()
+                if (value !== undefined && value !== null) {
+                  const escaped = String(value).replace(/'/g, "''")
+                  values.push(`'${escaped}'`)
+                } else {
+                  values.push('NULL')
+                }
+              } catch (err) {
+                if (task.skipInvalidRows) {
+                  values.push('NULL')
+                  continue
+                } else {
+                  throw new Error(
+                    `[타입 변환 오류] ${tableName}.${col.columnName} (${i + 1}행): ${(err as Error).message}`
+                  )
+                }
               }
             }
 
@@ -267,10 +280,23 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
 
               const values: string[] = []
               for (let j = 0; j < chunkSize; j++) {
-                const { value } = await stream.next()
-                if (value !== undefined) {
-                  const escaped = String(value).replace(/'/g, "''")
-                  values.push(`'${escaped}'`)
+                try {
+                  const { value } = await stream.next()
+                  if (value !== undefined) {
+                    const escaped = String(value).replace(/'/g, "''")
+                    values.push(`'${escaped}'`)
+                  } else {
+                    values.push('NULL')
+                  }
+                } catch (err) {
+                  if (task.skipInvalidRows) {
+                    values.push('NULL')
+                    continue
+                  } else {
+                    throw new Error(
+                      `[타입 변환 오류] ${tableName}.${col.columnName} (${j + 1}행): ${(err as Error).message}`
+                    )
+                  }
                 }
               }
 

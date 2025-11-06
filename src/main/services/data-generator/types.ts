@@ -109,6 +109,7 @@ export interface WorkerTask {
     password: string
     database: string
   }
+  skipInvalidRows?: boolean
 }
 
 export interface WorkerResult {
