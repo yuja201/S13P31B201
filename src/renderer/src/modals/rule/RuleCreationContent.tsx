@@ -3,8 +3,8 @@ import SimpleCard from '@renderer/components/SimpleCard'
 import InputField from '@renderer/components/InputField'
 import PageTitle from '@renderer/components/PageTitle'
 import SelectDomain from '@renderer/components/SelectDomain'
-import Toast from '@renderer/components/Toast'
 import Button from '@renderer/components/Button'
+import { useToastStore } from '@renderer/stores/toastStore'
 
 export interface RuleCreationData {
   source: 'FAKER' | 'AI'
@@ -34,36 +34,28 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
 }) => {
   const [selectedSource, setSelectedSource] = useState<'FAKER' | 'AI'>('FAKER')
   const [settingName, setSettingName] = useState('')
-  const [showToast, setShowToast] = useState(false)
-  const [toastType, setToastType] = useState<'success' | 'warning' | 'error'>('success')
-  const [toastMessage, setToastMessage] = useState('')
+  const showToast = useToastStore((s) => s.showToast)
   const [apiToken, setApiToken] = useState('')
   const [prompt, setPrompt] = useState('')
   const [selectedModel, setSelectedModel] = useState('1')
   const [selectedDomain, setSelectedDomain] = useState<{ id: number; name: string } | null>(null)
 
-  const showToastMsg = (type: 'success' | 'warning' | 'error', message: string): void => {
-    setToastType(type)
-    setToastMessage(message)
-    setShowToast(true)
-  }
-
   const validateRequiredFields = (): boolean => {
     if (!settingName.trim()) {
-      showToastMsg('warning', '설정 이름을 입력하세요.')
+      showToast('설정 이름을 입력하세요.', 'warning', '입력 오류')
       return false
     }
     if (!selectedDomain) {
-      showToastMsg('warning', '도메인을 선택하세요.')
+      showToast('도메인을 선택하세요.', 'warning', '입력 오류')
       return false
     }
     if (selectedSource === 'AI') {
       if (!apiToken.trim()) {
-        showToastMsg('warning', 'API 토큰을 입력하세요.')
+        showToast('API 토큰을 입력하세요.', 'warning', '입력 오류')
         return false
       }
       if (prompt.length > 500) {
-        showToastMsg('warning', '프롬프트는 500자 이내로 입력하세요.')
+        showToast('프롬프트는 500자 이내로 입력하세요.', 'warning', '입력 오류')
         return false
       }
     }
@@ -104,7 +96,7 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
           domainName: selectedDomain!.name
         })
 
-        showToastMsg('success', 'Faker 규칙이 저장되었습니다.')
+        showToast('Faker 규칙이 저장되었습니다.', 'success', '성공')
       } else if (selectedSource === 'AI') {
         const result = await window.api.rule.createAI({
           name: settingName,
@@ -127,13 +119,13 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
           domainName: selectedDomain!.name
         })
 
-        showToastMsg('success', 'AI 규칙이 저장되었습니다.')
+        showToast('AI 규칙이 저장되었습니다.', 'success', '성공')
       }
 
       onCancel()
     } catch (err) {
       console.error(err)
-      showToastMsg('error', '규칙 저장 중 오류가 발생했습니다.')
+      showToast('규칙 저장 중 오류가 발생했습니다.', 'warning', '저장 실패')
     }
   }
 
@@ -286,29 +278,6 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
           확인
         </Button>
       </div>
-
-      {/* Toast 표시 */}
-      {showToast && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            zIndex: 9999
-          }}
-        >
-          <Toast
-            type={toastType}
-            title={
-              toastType === 'success' ? '성공' : toastType === 'warning' ? '입력 오류' : '실패'
-            }
-            onClose={() => setShowToast(false)}
-          >
-            <div className="toast-text">{toastMessage}</div>
-          </Toast>
-        </div>
-      )}
 
       <style>{`
         .rule-create {
