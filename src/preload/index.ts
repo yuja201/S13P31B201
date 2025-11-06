@@ -164,7 +164,7 @@ if (process.contextIsolated) {
       GOOGLE_API_KEY: process.env.GOOGLE_API_KEY || null
     })
   } catch (error) {
-    console.error(error)
+    log.error('Failed to set up contextBridge:', error)
   }
 } else {
   // @ts-ignore (define in dts)
