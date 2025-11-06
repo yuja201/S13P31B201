@@ -1,10 +1,11 @@
 {
   "name": "heresdummy",
   "version": "1.0.1",
+  "productName": "Here's Dummy",
   "description": "An Electron application with React and TypeScript",
   "main": "out/main/index.js",
-  "author": "example.com",
-  "homepage": "https://electron-vite.org",
+  "author": "yuja",
+  "homepage": "https://github.com/yuja201/here-is-dummy",
   "license": "MIT",
   "scripts": {
     "format": "prettier --write .",
