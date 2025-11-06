@@ -13,6 +13,7 @@ const SelectMethodView: React.FC = () => {
   const selectedTables =
     (location.state as { tables?: Array<{ id: string; name: string }> } | undefined)?.tables ?? []
 
+  const [skipInvalidRows, setSkipInvalidRows] = useState(true)
   const [isHover, setIsHover] = useState(false)
   const baseColor = 'var(--color-dark-gray)'
   const hoverColor = 'var(--color-black)'
@@ -53,7 +54,7 @@ const SelectMethodView: React.FC = () => {
         <div
           onClick={() =>
             navigate(`/main/insert/sql/${projectId}`, {
-              state: { tables: selectedTables, mode: 'sql' }
+              state: { tables: selectedTables, mode: 'sql', skipInvalidRows }
             })
           }
           style={{
@@ -85,7 +86,7 @@ const SelectMethodView: React.FC = () => {
         <div
           onClick={() =>
             navigate(`/main/insert/sql/${projectId}`, {
-              state: { tables: selectedTables, mode: 'db' }
+              state: { tables: selectedTables, mode: 'db', skipInvalidRows }
             })
           }
           style={{
@@ -113,6 +114,17 @@ const SelectMethodView: React.FC = () => {
           </p>
         </div>
       </div>
+      {/* 오류 행 자동 건너뛰기 (기본값 ON) */}
+      <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 30 }}>
+        <input
+          type="checkbox"
+          checked={skipInvalidRows}
+          onChange={(e) => setSkipInvalidRows(e.target.checked)}
+        />
+        <span className="preRegular16" style={{ color: 'var(--color-dark-gray)' }}>
+          오류 행 자동 건너뛰기 (권장)
+        </span>
+      </label>
     </div>
   )
 }
