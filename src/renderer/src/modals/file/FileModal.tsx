@@ -169,11 +169,7 @@ const FileModal: React.FC<FileModalProps> = ({
     <>
       <Modal isOpen={isOpen} onClose={handleCloseRequest} width="740px">
         {step === 'upload' && (
-          <FileUploadContent
-            tableName={tableName}
-            onNext={handleUploadSuccess}
-            onError={showToast}
-          />
+          <FileUploadContent tableName={tableName} onNext={handleUploadSuccess} />
         )}
 
         {step === 'preview' && uploaded && (
