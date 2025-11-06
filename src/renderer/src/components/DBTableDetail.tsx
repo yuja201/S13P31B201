@@ -77,8 +77,10 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table, onColumnUpdate, onGe
   // Input handlers
 
   const handleRowsChange = (value: number): void => {
-    setRows(value)
-    setTableRecordCount(table.name, value)
+    const MAX_ROWS = 50_000_000
+    const safeValue = Math.min(Math.max(1, value), MAX_ROWS) // 1~5천만 사이로 제한
+    setRows(safeValue)
+    setTableRecordCount(table.name, safeValue)
   }
 
   const displayColumnDetails = useMemo(() => {
@@ -152,6 +154,8 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table, onColumnUpdate, onGe
                 placeholder="e.g., 1,000"
                 className="preMedium16 shadow"
                 step="100"
+                min={1}
+                max={50000000}
               />
             </div>
             <Button
