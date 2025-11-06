@@ -44,8 +44,8 @@ const api = {
     update: (data: ProjectUpdate): Promise<Project | undefined> =>
       ipcRenderer.invoke('db:project:update', data),
     delete: (id: number): Promise<boolean> => ipcRenderer.invoke('db:project:delete', id),
-    updateAccessedAt: (id: number): Promise<Project | undefined> =>
-      ipcRenderer.invoke('db:project:updateAccessedAt', id)
+    updateUpdatedAt: (id: number): Promise<Project | undefined> =>
+      ipcRenderer.invoke('db:project:updateUpdatedAt', id)
   },
 
   // Database operations

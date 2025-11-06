@@ -35,7 +35,7 @@ interface API {
     create: (data: ProjectInput) => Promise<Project>
     update: (data: ProjectUpdate) => Promise<Project | undefined>
     delete: (id: number) => Promise<boolean>
-    updateAccessedAt: (id: number) => Promise<Project | undefined>
+    updateUpdatedAt: (id: number) => Promise<Project | undefined>
   }
   database: {
     getAll: () => Promise<Database[]>

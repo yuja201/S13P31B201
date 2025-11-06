@@ -78,7 +78,7 @@ export function updateProject(data: ProjectUpdate): Project | undefined {
 /**
  * 프로젝트 수정 시간 갱신
  */
-export function updateProjectAccessedAt(id: number): Project | undefined {
+export function updateProjectUpdatedAt(id: number): Project | undefined {
   const db = getDatabase()
   const now = Math.floor(Date.now() / 1000)
 

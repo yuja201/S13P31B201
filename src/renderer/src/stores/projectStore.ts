@@ -30,10 +30,14 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     set({ selectedProject: project || null })
 
     if (project) {
-      const updatedProject = await window.api.project.updateAccessedAt(idAsNumber)
-      if (updatedProject) {
-        get().updateProjectInList(idAsNumber, { ...project, ...updatedProject })
-        set({ selectedProject: { ...project, ...updatedProject } })
+      try {
+        const updatedProject = await window.api.project.updateUpdatedAt(idAsNumber)
+        if (updatedProject) {
+          get().updateProjectInList(idAsNumber, { ...project, ...updatedProject })
+          set({ selectedProject: { ...project, ...updatedProject } })
+        }
+      } catch (error) {
+        console.error('Failed to update project updated_at timestamp:', error)
       }
     }
   },
