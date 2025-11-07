@@ -17,7 +17,7 @@ const SelectDomain: React.FC<SelectDomainProps> = ({ source, columnType, onChang
   const dbms = selectedProject?.dbms?.name ?? 'mysql'
 
   // faker가 지원하지 않는 도메인 ID 목록
-  const excludedForFaker: string[] = ['16', '27', '32', '44', '47', '48']
+  const excludedForFaker = new Set<number>([16, 27, 32, 44, 47, 48])
 
   /** DB에서 logical_type 기준으로 도메인 불러오기 */
   useEffect(() => {
@@ -46,9 +46,7 @@ const SelectDomain: React.FC<SelectDomainProps> = ({ source, columnType, onChang
       ? categories
           .map((category) => ({
             ...category,
-            items: category.items.filter(
-              (item: Domain) => !excludedForFaker.includes(String(item.id))
-            )
+            items: category.items.filter((item: Domain) => !excludedForFaker.has(item.id))
           }))
           .filter((category) => category.items.length > 0)
       : categories
