@@ -4,7 +4,7 @@ import InputField from '@renderer/components/InputField'
 import PageTitle from '@renderer/components/PageTitle'
 import Label from '@renderer/components/Label'
 import { Rule } from '@main/database/types'
-import { FileType } from '../file/FileUploadContent'
+import { FileType } from '@renderer/modals/file/FileUploadContent'
 
 export interface RuleCreationData {
   source: 'Faker' | 'AI'
@@ -32,6 +32,7 @@ export interface RuleSelection {
     refTable?: string
     refColumn?: string
     previewValue?: string
+    ensureUnique?: boolean
   }
 }
 

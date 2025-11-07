@@ -37,6 +37,7 @@ export type ReferenceMetaData = {
   refTable: string
   refColumn: string
   fixedValue: string
+  ensureUnique?: boolean
 }
 
 export type ColumnMetaData =
@@ -107,7 +108,6 @@ interface GenerationState {
 export const useGenerationStore = create<GenerationState>((set, get) => ({
   tables: {},
 
-  // ------------------------
   // recordCnt 관리
   setTableRecordCount: (tableName, recordCnt) => {
     set((state) => {
@@ -248,7 +248,8 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
           kind: 'reference',
           refTable,
           refColumn,
-          fixedValue: rule.metaData.fixedValue ?? ''
+          fixedValue: rule.metaData.fixedValue ?? '',
+          ensureUnique: rule.metaData.ensureUnique
         }
         break
       }

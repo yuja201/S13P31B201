@@ -6,16 +6,19 @@ import type { WorkerTask, WorkerResult } from './types.js'
 import { DBMS_MAP } from '../../utils/dbms-map.js'
 import { generateFakeStream } from './faker-generator.js'
 import { generateAIStream } from './ai-generator.js'
+import { createFileValueStream } from './file-generator.js'
+import { generateFixedStream } from './fixed-generator.js'
+import { generateReferenceStream } from './reference-generator.js'
+import { ConnectionConfig } from '../../utils/db-connection-test.js'
 import {
   DataSourceType,
   type ColumnMetaData,
   FakerMetaData,
   AIMetaData,
   FileMetaData,
-  FixedMetaData
+  FixedMetaData,
+  ReferenceMetaData
 } from './types.js'
-import { createFileValueStream } from './file-generator.js'
-import { generateFixedStream } from './fixed-generator.js'
 
 // 컬럼별 스트림 생성 함수
 function createColumnStream(
@@ -104,7 +107,32 @@ function createColumnStream(
         recordCnt
       })
     }
+    case 'REFERENCE': {
+      if (!col.metaData) {
+        throw new Error(
+          `[참조 메타데이터 오류] ${tableName}.${col.columnName} 컬럼의 참조 설정이 올바르지 않습니다.`
+        )
+      }
+      const meta = col.metaData as ReferenceMetaData
+      if (!task.connection) {
+        throw new Error('참조 생성은 DB 직접 연결 모드에서만 지원됩니다.')
+      }
 
+      const connectionConfig: ConnectionConfig = {
+        dbType: task.dbType === 'mysql' ? 'MySQL' : 'PostgreSQL',
+        host: task.connection.host,
+        port: task.connection.port,
+        username: task.connection.username,
+        password: task.connection.password,
+        database: task.connection.database
+      }
+
+      return generateReferenceStream({
+        recordCnt,
+        metaData: meta,
+        connectionConfig
+      })
+    }
     default:
       throw new Error(`알 수 없는 데이터 소스: ${col.dataSource}`)
   }
