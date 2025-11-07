@@ -64,7 +64,10 @@ async function checkMySQLFkValue(
 }
 
 function quoteIdentifier(identifier: string): string {
-  return `"${identifier.replace(/"/g, '""')}"`
+  return identifier
+    .split('.')
+    .map((part) => `"${part.replace(/"/g, '""')}"`)
+    .join('.')
 }
 
 // --- PostgreSQL 헬퍼 함수 ---
