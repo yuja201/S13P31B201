@@ -4,6 +4,7 @@ import InputField from '@renderer/components/InputField'
 import PageTitle from '@renderer/components/PageTitle'
 import Label from '@renderer/components/Label'
 import { Rule } from '@main/database/types'
+import { FileType } from '../file/FileUploadContent'
 
 export interface RuleCreationData {
   source: 'Faker' | 'AI'
@@ -17,7 +18,7 @@ export interface RuleCreationData {
 
 export interface RuleSelection {
   columnName: string
-  dataSource: 'FAKER' | 'AI' | 'FILE' | 'FIXED' | 'ENUM'
+  dataSource: 'FAKER' | 'AI' | 'FILE' | 'FIXED' | 'ENUM' | 'REFERENCE'
   metaData: {
     ruleId?: number
     ruleName?: string
@@ -26,6 +27,11 @@ export interface RuleSelection {
     filePath?: string
     columnIdx?: number
     fixedValue?: string
+    fileType?: FileType
+    useHeaderRow?: boolean
+    refTable?: string
+    refColumn?: string
+    previewValue?: string
   }
 }
 

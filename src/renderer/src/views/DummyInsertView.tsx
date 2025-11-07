@@ -125,7 +125,8 @@ const DummyInsertView: React.FC = () => {
           recordCnt: tableData.recordCnt,
           columns: tableData.columns.map((col) => ({
             columnName: col.columnName,
-            dataSource: col.dataSource as DataSourceType,
+            dataSource:
+              col.dataSource === 'REFERENCE' ? 'FIXED' : (col.dataSource as DataSourceType),
             metaData: col.metaData as ColumnMetaData
           }))
         }))

@@ -4,7 +4,7 @@ import DBTableList from '@renderer/components/DBTableList'
 import DBTableDetail from '@renderer/components/DBTableDetail'
 import { useSchemaStore } from '@renderer/stores/schemaStore'
 import { useProjectStore } from '@renderer/stores/projectStore'
-import type { Table, Column } from '@main/database/types'
+import type { Table, Column, ForeignKey } from '@main/database/types'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useGenerationStore } from '@renderer/stores/generationStore'
 import { validateTable } from '@renderer/utils/validateTable'
@@ -20,6 +20,9 @@ export type ColumnDetail = {
   defaultValue: string | null
   checkConstraint: string | null
   enumList: string[] | null
+  isForeignKey: boolean
+  foreignKeys: ForeignKey[] | null
+  previewValue?: unknown
 }
 
 // 테이블 전체 정보 타입
@@ -31,10 +34,10 @@ export type TableInfo = {
   columnDetails: ColumnDetail[]
 }
 
-const convertColumn = (col: Column): ColumnDetail => {
+// Store의 Column 타입을 View의 ColumnDetail 타입으로 변환
+const convertColumn = (col: Column, table: Table): ColumnDetail => {
   const constraints: string[] = []
   if (col.isPrimaryKey) constraints.push('PK')
-  if (col.isForeignKey) constraints.push('FK')
   if (col.notNull) constraints.push('NOT NULL')
   if (col.unique) constraints.push('UNIQUE')
   if (col.autoIncrement) constraints.push('AUTO INCREMENT')
@@ -43,6 +46,13 @@ const convertColumn = (col: Column): ColumnDetail => {
   if (col.enum) constraints.push('ENUM')
   if (col.domain) constraints.push('DOMAIN')
 
+  const columnForeignKeys = table.foreignKeys?.filter((fk) => fk.column_name === col.name) || null
+  const isForeignKey = (columnForeignKeys && columnForeignKeys.length > 0) || false
+
+  if (isForeignKey) {
+    constraints.push('FK')
+  }
+  // ---  생성 방식 & 설정 자동 채우기 로직 ---
   let generation = ''
   let setting = ''
 
@@ -52,9 +62,6 @@ const convertColumn = (col: Column): ColumnDetail => {
   } else if (col.default) {
     generation = '고정값'
     setting = col.default
-  } else if (col.isForeignKey) {
-    generation = '참조'
-    setting = '테이블.컬럼'
   }
 
   return {
@@ -65,7 +72,9 @@ const convertColumn = (col: Column): ColumnDetail => {
     setting,
     defaultValue: col.default || null,
     checkConstraint: col.check || null,
-    enumList: col.enum || null
+    enumList: col.enum || null,
+    isForeignKey: isForeignKey,
+    foreignKeys: columnForeignKeys
   }
 }
 
@@ -90,7 +99,7 @@ const CreateDummyView: React.FC = () => {
         name: table.name,
         columns: table.columns.length,
         rows: table.rowCount || 0,
-        columnDetails: table.columns.map((col) => convertColumn(col))
+        columnDetails: table.columns.map((col) => convertColumn(col, table))
       })
     )
   }, [schemasMap, selectedProject])
@@ -123,6 +132,13 @@ const CreateDummyView: React.FC = () => {
       setIsInitialized(true)
     }
   }, [tables, isInitialized, setColumnRule])
+
+  // 테이블 목록 로드 후 첫 번째 테이블 자동 선택
+  useEffect(() => {
+    if (tables.length > 0 && !focusedTable) {
+      setFocusedTable(tables[0])
+    }
+  }, [tables, focusedTable])
 
   // NOT NULL 컬럼 검증 로직
   const validationResults = useMemo(() => {
@@ -177,25 +193,6 @@ const CreateDummyView: React.FC = () => {
 
     navigate(`/main/select-method/${projectId}`, { state: { tables: payload } })
   }
-
-  useEffect(() => {
-    if (tables.length > 0) {
-      if (!focusedTable) {
-        setFocusedTable(tables[0])
-      } else {
-        const stillExists = tables.find((t) => t.id === focusedTable.id)
-
-        if (stillExists) {
-          setFocusedTable(stillExists)
-        } else {
-          setFocusedTable(tables[0])
-        }
-      }
-    } else {
-      setFocusedTable(null)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tables])
 
   const handleColumnUpdate = (columnName: string, generation: string, setting: string): void => {
     if (!focusedTable) return

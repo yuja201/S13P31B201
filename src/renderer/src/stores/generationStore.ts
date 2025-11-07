@@ -2,7 +2,7 @@
 import { create } from 'zustand'
 import { RuleSelection } from '@renderer/modals/rule/RuleSelectContent'
 
-export type DataSourceType = 'FAKER' | 'AI' | 'FILE' | 'FIXED'
+export type DataSourceType = 'FAKER' | 'AI' | 'FILE' | 'FIXED' | 'REFERENCE'
 
 export type FileMetaData = {
   kind: 'file'
@@ -31,7 +31,19 @@ export type FixedMetaData = {
   fixedValue: string
 }
 
-export type ColumnMetaData = FakerMetaData | AIMetaData | FileMetaData | FixedMetaData
+export type ReferenceMetaData = {
+  kind: 'reference'
+  refTable: string
+  refColumn: string
+  fixedValue: string
+}
+
+export type ColumnMetaData =
+  | FakerMetaData
+  | AIMetaData
+  | FileMetaData
+  | FixedMetaData
+  | ReferenceMetaData
 
 export interface ColumnConfig {
   columnName: string
@@ -177,35 +189,74 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
     let metaData: ColumnMetaData
 
     switch (rule.dataSource) {
-      case 'FAKER':
+      case 'FAKER': {
+        const ruleId = rule.metaData.ruleId ?? Number(rule.metaData.ruleId)
+        if (!Number.isInteger(ruleId)) {
+          console.warn(`유효하지 않은 Faker rule id: ${rule.metaData.ruleId}`)
+          return
+        }
         dataSource = 'FAKER'
-        metaData = { kind: 'faker', ruleId: rule.metaData.ruleId! }
+        metaData = { kind: 'faker', ruleId }
         break
-      case 'AI':
+      }
+
+      case 'AI': {
+        const ruleId = rule.metaData.ruleId ?? Number(rule.metaData.ruleId)
+        if (!Number.isInteger(ruleId)) {
+          console.warn(`유효하지 않은 AI rule id: ${rule.metaData.ruleId}`)
+          return
+        }
         dataSource = 'AI'
-        metaData = { kind: 'ai', ruleId: rule.metaData.ruleId! }
+        metaData = { kind: 'ai', ruleId }
         break
+      }
+
       case 'FIXED':
-      case 'ENUM':
+      case 'ENUM': {
+        const fixedValue = rule.metaData.fixedValue
+        if (typeof fixedValue !== 'string') {
+          console.warn(`유효하지 않은 고정값: ${fixedValue}`)
+          return
+        }
         dataSource = 'FIXED'
-        metaData = { kind: 'fixed', fixedValue: rule.metaData.fixedValue! }
+        metaData = { kind: 'fixed', fixedValue }
         break
-      case 'FILE':
+      }
+
+      case 'FILE': {
         dataSource = 'FILE'
         metaData = {
           kind: 'file',
           filePath: rule.metaData.filePath ?? '',
-          fileType: 'csv',
+          fileType: rule.metaData.fileType ?? 'csv',
           fileColumn: rule.metaData.domainName ?? '',
-          useHeaderRow: true
+          useHeaderRow: rule.metaData.useHeaderRow ?? true
         }
         break
+      }
+
+      case 'REFERENCE': {
+        const refTable = rule.metaData.refTable ?? ''
+        const refColumn = rule.metaData.refColumn ?? ''
+        if (!refTable || !refColumn) {
+          console.warn(`유효하지 않은 참조(FK) 설정: ${rule.metaData}`)
+          return
+        }
+        dataSource = 'REFERENCE'
+        metaData = {
+          kind: 'reference',
+          refTable,
+          refColumn,
+          fixedValue: rule.metaData.fixedValue ?? ''
+        }
+        break
+      }
+
       default:
         console.warn(`Unknown dataSource: ${rule.dataSource}`)
         return
     }
 
-    // DB/백엔드와 바로 연동 가능한 형태로 저장
     set((state) => {
       const existingTable = state.tables[tableName] || {
         tableName,

@@ -73,7 +73,21 @@ interface API {
   }>
   schema: {
     fetch: (databaseId: number) => Promise<DatabaseSchema>
+
+    getRandomSample: (params: {
+      databaseId: number
+      table: string
+      column: string
+    }) => Promise<{ sample: any }>
+
+    validateFkValue: (params: {
+      databaseId: number
+      table: string
+      column: string
+      value: any
+    }) => Promise<{ isValid: boolean }>
   }
+
   file: {
     cache: {
       write: (payload: { content: string; encoding?: string; extension?: string }) => Promise<{

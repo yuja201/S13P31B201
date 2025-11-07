@@ -2,9 +2,9 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import { TableInfo, ColumnDetail } from '@renderer/views/CreateDummyView'
 import Button from '@renderer/components/Button'
 import FileModal from '@renderer/modals/file/FileModal'
-import RuleModal, { RuleResult } from '@renderer/modals/rule/RuleModal'
 import { useGenerationStore } from '@renderer/stores/generationStore'
 import type { FileModalApplyPayload } from '@renderer/modals/file/types'
+import RuleModal, { RuleResult } from '@renderer/modals/rule/RuleModal'
 
 type DBTableDetailProps = {
   table: TableInfo
@@ -78,7 +78,6 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
 
   const handleRuleConfirm = (result: RuleResult): void => {
     if (!selectedColumn) return
-
     onColumnUpdate(selectedColumn.name, result.generation, result.setting)
     closeRuleModal()
   }
@@ -99,46 +98,53 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
 
     return table.columnDetails.map((col) => {
       const config = columnConfigs[col.name]
-      if (!config) {
-        return col
+
+      if (config) {
+        let generation = '',
+          setting = ''
+
+        switch (config.dataSource) {
+          case 'FILE':
+            generation = '파일 업로드'
+            if (config.metaData.kind === 'file') {
+              setting = config.metaData.fileColumn
+            } else {
+              setting = '파일 매핑'
+            }
+            break
+          case 'FIXED':
+            generation = '고정값'
+            if (config.metaData.kind === 'fixed') {
+              setting = config.metaData.fixedValue
+            } else {
+              setting = '고정값'
+            }
+            break
+          case 'FAKER':
+            generation = 'Faker.js'
+            if (config.metaData.kind === 'faker') {
+              setting = `Rule #${config.metaData.ruleId}`
+            }
+            break
+          case 'AI':
+            generation = 'AI'
+            if (config.metaData.kind === 'ai') {
+              setting = `Rule #${config.metaData.ruleId}`
+            }
+            break
+          case 'REFERENCE':
+            generation = '참조'
+            if (config.metaData.kind === 'reference') {
+              setting = `${config.metaData.refTable}.${config.metaData.refColumn}`
+            } else {
+              setting = '참조 설정됨'
+            }
+            break
+        }
+
+        return { ...col, generation, setting }
       }
-
-      let generation = '',
-        setting = ''
-
-      switch (config.dataSource) {
-        case 'FILE':
-          generation = '파일 업로드'
-          if (config.metaData.kind === 'file') {
-            setting = config.metaData.fileColumn
-          } else {
-            setting = '파일 매핑'
-          }
-          break
-        case 'FIXED':
-          generation = '고정값'
-          if (config.metaData.kind === 'fixed') {
-            setting = config.metaData.fixedValue
-          } else {
-            setting = '고정값'
-          }
-          break
-        case 'FAKER':
-          generation = 'Faker.js'
-          if (config.metaData.kind === 'faker') {
-            setting = `Rule #${config.metaData.ruleId}`
-          }
-          break
-        case 'AI':
-          generation = 'AI'
-          if (config.metaData.kind === 'ai') {
-            setting = `Rule #${config.metaData.ruleId}`
-          }
-          break
-        // TODO: 'REFERENCE' 케이스 추가
-      }
-
-      return { ...col, generation, setting }
+      return col
     })
   }, [table.columnDetails, tableGenerationConfig?.columns])
 
@@ -194,53 +200,87 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
               </thead>
               {/* 테이블 바디 (컬럼 목록) */}
               <tbody className="preRegular14">
-                {displayColumnDetails.map((col) => (
-                  <tr
-                    key={col.name}
-                    className={
-                      col.generation && col.generation !== '-' ? 'has-generation-method' : ''
-                    }
-                  >
-                    <td className="preMedium14">{col.name}</td>
-                    <td>{col.type}</td>
-                    <td>
-                      <div className="constraint-badges">
-                        {col.constraints.map((c) => (
-                          <span key={c} className={`badge badge-${c.toLowerCase()}`}>
-                            {c}
-                          </span>
-                        ))}
-                      </div>
-                    </td>
-                    {/* --- 생성 방식 셀 --- */}
-                    <td className="generation-method-cell preSemiBold14">
-                      <button
-                        className="select-generation-link"
-                        onClick={() => handleSelectGenerationClick(col)}
-                      >
-                        {col.generation && col.generation !== '-'
-                          ? col.generation
-                          : '생성방식 선택'}
-                      </button>
-                    </td>
-
-                    <td>
-                      <Button
-                        variant="gray"
-                        size="sm"
-                        style={{
-                          whiteSpace: 'nowrap',
-                          backgroundColor: 'var(--color-sky-blue)',
-                          color: 'var(--color-main-blue)',
-                          borderRadius: '10px',
-                          padding: '4px 12px'
-                        }}
-                      >
-                        {col.setting || '-'} 🖊️
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
+                {displayColumnDetails.map((col) => {
+                  const isFK = col.constraints.includes('FK')
+                  const needsSelection = !col.generation || col.generation === '-'
+                  const hasSetting = col.setting && col.setting !== '-'
+                  const isEditableSetting = col.generation !== 'Auto Increment'
+                  return (
+                    <tr
+                      key={col.name}
+                      className={
+                        col.generation && col.generation !== '-' ? 'has-generation-method' : ''
+                      }
+                    >
+                      <td className="preMedium14">{col.name}</td>
+                      <td>{col.type}</td>
+                      <td>
+                        <div className="constraint-badges">
+                          {col.constraints.map((c) => {
+                            const badgeClass = c
+                              .toLowerCase()
+                              .replace(' ', '-')
+                              .replace('not-null', 'not')
+                            return (
+                              <span key={c} className={`badge badge-${badgeClass}`}>
+                                {c}
+                              </span>
+                            )
+                          })}
+                        </div>
+                      </td>
+                      {/* --- 생성 방식 셀 --- */}
+                      <td className="generation-method-cell preSemiBold14">
+                        {needsSelection ? (
+                          <button
+                            className="select-generation-link"
+                            onClick={() => handleSelectGenerationClick(col)}
+                          >
+                            {isFK ? '참조 설정' : '생성방식 선택'}
+                          </button>
+                        ) : (
+                          col.generation
+                        )}
+                      </td>
+                      <td>
+                        {hasSetting ? (
+                          isEditableSetting ? (
+                            <Button
+                              variant="gray"
+                              size="sm"
+                              onClick={() => handleSelectGenerationClick(col)}
+                              style={{
+                                whiteSpace: 'nowrap',
+                                backgroundColor: 'var(--color-sky-blue)',
+                                color: 'var(--color-main-blue)',
+                                borderRadius: '10px',
+                                padding: '4px 12px'
+                              }}
+                            >
+                              {col.setting} 🖊️
+                            </Button>
+                          ) : (
+                            <span
+                              style={{
+                                display: 'inline-block',
+                                whiteSpace: 'nowrap',
+                                backgroundColor: 'var(--color-gray-200)',
+                                color: 'var(--color-dark-gray)',
+                                borderRadius: '10px',
+                                padding: '4px 12px',
+                                font: 'var(--preRegular14)'
+                              }}
+                            >
+                              {col.setting}
+                            </span>
+                          )
+                        ) : (
+                          '-'
+                        )}
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>
@@ -277,7 +317,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
           isOpen={isRuleModalOpen}
           onClose={closeRuleModal}
           column={selectedColumn}
-          onConfirm={handleRuleConfirm} // [!] 핸들러 전달
+          onConfirm={handleRuleConfirm}
         />
       )}
 
@@ -406,7 +446,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
         .badge-unique { background-color: #F0FDF4; color: #15803D; }
         .badge-enum { background-color: #F5F3FF; color: #5B21B6; }
         .badge-check { background-color: #FEFBF1; color: #D97706; } 
-        .badge-auto { background-color: #F0FDFA; color: #0F766E; } 
+        .badge-auto-increment { background-color: #F0FDFA; color: #0F766E; } 
         .badge-default { background-color: #F3F4F6; color: #4B5563; }
         .badge-domain { background-color: #FFF7ED; color: #EA580C; } 
       `}</style>

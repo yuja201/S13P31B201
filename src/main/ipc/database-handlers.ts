@@ -5,6 +5,7 @@ import * as databaseOps from '../database/databases'
 import * as ruleOps from '../database/rules'
 import { testDatabaseConnection, ConnectionConfig } from '../utils/db-connection-test'
 import { fetchDatabaseSchema } from '../utils/schema-fetch'
+import { fetchRandomSample, checkFkValueExists } from '../utils/db-query'
 
 /**
  * SQLite Database
@@ -114,13 +115,7 @@ ipcMain.handle('db:rule:delete', (_, id: number) => {
  * MySQL/PostgreSQL Database
  */
 
-// Database connection test
-ipcMain.handle('db:connection:test', async (_, config: ConnectionConfig) => {
-  return testDatabaseConnection(config)
-})
-
-// Schema operations
-ipcMain.handle('db:schema:fetch', (_, databaseId: number) => {
+const getConnectionConfig = (databaseId: number): ConnectionConfig => {
   const database = databaseOps.getDatabaseById(databaseId)
   if (!database) {
     throw new Error(`Database with id ${databaseId} not found`)
@@ -133,12 +128,70 @@ ipcMain.handle('db:schema:fetch', (_, databaseId: number) => {
 
   const [host, port] = database.url.split(':')
 
-  return fetchDatabaseSchema({
+  return {
     dbType: dbms.name as 'MySQL' | 'PostgreSQL',
     host,
     port: parseInt(port),
     username: database.username,
     password: database.password,
     database: database.database_name
-  })
+  }
+}
+
+// Database connection test
+ipcMain.handle('db:connection:test', async (_, config: ConnectionConfig) => {
+  return testDatabaseConnection(config)
 })
+
+ipcMain.handle('db:schema:fetch', (_, databaseId: number) => {
+  const config = getConnectionConfig(databaseId)
+  return fetchDatabaseSchema(config)
+})
+
+// 무작위 샘플링 핸들러
+ipcMain.handle(
+  'db:get-random-sample',
+  async (
+    _event,
+    { databaseId, table, column }: { databaseId: number; table: string; column: string }
+  ) => {
+    try {
+      const config = getConnectionConfig(databaseId)
+      return await fetchRandomSample(config, table, column)
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : '샘플링 중 오류 발생'
+      console.error('[IPC Error] db:get-random-sample:', errorMessage)
+      throw new Error(errorMessage)
+    }
+  }
+)
+
+//  FK 값 검증 핸들러
+ipcMain.handle(
+  'db:validate-fk-value',
+  async (
+    _event,
+    {
+      databaseId,
+      table,
+      column,
+      value
+    }: { databaseId: number; table: string; column: string; value: any }
+  ) => {
+    try {
+      const config = getConnectionConfig(databaseId)
+      return await checkFkValueExists(config, table, column, value)
+    } catch (error) {
+      // [수정] 타입 확인
+      const errorMessage = error instanceof Error ? error.message : '검증 중 오류 발생'
+      console.error('[IPC Error] db:validate-fk-value:', errorMessage)
+
+      // DB 드라이버 에러(예: 'ECONNREFUSED')는 프론트로 전파
+      if (error && typeof error === 'object' && 'code' in error) {
+        throw new Error(errorMessage)
+      }
+      // 그 외 (예: 쿼리 결과 없음)는 'invalid'로 간주
+      return { isValid: false }
+    }
+  }
+)
