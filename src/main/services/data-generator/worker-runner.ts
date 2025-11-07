@@ -50,7 +50,7 @@ function createColumnStream(
         tableName,
         columnName: col.columnName,
         recordCnt,
-        metaData: { ruleId: meta.ruleId },
+        metaData: meta,
         domainName: rule.domain_name,
         schema
       })
@@ -74,7 +74,7 @@ function createColumnStream(
         tableName,
         columnName: col.columnName,
         recordCnt,
-        metaData: { ruleId: meta.ruleId },
+        metaData: meta,
         schema,
         database,
         rule
