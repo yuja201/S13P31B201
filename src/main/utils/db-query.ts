@@ -123,7 +123,7 @@ async function checkPostgreSQLFkValue(
     const result = await client.query(query, [value])
     await client.end()
     return { isValid: result.rows.length > 0 }
-  } catch (error) {
+  } catch (error: unknown) {
     await client.end().catch(() => {})
     throw error
   }
