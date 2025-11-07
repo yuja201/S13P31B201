@@ -13,6 +13,6 @@ ipcMain.handle('db:rule:createAI', async (_: unknown, data: AIRuleInput): Promis
   return createAIRule(data)
 })
 
-ipcMain.handle('rule:getByLogicalType', (_, logicalType: string) => {
+ipcMain.handle('db:rule:getByLogicalType', (_, logicalType: string) => {
   return getRulesByLogicalType(logicalType)
 })

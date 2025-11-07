@@ -5,6 +5,6 @@ ipcMain.handle('domain:getAll', () => {
   return getAllDomains()
 })
 
-ipcMain.handle('domain:getByType', (_, logicalType: string) => {
+ipcMain.handle('domain:getByLogicalType', (_, logicalType: string) => {
   return getDomainsByLogicalType(logicalType)
 })

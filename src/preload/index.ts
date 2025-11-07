@@ -80,7 +80,7 @@ const api = {
       ipcRenderer.invoke('db:rule:createFaker', data),
     createAI: (data: AIRuleInput): Promise<Rule> => ipcRenderer.invoke('db:rule:createAI', data),
     getByLogicalType: (logicalType: string) =>
-      ipcRenderer.invoke('rule:getByLogicalType', logicalType)
+      ipcRenderer.invoke('db:rule:getByLogicalType', logicalType)
   },
 
   // Database connection test
