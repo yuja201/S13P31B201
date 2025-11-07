@@ -12,7 +12,7 @@ export interface RuleCreationData {
   apiToken?: string
   prompt?: string
   model?: string
-  columnType?: string
+  columnType: string
   columnName?: string
   result?: number
   domainId?: number
@@ -20,7 +20,7 @@ export interface RuleCreationData {
 }
 
 interface RuleCreationContentProps {
-  columnType?: string
+  columnType: string
   columnName?: string
   onCancel: () => void
   onSubmit?: (data: RuleCreationData) => void
@@ -207,7 +207,11 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
 
       {/* 도메인 선택 */}
       <div style={{ width: '100%', overflow: 'hidden' }}>
-        <SelectDomain source={selectedSource} onChange={(value) => setSelectedDomain(value)} />
+        <SelectDomain
+          source={selectedSource}
+          columnType={columnType}
+          onChange={(value) => setSelectedDomain(value)}
+        />
       </div>
 
       {/* AI 생성 선택 시에만 표시되는 섹션 */}
