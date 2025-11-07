@@ -420,20 +420,22 @@ async function fetchPostgreSQLColumns(client: Client, tableName: string): Promis
     if (row.checkConstraint) {
       const inPattern = /IN\s*\((.+)\)/i
       const inMatch = row.checkConstraint.match(inPattern)
+
       if (inMatch) {
         enumFromCheck = inMatch[1]
           .split(',')
           .map((v) => v.trim().replace(/'/g, ''))
           .filter((v) => v.length > 0)
-      }
+      } else {
+        const arrayPattern = /ARRAY\[(.+)\]/i
+        const arrayMatch = row.checkConstraint.match(arrayPattern)
 
-      const arrayPattern = /ARRAY\[(.+)\]/i
-      const arrayMatch = row.checkConstraint.match(arrayPattern)
-      if (arrayMatch) {
-        enumFromCheck = arrayMatch[1]
-          .split(',')
-          .map((v) => v.replace(/::.*$/, '').trim().replace(/'/g, ''))
-          .filter((v) => v.length > 0)
+        if (arrayMatch) {
+          enumFromCheck = arrayMatch[1]
+            .split(',')
+            .map((v) => v.replace(/::.*$/, '').trim().replace(/'/g, ''))
+            .filter((v) => v.length > 0)
+        }
       }
     }
     let typeStr = row.data_type
