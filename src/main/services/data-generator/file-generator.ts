@@ -258,7 +258,8 @@ function resolveSeparator(value: string | undefined, fallback: string): string {
 }
 
 function formatValue(value: unknown): string {
-  if (value === null || value === undefined) return ''
+  if (value === null || value === undefined) return null as unknown as string
+  if (value === '') return ''
   if (typeof value === 'object') return JSON.stringify(value)
   return String(value)
 }

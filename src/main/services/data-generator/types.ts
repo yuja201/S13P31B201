@@ -40,6 +40,7 @@ export interface ColumnConfig {
   columnName: string
   dataSource: DataSourceType
   metaData: ColumnMetaData
+  isNullable: boolean
 }
 
 /**

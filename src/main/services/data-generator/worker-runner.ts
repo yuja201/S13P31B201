@@ -17,6 +17,9 @@ import {
 import { createFileValueStream } from './file-generator.js'
 import { generateFixedStream } from './fixed-generator.js'
 
+const INVALID = { __invalid: true } as const
+type CellValue = string | typeof INVALID
+
 // 컬럼별 스트림 생성 함수
 function createColumnStream(
   col: {
@@ -26,7 +29,7 @@ function createColumnStream(
   },
   task: WorkerTask,
   recordCnt: number
-): AsyncGenerator<string> {
+): AsyncGenerator<string | null | undefined> {
   const { projectId, table, schema, database, rules } = task
   const { tableName } = table
   const dataSource = col.dataSource as DataSourceType
@@ -129,6 +132,86 @@ function separateColumnsByType(columns: { dataSource: DataSourceType }[]): {
   return { aiColumns, nonAiColumns }
 }
 
+function convertValue(
+  raw: string | null,
+  columnName: string,
+  tableName: string,
+  schema: WorkerTask['schema']
+): string | typeof INVALID {
+  const table = schema.find((t) => t.name === tableName)
+  if (!table) return INVALID
+
+  const colSchema = table.columns.find((c) => c.name === columnName)
+  if (!colSchema) return INVALID
+
+  // NULL 처리
+  if (raw === null || raw === '') {
+    console.log(`[NULL] ${tableName}.${columnName} → NULL`)
+    return colSchema.notNull ? INVALID : 'NULL'
+  }
+
+  // CSV에서 "값" 형태면 외부 따옴표 제거
+  if (typeof raw === 'string' && /^".*"$/.test(raw)) {
+    console.log(`[QUOTE STRIP] BEFORE: ${raw}`)
+    raw = raw.slice(1, -1)
+    console.log(`[QUOTE STRIP] AFTER: ${raw}`)
+  }
+
+  // uuid_generate_v4()
+  if (/^\s*uuid_generate_v4\s*\(\s*\)\s*$/i.test(raw)) {
+    console.log(`[UUID FUNC] ${tableName}.${columnName}: uuid_generate_v4()`)
+    return `uuid_generate_v4()`
+  }
+
+  // Boolean
+  if (raw.toLowerCase() === 'true') return 'TRUE'
+  if (raw.toLowerCase() === 'false') return 'FALSE'
+
+  const type = colSchema.type.toLowerCase()
+
+  // ENUM 처리 + 로그
+  if (colSchema.enum && colSchema.enum.length > 0) {
+    console.log(`[ENUM CHECK] ${tableName}.${columnName}`)
+    console.log(`  Allowed: ${JSON.stringify(colSchema.enum)}`)
+    console.log(`  Incoming: "${raw}"`)
+
+    if (!colSchema.enum.includes(raw)) {
+      console.warn(`[ENUM INVALID] "${raw}" NOT IN ${JSON.stringify(colSchema.enum)} → SKIP`)
+      return INVALID
+    }
+
+    return `'${raw.replace(/'/g, "''")}'`
+  }
+
+  // 숫자
+  if (
+    type.includes('int') ||
+    type.includes('numeric') ||
+    type.includes('decimal') ||
+    type.includes('float') ||
+    type.includes('double')
+  ) {
+    const num = Number(raw)
+    console.log(`[NUM CHECK] ${raw} -> ${num}`)
+    return Number.isNaN(num) ? INVALID : String(num)
+  }
+
+  // 날짜 / now()
+  if (type.includes('timestamp') || type.includes('date')) {
+    if (raw.toLowerCase() === 'now()') {
+      return 'now()'
+    }
+    return `'${raw.replace(/'/g, "''")}'`
+  }
+
+  // JSON
+  if (/^\s*\{.*\}\s*$/.test(raw)) {
+    return `'${raw.replace(/'/g, "''")}'`
+  }
+
+  return `'${raw.replace(/'/g, "''")}'`
+}
+
 type DirectContext = {
   execute: (sql: string) => Promise<void>
   commit: () => Promise<void>
@@ -191,7 +274,6 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
   const { quote } = DBMS_MAP[dbType]
   const columnNames = columns.map((c) => `${quote}${c.columnName}${quote}`).join(', ')
   const CHUNK_SIZE = 1000
-  const LOG_INTERVAL = 100_000
   const MAX_AI_CONCURRENT = 2
 
   const directMode = mode === 'DIRECT_DB' && Boolean(connection)
@@ -220,7 +302,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
 
       const columnStreams = columns.map((col) => createColumnStream(col, task, chunkSize))
       const { aiColumns, nonAiColumns } = separateColumnsByType(columns)
-      const chunkColumnValues: string[][] = new Array(columns.length)
+      const chunkColumnValues: (string | typeof INVALID)[][] = new Array(columns.length)
 
       if (nonAiColumns.length > 0) {
         console.log(`[${tableName}] Non-AI 컬럼 동시 처리:`)
@@ -231,25 +313,22 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
             const colStart = Date.now()
             console.log(`  ▶ [${col.columnName}] 처리 (${col.dataSource})`)
 
-            const values: string[] = []
+            const values: (string | typeof INVALID)[] = []
             for (let i = 0; i < chunkSize; i++) {
               try {
                 const { value } = await stream.next()
-                if (value !== undefined && value !== null) {
-                  const escaped = String(value).replace(/'/g, "''")
-                  values.push(`'${escaped}'`)
-                } else {
-                  values.push('NULL')
-                }
-              } catch (err) {
-                if (task.skipInvalidRows) {
-                  values.push('NULL')
+                if (value === null && col.isNullable === false) {
+                  values.push(INVALID)
                   continue
-                } else {
-                  throw new Error(
-                    `[타입 변환 오류] ${tableName}.${col.columnName} (${i + 1}행): ${(err as Error).message}`
-                  )
                 }
+                const converted = convertValue(value, col.columnName, tableName, task.schema)
+                if (converted === INVALID) {
+                  values.push(INVALID)
+                } else {
+                  values.push(converted)
+                }
+              } catch {
+                values.push(INVALID) // 실패는 전부 invalid
               }
             }
 
@@ -278,25 +357,18 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
               const colStart = Date.now()
               console.log(`  ▶ [${col.columnName}] 처리 (${col.dataSource})`)
 
-              const values: string[] = []
+              const values: (string | typeof INVALID)[] = []
               for (let j = 0; j < chunkSize; j++) {
                 try {
                   const { value } = await stream.next()
-                  if (value !== undefined) {
-                    const escaped = String(value).replace(/'/g, "''")
-                    values.push(`'${escaped}'`)
+                  const converted = convertValue(value, col.columnName, tableName, task.schema)
+                  if (converted === INVALID) {
+                    values.push(INVALID)
                   } else {
-                    values.push('NULL')
+                    values.push(converted)
                   }
-                } catch (err) {
-                  if (task.skipInvalidRows) {
-                    values.push('NULL')
-                    continue
-                  } else {
-                    throw new Error(
-                      `[타입 변환 오류] ${tableName}.${col.columnName} (${j + 1}행): ${(err as Error).message}`
-                    )
-                  }
+                } catch {
+                  values.push(INVALID) // 실패한 셀
                 }
               }
 
@@ -319,25 +391,28 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
       }
 
       const rows: string[] = []
+      const skipInvalid = task.skipInvalidRows !== false
+
       for (let rowIdx = 0; rowIdx < chunkSize; rowIdx++) {
-        const rowValues = columns.map((_, colIdx) => {
+        const rowValues: CellValue[] = columns.map((_, colIdx) => {
           const columnValues = chunkColumnValues[colIdx]
           return columnValues?.[rowIdx] ?? 'NULL'
         })
+
+        const hasInvalid = rowValues.some((v) => v === INVALID)
+
+        if (hasInvalid) {
+          if (skipInvalid) {
+            continue
+          } else {
+            throw new Error(
+              `[행 변환 오류] ${tableName} ${totalProcessed + rowIdx + 1}행 변환 실패`
+            )
+          }
+        }
+
         rows.push(`(${rowValues.join(', ')})`)
         totalProcessed++
-
-        if (totalProcessed % LOG_INTERVAL === 0 || totalProcessed === recordCnt) {
-          const progress = recordCnt === 0 ? 100 : Math.round((totalProcessed / recordCnt) * 100)
-          process.stdout.write(
-            JSON.stringify({
-              type: 'row-progress',
-              tableName,
-              progress,
-              currentRow: totalProcessed
-            }) + '\n'
-          )
-        }
       }
 
       if (rows.length > 0) {
