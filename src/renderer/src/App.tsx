@@ -1,5 +1,11 @@
 import React from 'react'
-import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { createHashRouter, RouterProvider } from 'react-router-dom'
+import { createPortal } from 'react-dom'
+import { useToastStore } from '@renderer/stores/toastStore'
+import { useConfirmStore } from '@renderer/stores/confirmStore'
+import Toast from '@renderer/components/Toast'
+import ConfirmDialog from '@renderer/components/ConfirmDialog'
+
 import LandingView from '@renderer/views/LandingView'
 import MainView from '@renderer/views/MainView'
 import MainLayout from '@renderer/layouts/MainLayout'
@@ -10,30 +16,88 @@ import CreateDummyView from '@renderer/views/CreateDummyView'
 import TestView from '@renderer/views/TestView'
 import HistoryView from '@renderer/views/HistoryView'
 import SelectMethodView from './views/SelectMethodView'
+import DummyInsertView from './views/DummyInsertView'
+import ErrorView from './views/ErrorView'
+
+const router = createHashRouter([
+  {
+    path: '/landing',
+    element: <LandingView />,
+    errorElement: <ErrorView />
+  },
+  {
+    path: '/',
+    element: <MainLayout />,
+    children: [
+      {
+        index: true,
+        element: <MainView />,
+        errorElement: <ErrorView />
+      },
+      { path: 'error', element: <ErrorView /> },
+      {
+        path: 'main/dashboard/:projectId',
+        element: <DashboardView />,
+        errorElement: <ErrorView />
+      },
+      { path: 'main/info/:projectId', element: <InfoView />, errorElement: <ErrorView /> },
+      { path: 'main/schema/:projectId', element: <SchemaView />, errorElement: <ErrorView /> },
+      { path: 'main/dummy/:projectId', element: <CreateDummyView />, errorElement: <ErrorView /> },
+      { path: 'main/test/:projectId', element: <TestView />, errorElement: <ErrorView /> },
+      { path: 'main/history/:projectId', element: <HistoryView />, errorElement: <ErrorView /> },
+      {
+        path: 'main/select-method/:projectId',
+        element: <SelectMethodView />,
+        errorElement: <ErrorView />
+      },
+      {
+        path: 'main/insert/sql/:projectId',
+        element: <DummyInsertView />,
+        errorElement: <ErrorView />
+      }
+    ]
+  }
+])
 
 const App: React.FC = () => {
-  return (
-    <HashRouter>
-      <Routes>
-        <Route path="/landing" element={<LandingView />} />
-        <Route path="/" element={<MainLayout />}>
-          {/*  MainView (사이드바 잠김) */}
-          <Route index element={<MainView />} />
+  const { show, msg, type, title, hideToast } = useToastStore()
+  const {
+    show: showConfirm,
+    type: confirmType,
+    title: confirmTitle,
+    message: confirmMessage,
+    confirmText,
+    cancelText,
+    handleConfirm,
+    hideConfirm
+  } = useConfirmStore()
 
-          {/*  프로젝트 뷰들 (사이드바 활성)*/}
-          <Route path="main">
-            <Route path="dashboard/:projectId" element={<DashboardView />} />
-            <Route path="info/:projectId" element={<InfoView />} />
-            <Route path="schema/:projectId" element={<SchemaView />} />
-            <Route path="dummy/:projectId" element={<CreateDummyView />} />
-            <Route path="test/:projectId" element={<TestView />} />
-            <Route path="history/:projectId" element={<HistoryView />} />
-            <Route path="select-method/:projectId/:tableId" element={<SelectMethodView />} />
-            <Route index element={<Navigate to="dashboard/:projectId" replace />} />
-          </Route>
-        </Route>
-      </Routes>
-    </HashRouter>
+  return (
+    <>
+      <RouterProvider router={router} />
+
+      {show &&
+        createPortal(
+          <Toast type={type} title={title} onClose={hideToast}>
+            {msg}
+          </Toast>,
+          document.body
+        )}
+
+      {showConfirm &&
+        createPortal(
+          <ConfirmDialog
+            type={confirmType}
+            title={confirmTitle}
+            message={confirmMessage}
+            confirmText={confirmText}
+            cancelText={cancelText}
+            onConfirm={handleConfirm}
+            onCancel={hideConfirm}
+          />,
+          document.body
+        )}
+    </>
   )
 }
 

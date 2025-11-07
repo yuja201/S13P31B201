@@ -1,6 +1,7 @@
-import fs from 'node:fs/promises'
+﻿import fs from 'node:fs/promises'
+import os from 'node:os'
 import path from 'node:path'
-import type { FileMetaData } from '../types'
+import type { FileMetaData } from './types'
 
 type ParsedFile =
   | {
@@ -16,6 +17,8 @@ type ParsedFile =
 
 type ParseCacheKey = string
 
+const CACHE_DIR_NAME = 'heresdummy-file-cache'
+const CACHE_DIR_ENV_KEY = 'HERESDUMMY_CACHE_DIR'
 const parseCache = new Map<ParseCacheKey, Promise<ParsedFile>>()
 
 export function createFileValueStream(
@@ -38,16 +41,21 @@ export function createFileValueStream(
 }
 
 async function parseFile(meta: FileMetaData): Promise<ParsedFile> {
-  const cacheKey = buildCacheKey(meta)
+  const safeFilePath = await resolveCacheFilePath(meta.filePath)
+  const normalizedMeta = safeFilePath ? { ...meta, filePath: safeFilePath } : meta
+
+  const cacheKey = buildCacheKey(normalizedMeta)
   const cached = parseCache.get(cacheKey)
   if (cached) return cached
 
   const parsePromise =
-    meta.fileType === 'json'
-      ? parseJson(meta)
+    normalizedMeta.fileType === 'json'
+      ? parseJson(normalizedMeta)
       : parseDelimited(
-          meta,
-          meta.fileType === 'csv' ? ',' : resolveSeparator(meta.columnSeparator, '\t')
+          normalizedMeta,
+          normalizedMeta.fileType === 'csv'
+            ? ','
+            : resolveSeparator(normalizedMeta.columnSeparator, '\t')
         )
 
   parseCache.set(cacheKey, parsePromise)
@@ -203,6 +211,43 @@ function buildCacheKey(meta: FileMetaData): ParseCacheKey {
     meta.columnSeparator ?? '',
     resolveEncoding(meta.encoding)
   ].join('|')
+}
+
+async function resolveCacheFilePath(filePath: string): Promise<string | null> {
+  const envDir = process.env[CACHE_DIR_ENV_KEY]
+  const cacheDir = envDir ? path.resolve(envDir) : path.resolve(os.tmpdir(), CACHE_DIR_NAME)
+
+  try {
+    const [cacheDirReal, targetReal] = await Promise.all([
+      fs.realpath(cacheDir).catch(() => path.resolve(cacheDir)),
+      fs.realpath(filePath)
+    ])
+
+    if (!isPathInside(cacheDirReal, targetReal)) {
+      throw new Error('[보안 오류] 허용되지 않은 파일 경로입니다.')
+    }
+
+    return targetReal
+  } catch (error) {
+    const err = error as NodeJS.ErrnoException
+    if (err && err.code === 'ENOENT') {
+      return null
+    }
+    throw error
+  }
+}
+
+function isPathInside(parent: string, child: string): boolean {
+  const normalizedParent = normalizeForComparison(
+    parent.endsWith(path.sep) ? parent : `${parent}${path.sep}`
+  )
+  const normalizedChild = normalizeForComparison(child)
+  return normalizedChild.startsWith(normalizedParent)
+}
+
+function normalizeForComparison(filePath: string): string {
+  const normalized = path.resolve(filePath)
+  return process.platform === 'win32' ? normalized.toLowerCase() : normalized
 }
 
 function resolveSeparator(value: string | undefined, fallback: string): string {

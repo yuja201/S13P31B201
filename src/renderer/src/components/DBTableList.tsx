@@ -1,30 +1,22 @@
-import React, { useState } from 'react'
+import React from 'react'
 import { TableInfo } from '@renderer/views/CreateDummyView'
 import MiniSearchBox from '@renderer/components/MiniSearchBox'
 
 type DBTableListProps = {
   tables: TableInfo[]
   focusedTableId: string
+  selectedTables: Set<string>
+  handleCheckboxChange: (tableId: string, checked: boolean) => void
   onTableSelect: (table: TableInfo) => void
 }
 
-const DBTableList: React.FC<DBTableListProps> = ({ tables, focusedTableId, onTableSelect }) => {
-  const [selectedTableIds, setSelectedTableIds] = useState<Set<string>>(
-    new Set(tables.filter((t) => t.id === 'users' || t.id === 'categories').map((t) => t.id))
-  )
-
-  const handleCheckboxChange = (tableId: string, isChecked: boolean): void => {
-    setSelectedTableIds((prevSelectedIds) => {
-      const newSelectedIds = new Set(prevSelectedIds)
-      if (isChecked) {
-        newSelectedIds.add(tableId)
-      } else {
-        newSelectedIds.delete(tableId)
-      }
-      return newSelectedIds
-    })
-  }
-
+const DBTableList: React.FC<DBTableListProps> = ({
+  tables,
+  focusedTableId,
+  selectedTables,
+  handleCheckboxChange,
+  onTableSelect
+}) => {
   return (
     <>
       <div className="table-list-container shadow">
@@ -49,8 +41,11 @@ const DBTableList: React.FC<DBTableListProps> = ({ tables, focusedTableId, onTab
             >
               <input
                 type="checkbox"
-                checked={selectedTableIds.has(table.id)}
-                onChange={(e) => handleCheckboxChange(table.id, e.target.checked)}
+                checked={selectedTables.has(table.id)}
+                onChange={(e) => {
+                  handleCheckboxChange(table.id, e.target.checked)
+                  onTableSelect(table)
+                }}
                 onClick={(e) => e.stopPropagation()}
               />
               <div className="table-item-info">
@@ -66,7 +61,7 @@ const DBTableList: React.FC<DBTableListProps> = ({ tables, focusedTableId, onTab
         {/* --- 하단 선택 개수 --- */}
         <div className="list-footer preRegular14">
           <span>선택된 테이블</span>
-          <span>{selectedTableIds.size}개</span>
+          <span>{selectedTables.size}개</span>
         </div>
       </div>
 

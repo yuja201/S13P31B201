@@ -1,6 +1,8 @@
 import mysql from 'mysql2/promise'
 import { Client } from 'pg'
 import type { DatabaseSchema, Table, Column, ForeignKey, Index } from '../database/types'
+import { getDatabaseByProjectId } from '../database/databases'
+import { getDBMSById } from '../database/dbms'
 
 interface DatabaseConfig {
   dbType: 'MySQL' | 'PostgreSQL'
@@ -515,4 +517,41 @@ export async function fetchDatabaseSchema(config: DatabaseConfig): Promise<Datab
   } else {
     throw new Error(`지원하지 않는 데이터베이스: ${config.dbType}`)
   }
+}
+
+/**
+ * 프로젝트 ID 기반 스키마 조회 (AI Generator용)
+ * - getDatabaseByProjectId, getDBMSById를 사용하여 자동으로 연결 정보 구성
+ */
+export async function fetchSchema(projectId: number): Promise<Table[]> {
+  // 1. Database 정보 조회
+  const database = getDatabaseByProjectId(projectId)
+  if (!database) {
+    throw new Error(`Database not found for project: ${projectId}`)
+  }
+
+  // 2. DBMS 정보 조회
+  const dbms = getDBMSById(database.dbms_id)
+  if (!dbms) {
+    throw new Error(`DBMS not found: ${database.dbms_id}`)
+  }
+
+  // 3. URL 파싱
+  const [host, portStr] = database.url.split(':')
+  const port = parseInt(portStr || (dbms.name === 'MySQL' ? '3306' : '5432'), 10)
+
+  // 4. DatabaseConfig 구성
+  const config: DatabaseConfig = {
+    dbType: dbms.name as 'MySQL' | 'PostgreSQL',
+    host,
+    port,
+    username: database.username,
+    password: database.password,
+    database: database.database_name
+  }
+
+  // 5. 스키마 조회
+  const schema = await fetchDatabaseSchema(config)
+
+  return schema.tables
 }

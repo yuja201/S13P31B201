@@ -1,10 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import PageTitle from '@renderer/components/PageTitle'
 import Table from '@renderer/components/Table'
 import type { Column, Row } from '@renderer/components/Table'
 import Checkbox from '@renderer/components/Checkbox'
 import Button from '@renderer/components/Button'
-import Toast from '@renderer/components/Toast'
+import { useToastStore } from '@renderer/stores/toastStore'
 import type { FileType } from './FileUploadContent'
 import type { ParseOptions, ParsedFileResult } from './types'
 
@@ -29,9 +29,7 @@ const FilePreviewContent: React.FC<FilePreviewContentProps> = ({
   onBack,
   onNext
 }) => {
-  const [showToast, setShowToast] = useState(false)
-  const [toastMessage, setToastMessage] = useState('')
-
+  const showToast = useToastStore((s) => s.showToast)
   const columns: Column[] = parseResult?.columns ?? []
   const rows: Row[] = parseResult?.rows ?? []
   const totalRows = parseResult?.totalRows ?? 0
@@ -40,18 +38,9 @@ const FilePreviewContent: React.FC<FilePreviewContentProps> = ({
 
   useEffect(() => {
     if (parseResult?.error) {
-      setToastMessage(parseResult.error)
-      setShowToast(true)
+      showToast(parseResult.error, 'warning', '파일 오류')
     }
-  }, [parseResult?.error])
-
-  useEffect(() => {
-    if (showToast) {
-      const timer = setTimeout(() => setShowToast(false), 2500)
-      return () => clearTimeout(timer)
-    }
-    return undefined
-  }, [showToast])
+  }, [parseResult?.error, showToast])
 
   const fileExt = useMemo(() => fileType.toUpperCase(), [fileType])
 
@@ -141,12 +130,6 @@ const FilePreviewContent: React.FC<FilePreviewContentProps> = ({
           다음
         </Button>
       </div>
-
-      {showToast && (
-        <Toast type="warning" title="파일 오류">
-          {toastMessage}
-        </Toast>
-      )}
 
       <style>{`
         .file-content {

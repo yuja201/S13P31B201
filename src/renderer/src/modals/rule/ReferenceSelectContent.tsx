@@ -3,7 +3,7 @@ import PageTitle from '@renderer/components/PageTitle'
 import Button from '@renderer/components/Button'
 import { useProjectStore } from '@renderer/stores/projectStore'
 import { ColumnDetail } from '@renderer/views/CreateDummyView'
-import { RuleResult } from './RuleModal'
+import { RuleSelection } from './RuleSelectContent'
 
 type ReferenceStrategy = 'RANDOM_SAMPLE' | 'FIXED_VALUE'
 type SampleState = { status: 'idle' | 'loading' | 'success' | 'error'; value: string }
@@ -12,7 +12,7 @@ type ValidationState = 'idle' | 'loading' | 'valid' | 'invalid'
 interface ReferenceSelectContentProps {
   column: ColumnDetail
   onCancel: () => void
-  onConfirm: (result: RuleResult) => void
+  onConfirm: (result: RuleSelection) => void
 }
 
 const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
@@ -57,7 +57,7 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
     return { status: 'idle', value: '' }
   })
 
-  // 무작위 샘플링 
+  // 무작위 샘플링
   useEffect(() => {
     if (strategy === 'RANDOM_SAMPLE' && databaseId) {
       if (column.generation === '참조' && column.previewValue) {
@@ -79,11 +79,17 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
           setSamplePreview({ status: 'error', value: '샘플 로딩 실패' })
         })
     }
+  }, [
+    strategy,
+    referencedTableName,
+    referencedColumnName,
+    databaseId,
+    column.generation,
+    column.previewValue
+  ])
 
-  }, [strategy, referencedTableName, referencedColumnName, databaseId, column.generation, column.previewValue])
-
-  //  고정값 검증 
-  const handleValidateValue = () => {
+  //  고정값 검증
+  const handleValidateValue = (): void => {
     if (!searchValue.trim()) {
       alert('검색할 값을 입력하세요.')
       return
@@ -119,25 +125,28 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
   // 저장 로직
   const handleSave = (): void => {
     if (strategy === 'RANDOM_SAMPLE') {
-
       if (samplePreview.status === 'error') {
         alert('샘플 로딩에 실패했지만, "무작위 샘플링" 규칙은 저장됩니다.')
       }
       onConfirm({
-        generation: '참조',
-        setting: `${referencedTableName}.${referencedColumnName}`,
-        previewValue: samplePreview.value
-      } as RuleResult)
-
+        columnName: column.name,
+        dataSource: 'REFERENCE',
+        metaData: {
+          refTable: referencedTableName,
+          refColumn: referencedColumnName,
+          previewValue: samplePreview.value,
+          fixedValue: samplePreview.value
+        }
+      })
     } else {
-
       if (validationState !== 'valid') {
         alert('유효한 값을 입력하고 "검증하기"를 완료해야 합니다.')
         return
       }
       onConfirm({
-        generation: '고정값',
-        setting: searchValue
+        columnName: column.name,
+        dataSource: 'FIXED',
+        metaData: { fixedValue: searchValue }
       })
     }
   }
@@ -211,7 +220,9 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
               />
               <div className="radio-label">
                 <span className="preSemiBold16">무작위 샘플링 (권장)</span>
-                <span className="preRegular14">{referencedTableName} 테이블의 값 중 무작위 선택</span>
+                <span className="preRegular14">
+                  {referencedTableName} 테이블의 값 중 무작위 선택
+                </span>
               </div>
             </label>
             {/* 옵션 2: 고정값 */}

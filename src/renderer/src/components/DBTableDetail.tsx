@@ -1,45 +1,50 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
 import { TableInfo, ColumnDetail } from '@renderer/views/CreateDummyView'
 import Button from '@renderer/components/Button'
 import FileModal from '@renderer/modals/file/FileModal'
-import { useGenerationStore, RuleResult } from '@renderer/stores/generationStore'
+import { useGenerationStore } from '@renderer/stores/generationStore'
 import type { FileModalApplyPayload } from '@renderer/modals/file/types'
-import RuleModal, { RuleResult as ModalRuleResult } from '@renderer/modals/rule/RuleModal'
+import RuleModal, { RuleResult } from '@renderer/modals/rule/RuleModal'
 
 type DBTableDetailProps = {
   table: TableInfo
+  onColumnUpdate: (columnName: string, generation: string, setting: string) => void
+  onGenerateData: () => void
+  isAllReady: boolean
+  hasMissing?: boolean
+  warningMessage?: string
 }
 
-const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
-  const navigate = useNavigate()
-  const { projectId } = useParams<{ projectId: string }>()
-
+const TableDetail: React.FC<DBTableDetailProps> = ({
+  table,
+  onColumnUpdate,
+  onGenerateData,
+  isAllReady,
+  hasMissing,
+  warningMessage
+}) => {
   const tableGenerationConfig = useGenerationStore((state) => state.tables[table.name])
-  const setTableRecordCount = useGenerationStore((state) => state.setTableRecordCount)
   const applyFileMapping = useGenerationStore((state) => state.applyFileMapping)
-  const setColumnRule = useGenerationStore((state) => state.setColumnRule)
 
-  const [rows, setRows] = useState(1000)
-
-  useEffect(() => {
-    if (
-      tableGenerationConfig?.recordCnt !== undefined &&
-      tableGenerationConfig.recordCnt !== rows
-    ) {
-      setRows(tableGenerationConfig.recordCnt)
-    }
-  }, [tableGenerationConfig?.recordCnt, rows])
-
-  useEffect(() => {
-    setTableRecordCount(table.name, rows)
-  }, [rows, setTableRecordCount, table.name])
+  const getTableRecordCount = useGenerationStore((s) => s.getTableRecordCount)
+  const setTableRecordCount = useGenerationStore((s) => s.setTableRecordCount)
+  const [rows, setRows] = useState<number>(() => getTableRecordCount(table.name))
 
   const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false)
   const [isRuleModalOpen, setIsRuleModalOpen] = useState(false)
   const [selectedColumn, setSelectedColumn] = useState<ColumnDetail | null>(null)
 
-  // FileUploadModal
+  useEffect(() => {
+    setRows(getTableRecordCount(table.name))
+  }, [table.name])
+
+  useEffect(() => {
+    if (!tableGenerationConfig) return
+    setTableRecordCount(table.name, rows)
+  }, [rows])
+
+  // ----------------------------
+  // File Upload Modal
   const openFileUploadModal = (): void => {
     setIsFileUploadModalOpen(true)
   }
@@ -49,7 +54,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
   }
 
   const handleFileMappingApply = useCallback(
-    (payload: FileModalApplyPayload) => {
+    (payload: FileModalApplyPayload): void => {
       applyFileMapping(table.name, payload)
       if (payload.recordCount !== undefined) {
         setRows(payload.recordCount)
@@ -59,7 +64,8 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
     [applyFileMapping, table.name]
   )
 
-  // 생성방식 선택 버튼
+  // ----------------------------
+  // Rule Modal
   const handleSelectGenerationClick = (column: ColumnDetail): void => {
     setSelectedColumn(column)
     setIsRuleModalOpen(true)
@@ -70,15 +76,21 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
     setSelectedColumn(null)
   }
 
-  const handleGenerateData = (): void => {
-    navigate(`/main/select-method/${projectId}/${table.id}`)
+  const handleRuleConfirm = (result: RuleResult): void => {
+    if (!selectedColumn) return
+    onColumnUpdate(selectedColumn.name, result.generation, result.setting)
+    closeRuleModal()
   }
 
-  const handleRuleConfirm = (result: ModalRuleResult): void => {
-    if (!selectedColumn) return
+  // ----------------------------
+  // Input handlers
 
-    setColumnRule(table.name, selectedColumn.name, result as RuleResult)
-    closeRuleModal()
+  const handleRowsChange = (value: number): void => {
+    const MAX_ROWS = 50_000_000
+    const normalized = Number.isFinite(value) ? Math.trunc(value) : 1
+    const safeValue = Math.min(Math.max(1, normalized), MAX_ROWS)
+    setRows(safeValue)
+    setTableRecordCount(table.name, safeValue)
   }
 
   const displayColumnDetails = useMemo(() => {
@@ -89,8 +101,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
 
       if (config) {
         let generation = '',
-          setting = '',
-          previewValue = null
+          setting = ''
 
         switch (config.dataSource) {
           case 'FILE':
@@ -101,9 +112,9 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
               setting = '파일 매핑'
             }
             break
-          case 'MANUAL':
+          case 'FIXED':
             generation = '고정값'
-            if (config.metaData.kind === 'manual') {
+            if (config.metaData.kind === 'fixed') {
               setting = config.metaData.fixedValue
             } else {
               setting = '고정값'
@@ -125,16 +136,14 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
             generation = '참조'
             if (config.metaData.kind === 'reference') {
               setting = `${config.metaData.refTable}.${config.metaData.refColumn}`
-              previewValue = config.metaData.previewValue
             } else {
               setting = '참조 설정됨'
             }
             break
         }
 
-        return { ...col, generation, setting, previewValue }
+        return { ...col, generation, setting }
       }
-
       return col
     })
   }, [table.columnDetails, tableGenerationConfig?.columns])
@@ -158,10 +167,12 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
               <input
                 type="number"
                 value={rows}
-                onChange={(e) => setRows(Number(e.target.value))}
+                onChange={(e) => handleRowsChange(Number(e.target.value))}
                 placeholder="e.g., 1,000"
                 className="preMedium16 shadow"
                 step="100"
+                min={1}
+                max={50000000}
               />
             </div>
             <Button
@@ -273,12 +284,17 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
               </tbody>
             </table>
           </div>
+          {/* 데이터 생성 버튼 위 경고문 */}
+          {hasMissing && warningMessage && (
+            <div className="validation-warning">{warningMessage}</div>
+          )}
 
           <Button
             variant="blue"
             size="md"
-            style={{ width: '100%', marginTop: '24px', padding: '12px' }}
-            onClick={handleGenerateData}
+            style={{ width: '100%', marginTop: '8px', padding: '12px' }}
+            onClick={onGenerateData}
+            disabled={!isAllReady}
           >
             데이터 생성
           </Button>
@@ -297,6 +313,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
       />
       {isRuleModalOpen && selectedColumn && (
         <RuleModal
+          tableName={table.name}
           isOpen={isRuleModalOpen}
           onClose={closeRuleModal}
           column={selectedColumn}
@@ -304,6 +321,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
         />
       )}
 
+      {/* --- 스타일 그대로 유지 --- */}
       <style>{`
         .table-detail-container{
           flex-grow: 1;
@@ -411,6 +429,17 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
           font-weight: 600;
 
         }
+        .validation-warning {
+          background-color: var(--color-light-yellow);
+          color: var(--color-black);
+          border: 1px solid var(--color-orange);
+          border-radius: 8px;
+          padding: 10px 12px;
+          text-align: center;
+          font: var(--preMedium14);
+          margin-top: 16px;
+          margin-bottom: 20px;
+        }
         .badge-pk { background-color: #FFFBEB; color: #B45309; }
         .badge-fk { background-color: #EFF6FF; color: #1D4ED8; }
         .badge-not { background-color: #FEF2F2; color: #B91C1C; }
@@ -420,7 +449,6 @@ const TableDetail: React.FC<DBTableDetailProps> = ({ table }) => {
         .badge-auto-increment { background-color: #F0FDFA; color: #0F766E; } 
         .badge-default { background-color: #F3F4F6; color: #4B5563; }
         .badge-domain { background-color: #FFF7ED; color: #EA580C; } 
-        
       `}</style>
     </>
   )

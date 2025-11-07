@@ -1,3 +1,8 @@
+import {
+  FakerRuleInput,
+  AIRuleInput,
+  GenerationResult
+} from './../main/services/data-generator/types'
 import { ElectronAPI } from '@electron-toolkit/preload'
 import type {
   DBMS,
@@ -14,6 +19,7 @@ import type {
   RuleUpdate,
   DatabaseSchema
 } from '../main/database/types'
+import type { GenerateRequest, GenerationResult } from '../main/services/data-generator/types'
 
 interface API {
   dbms: {
@@ -29,6 +35,7 @@ interface API {
     create: (data: ProjectInput) => Promise<Project>
     update: (data: ProjectUpdate) => Promise<Project | undefined>
     delete: (id: number) => Promise<boolean>
+    updateUpdatedAt: (id: number) => Promise<Project | undefined>
   }
   database: {
     getAll: () => Promise<Database[]>
@@ -46,6 +53,8 @@ interface API {
     create: (data: RuleInput) => Promise<Rule>
     update: (data: RuleUpdate) => Promise<Rule | undefined>
     delete: (id: number) => Promise<boolean>
+    createFaker: (data: FakerRuleInput) => Promise<Rule>
+    createAI: (data: AIRuleInput) => Promise<Rule>
   }
   testConnection: (config: {
     dbType: 'MySQL' | 'PostgreSQL'
@@ -96,9 +105,23 @@ interface API {
     }
   }
   dataGenerator: {
-    generate: (payload: unknown) => Promise<unknown>
+    generate: (payload: GenerateRequest) => Promise<GenerationResult>
     onProgress: (callback: (msg: unknown) => void) => void
     removeProgressListeners: () => void
+    downloadZip: (zipPath: string) => void
+  }
+  env: {
+    updateApiKey: (key: string, value: string) => Promise<{ success: boolean; error?: string }>
+    load: () => Promise<Record<string, string>>
+    getPath: () => Promise<string>
+    openFolder: () => Promise<void>
+  }
+  logger: {
+    debug: (...args: unknown[]) => void
+    info: (...args: unknown[]) => void
+    warn: (...args: unknown[]) => void
+    error: (...args: unknown[]) => void
+    verbose: (...args: unknown[]) => void
   }
 }
 

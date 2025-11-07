@@ -14,6 +14,10 @@ interface CardProps {
   width?: number | string
   height?: number | string
   onClick?: () => void
+  option?: {
+    icon: React.ReactNode
+    onClick: (e: React.MouseEvent) => void
+  }
 }
 
 const Card: React.FC<CardProps> = ({
@@ -26,7 +30,8 @@ const Card: React.FC<CardProps> = ({
   lastUpdated,
   width = 400,
   height = 'auto',
-  onClick
+  onClick,
+  option
 }) => {
   return (
     <>
@@ -43,6 +48,7 @@ const Card: React.FC<CardProps> = ({
             box-shadow: var(--shadow);
             transition: box-shadow 0.2s ease, transform 0.2s ease;
             cursor: pointer;
+            position: relative;
           }
 
           .card:hover {
@@ -56,6 +62,28 @@ const Card: React.FC<CardProps> = ({
             align-items: flex-start;
             gap: 16px;
             margin-bottom: 16px;
+            width: 100%;
+          }
+
+          .card-option-button {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 8px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--color-dark-gray);
+            transition: background-color 0.2s ease, color 0.2s ease;
+          }
+
+          .card-option-button:hover {
+            background-color: rgba(0, 0, 0, 0.05);
+            color: var(--color-black);
           }
 
           .card-title {
@@ -105,6 +133,11 @@ const Card: React.FC<CardProps> = ({
       </style>
 
       <div className="card" style={{ width, height }} onClick={onClick}>
+        {option && (
+          <button className="card-option-button" onClick={option.onClick} aria-label="Options">
+            {option.icon}
+          </button>
+        )}
         <div className="card-header">
           <h2 className="card-title">{name}</h2>
           <span className="card-badge">{dbType}</span>

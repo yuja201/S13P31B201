@@ -1,29 +1,34 @@
 import React, { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import PageTitle from '@renderer/components/PageTitle'
 import { ArrowLeft } from 'react-feather'
+import { useGenerationStore } from '@renderer/stores/generationStore'
 
 const SelectMethodView: React.FC = () => {
   const navigate = useNavigate()
-  const [isHover, setIsHover] = useState(false)
+  const location = useLocation()
+  const { projectId } = useParams<{ projectId: string }>()
+  useGenerationStore()
 
+  const selectedTables =
+    (location.state as { tables?: Array<{ id: string; name: string }> } | undefined)?.tables ?? []
+
+  const [skipInvalidRows, setSkipInvalidRows] = useState(true)
+  const [isHover, setIsHover] = useState(false)
   const baseColor = 'var(--color-dark-gray)'
   const hoverColor = 'var(--color-black)'
 
   return (
     <div className="flex flex-col">
-      {/* 상단 타이틀 */}
       <div style={{ marginBottom: '40px' }}>
         <PageTitle
-          title="더미데이터 생성"
+          title="더미 데이터 생성"
           description={
-            '생성 방식을 선택하세요.\n' +
-            'SQL 스크립트를 생성하거나, 연결된 DB에 직접 삽입할 수 있습니다.'
+            '생성 방식을 선택해주세요.\nSQL 스크립트를 생성하거나 연결된 DB에 직접 삽입할 수 있습니다.'
           }
         />
       </div>
 
-      {/* 이전으로 */}
       <div
         onClick={() => navigate(-1)}
         onMouseEnter={() => setIsHover(true)}
@@ -44,11 +49,14 @@ const SelectMethodView: React.FC = () => {
         <span className="preRegular16">이전으로</span>
       </div>
 
-      {/* 카드 선택 영역 */}
       <div style={{ display: 'flex', gap: 40 }}>
-        {/* INSERT SQL 생성하기 */}
+        {/* SQL 생성 */}
         <div
-          onClick={() => {}}
+          onClick={() =>
+            navigate(`/main/insert/sql/${projectId}`, {
+              state: { tables: selectedTables, mode: 'sql', skipInvalidRows }
+            })
+          }
           style={{
             width: 500,
             height: 160,
@@ -63,24 +71,24 @@ const SelectMethodView: React.FC = () => {
             justifyContent: 'center',
             transition: 'all 0.25s ease'
           }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'var(--color-light-blue)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'var(--color-white)'
-          }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-light-blue)')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-white)')}
         >
           <p className="preSemiBold20" style={{ color: 'var(--color-black)', marginBottom: 8 }}>
             INSERT SQL 생성하기
           </p>
           <p className="preRegular18" style={{ color: 'var(--color-dark-gray)' }}>
-            더미데이터 삽입을 위한 SQL문을 생성할게요.
+            더미 데이터 삽입용 SQL 문서를 생성합니다.
           </p>
         </div>
 
-        {/* 바로 DB에 삽입하기 */}
+        {/* DB 직접 삽입 */}
         <div
-          onClick={() => {}}
+          onClick={() =>
+            navigate(`/main/insert/sql/${projectId}`, {
+              state: { tables: selectedTables, mode: 'db', skipInvalidRows }
+            })
+          }
           style={{
             width: 500,
             height: 160,
@@ -95,21 +103,28 @@ const SelectMethodView: React.FC = () => {
             justifyContent: 'center',
             transition: 'all 0.25s ease'
           }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.backgroundColor = 'var(--color-light-blue)'
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.backgroundColor = 'var(--color-white)'
-          }}
+          onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-light-blue)')}
+          onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'var(--color-white)')}
         >
           <p className="preSemiBold20" style={{ color: 'var(--color-black)', marginBottom: 8 }}>
             바로 DB에 삽입하기
           </p>
           <p className="preRegular18" style={{ color: 'var(--color-dark-gray)' }}>
-            연결된 DB에 바로 더미데이터를 삽입할게요.
+            연결된 데이터베이스에 즉시 더미 데이터를 삽입합니다.
           </p>
         </div>
       </div>
+      {/* 오류 행 자동 건너뛰기 (기본값 ON) */}
+      <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 30 }}>
+        <input
+          type="checkbox"
+          checked={skipInvalidRows}
+          onChange={(e) => setSkipInvalidRows(e.target.checked)}
+        />
+        <span className="preRegular16" style={{ color: 'var(--color-dark-gray)' }}>
+          오류 행 자동 건너뛰기 (권장)
+        </span>
+      </label>
     </div>
   )
 }

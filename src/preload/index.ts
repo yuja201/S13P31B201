@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import log from 'electron-log/renderer'
 import type {
   DBMS,
   DBMSInput,
@@ -15,7 +16,13 @@ import type {
   RuleUpdate,
   DatabaseSchema
 } from '../main/database/types'
-import { GenerationInput } from '../main/services/types'
+
+import {
+  FakerRuleInput,
+  AIRuleInput,
+  GenerateRequest,
+  GenerationResult
+} from '../main/services/data-generator/types'
 
 // Custom APIs for renderer
 const api = {
@@ -37,7 +44,9 @@ const api = {
     create: (data: ProjectInput): Promise<Project> => ipcRenderer.invoke('db:project:create', data),
     update: (data: ProjectUpdate): Promise<Project | undefined> =>
       ipcRenderer.invoke('db:project:update', data),
-    delete: (id: number): Promise<boolean> => ipcRenderer.invoke('db:project:delete', id)
+    delete: (id: number): Promise<boolean> => ipcRenderer.invoke('db:project:delete', id),
+    updateUpdatedAt: (id: number): Promise<Project | undefined> =>
+      ipcRenderer.invoke('db:project:updateUpdatedAt', id)
   },
 
   // Database operations
@@ -65,7 +74,10 @@ const api = {
     create: (data: RuleInput): Promise<Rule> => ipcRenderer.invoke('db:rule:create', data),
     update: (data: RuleUpdate): Promise<Rule | undefined> =>
       ipcRenderer.invoke('db:rule:update', data),
-    delete: (id: number): Promise<boolean> => ipcRenderer.invoke('db:rule:delete', id)
+    delete: (id: number): Promise<boolean> => ipcRenderer.invoke('db:rule:delete', id),
+    createFaker: (data: FakerRuleInput): Promise<Rule> =>
+      ipcRenderer.invoke('db:rule:createFaker', data),
+    createAI: (data: AIRuleInput): Promise<Rule> => ipcRenderer.invoke('db:rule:createAI', data)
   },
 
   // Database connection test
@@ -123,13 +135,33 @@ const api = {
 
   // dataGenerator operations
   dataGenerator: {
-    generate: (payload: GenerationInput) => ipcRenderer.invoke('gen:dummy:bulk', payload),
+    generate: (payload: GenerateRequest): Promise<GenerationResult> =>
+      ipcRenderer.invoke('gen:dummy:bulk', payload),
     onProgress: (callback: (msg: unknown) => void) => {
-      ipcRenderer.on('data-generator:progress', (_, msg) => callback(msg))
+      ipcRenderer.on('data-generator:progress', (_, msg) => {
+        callback(msg)
+      })
     },
     removeProgressListeners: () => {
       ipcRenderer.removeAllListeners('data-generator:progress')
+    },
+    downloadZip: (zipPath: string) => {
+      ipcRenderer.invoke('gen:dummy:download', zipPath)
     }
+  },
+  env: {
+    updateApiKey: (key: string, value: string) =>
+      ipcRenderer.invoke('env:update-api-key', { key, value }),
+    load: () => ipcRenderer.invoke('env:load'),
+    getPath: () => ipcRenderer.invoke('env:get-path'),
+    openFolder: () => ipcRenderer.invoke('env:open-folder')
+  },
+  logger: {
+    debug: (...args: unknown[]) => log.debug(...args),
+    info: (...args: unknown[]) => log.info(...args),
+    warn: (...args: unknown[]) => log.warn(...args),
+    error: (...args: unknown[]) => log.error(...args),
+    verbose: (...args: unknown[]) => log.verbose(...args)
   }
 }
 
@@ -140,8 +172,13 @@ if (process.contextIsolated) {
   try {
     contextBridge.exposeInMainWorld('electron', electronAPI)
     contextBridge.exposeInMainWorld('api', api)
+    contextBridge.exposeInMainWorld('env', {
+      OPENAI_API_KEY: process.env.OPENAI_API_KEY || null,
+      ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || null,
+      GOOGLE_API_KEY: process.env.GOOGLE_API_KEY || null
+    })
   } catch (error) {
-    console.error(error)
+    log.error('Failed to set up contextBridge:', error)
   }
 } else {
   // @ts-ignore (define in dts)

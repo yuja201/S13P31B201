@@ -1,18 +1,22 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import SimpleCard from '@renderer/components/SimpleCard'
 import InputField from '@renderer/components/InputField'
 import PageTitle from '@renderer/components/PageTitle'
 import SelectDomain from '@renderer/components/SelectDomain'
 import Button from '@renderer/components/Button'
+import { useToastStore } from '@renderer/stores/toastStore'
 
 export interface RuleCreationData {
-  source: 'faker' | 'ai'
+  source: 'FAKER' | 'AI'
   settingName: string
   apiToken?: string
   prompt?: string
   model?: string
   columnType?: string
   columnName?: string
+  result?: number
+  domainId?: number
+  domainName?: string
 }
 
 interface RuleCreationContentProps {
@@ -28,28 +32,119 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
   onCancel,
   onSubmit
 }) => {
-  const [selectedSource, setSelectedSource] = useState<'faker' | 'ai'>('faker')
+  const [selectedSource, setSelectedSource] = useState<'FAKER' | 'AI'>('FAKER')
   const [settingName, setSettingName] = useState('')
+  const showToast = useToastStore((s) => s.showToast)
   const [apiToken, setApiToken] = useState('')
   const [prompt, setPrompt] = useState('')
-  const [selectedModel, setSelectedModel] = useState('OpenAI GPT-4o')
+  const [selectedModel, setSelectedModel] = useState('1')
+  const [selectedDomain, setSelectedDomain] = useState<{ id: number; name: string } | null>(null)
 
-  const handleSubmit = (): void => {
+  const validateRequiredFields = (): boolean => {
     if (!settingName.trim()) {
-      alert('설정 이름을 입력하세요.')
-      return
+      showToast('설정 이름을 입력하세요.', 'warning', '입력 오류')
+      return false
+    }
+    if (!selectedDomain) {
+      showToast('도메인을 선택하세요.', 'warning', '입력 오류')
+      return false
+    }
+    if (selectedSource === 'AI') {
+      if (!apiToken.trim()) {
+        showToast('API 토큰을 입력하세요.', 'warning', '입력 오류')
+        return false
+      }
+      if (prompt.length > 500) {
+        showToast('프롬프트는 500자 이내로 입력하세요.', 'warning', '입력 오류')
+        return false
+      }
+    }
+    return true
+  }
+
+  const handleSubmit = async (): Promise<void> => {
+    if (!validateRequiredFields()) return
+
+    if (selectedSource === 'AI' && apiToken.trim()) {
+      let envKey = ''
+      if (selectedModel === '1') envKey = 'OPENAI_API_KEY'
+      else if (selectedModel === '2') envKey = 'ANTHROPIC_API_KEY'
+      else if (selectedModel === '3') envKey = 'GOOGLE_API_KEY'
+
+      if (envKey) {
+        const result = await window.api.env.updateApiKey(envKey, apiToken)
+        if (!result.success) {
+          console.error('Failed to save API key:', result.error)
+        }
+      }
     }
 
-    onSubmit?.({
-      source: selectedSource,
-      settingName,
-      apiToken,
-      prompt,
-      model: selectedModel,
-      columnType,
-      columnName
-    })
+    try {
+      if (selectedSource === 'FAKER') {
+        const result = await window.api.rule.createFaker({
+          name: settingName,
+          domain: selectedDomain!.id
+        })
+
+        onSubmit?.({
+          source: selectedSource,
+          settingName,
+          columnType,
+          columnName,
+          result: result.id,
+          domainId: selectedDomain!.id,
+          domainName: selectedDomain!.name
+        })
+
+        showToast('Faker 규칙이 저장되었습니다.', 'success', '성공')
+      } else if (selectedSource === 'AI') {
+        const result = await window.api.rule.createAI({
+          name: settingName,
+          domain: selectedDomain!.id,
+          model_id: Number(selectedModel),
+          token: apiToken,
+          prompt
+        })
+
+        onSubmit?.({
+          source: selectedSource,
+          settingName,
+          apiToken,
+          prompt,
+          model: selectedModel,
+          columnType,
+          columnName,
+          result: result.id,
+          domainId: selectedDomain!.id,
+          domainName: selectedDomain!.name
+        })
+
+        showToast('AI 규칙이 저장되었습니다.', 'success', '성공')
+      }
+
+      onCancel()
+    } catch (err) {
+      console.error(err)
+      showToast('규칙 저장 중 오류가 발생했습니다.', 'warning', '저장 실패')
+    }
   }
+
+  useEffect(() => {
+    if (selectedSource === 'AI') {
+      let autoToken = ''
+      if (selectedModel === '1' && window.env?.OPENAI_API_KEY) {
+        autoToken = window.env.OPENAI_API_KEY
+      } else if (selectedModel === '2' && window.env?.ANTHROPIC_API_KEY) {
+        autoToken = window.env.ANTHROPIC_API_KEY
+      } else if (selectedModel === '3' && window.env?.GOOGLE_API_KEY) {
+        autoToken = window.env.GOOGLE_API_KEY
+      }
+      setApiToken(autoToken)
+    } else {
+      setApiToken('')
+      setPrompt('')
+    }
+  }, [selectedModel, selectedSource])
 
   return (
     <div className="rule-create">
@@ -98,25 +193,25 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
           <SimpleCard
             title="Faker.js 생성"
             description="무작위 데이터를 생성해요"
-            selected={selectedSource === 'faker'}
-            onSelect={() => setSelectedSource('faker')}
+            selected={selectedSource === 'FAKER'}
+            onSelect={() => setSelectedSource('FAKER')}
           />
           <SimpleCard
             title="AI 생성"
             description="진짜 같은 데이터를 생성해요"
-            selected={selectedSource === 'ai'}
-            onSelect={() => setSelectedSource('ai')}
+            selected={selectedSource === 'AI'}
+            onSelect={() => setSelectedSource('AI')}
           />
         </div>
       </div>
 
       {/* 도메인 선택 */}
       <div style={{ width: '100%', overflow: 'hidden' }}>
-        <SelectDomain />
+        <SelectDomain source={selectedSource} onChange={(value) => setSelectedDomain(value)} />
       </div>
 
       {/* AI 생성 선택 시에만 표시되는 섹션 */}
-      {selectedSource === 'ai' && (
+      {selectedSource === 'AI' && (
         <>
           {/* 모델 선택 */}
           <div className="rule-create__section">
@@ -143,9 +238,9 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
                 boxSizing: 'border-box'
               }}
             >
-              <option value="OpenAI GPT-4o">OpenAI GPT-4o</option>
-              <option value="Claude 3.5">Claude 3.5</option>
-              <option value="Gemini 1.5 Pro">Gemini 1.5 Pro</option>
+              <option value="1">OpenAI GPT-4.1 Mini</option>
+              <option value="2">Claude 3.5 Haiku</option>
+              <option value="3">Gemini 2.0 Flash</option>
             </select>
           </div>
 
@@ -196,7 +291,6 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
           padding: 0 14px 14px 0;
         }
 
-        /* 상단 타입 */
         .rule-create__type {
           font-family: var(--font-family);
           font-size: 20px;

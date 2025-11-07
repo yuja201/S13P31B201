@@ -3,10 +3,11 @@ import { useNavigate } from 'react-router-dom'
 import SearchBox from '@renderer/components/SearchBox'
 import Card from '@renderer/components/Card'
 import CreateProjectModal from '@renderer/modals/CreateProjectModal'
-import { IoFilterOutline } from 'react-icons/io5'
+import { IoFilterOutline, IoTrashOutline } from 'react-icons/io5'
 import { formatRelativeTime } from '@renderer/utils/timeFormat'
 import { useProjectStore, ProjectWithDetails } from '@renderer/stores/projectStore'
-
+import { useToastStore } from '@renderer/stores/toastStore'
+import { useConfirmStore } from '@renderer/stores/confirmStore'
 
 const MainView: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
@@ -17,6 +18,8 @@ const MainView: React.FC = () => {
   const projects = useProjectStore((state) => state.projects)
   const setProjects = useProjectStore((state) => state.setProjects)
   const setSelectedProject = useProjectStore((state) => state.setSelectedProject)
+  const showToast = useToastStore((state) => state.showToast)
+  const showConfirm = useConfirmStore((state) => state.showConfirm)
 
   const [loading, setLoading] = useState(true)
   const navigate = useNavigate()
@@ -44,19 +47,15 @@ const MainView: React.FC = () => {
 
       setProjects(projectsWithDB)
     } catch (error) {
-      console.error('프로젝트 로드 중 오류:', error)
+      window.api.logger.error('프로젝트 로드 중 오류:', error)
     } finally {
       setLoading(false)
     }
   }, [setProjects])
 
   useEffect(() => {
-    if (projects.length === 0) {
-      loadProjects()
-    } else {
-      setLoading(false)
-    }
-  }, [loadProjects, projects.length])
+    loadProjects()
+  }, [loadProjects])
 
   // 필터링된 프로젝트 목록
   const filteredProjects = projects
@@ -99,7 +98,7 @@ const MainView: React.FC = () => {
 
       navigate(`/main/dashboard/${projectId}`)
     } catch (error) {
-      console.error('프로젝트 선택 중 오류:', error)
+      window.api.logger.error('프로젝트 선택 중 오류:', error)
     }
   }
 
@@ -114,6 +113,38 @@ const MainView: React.FC = () => {
 
   const getSortLabel = (): string => {
     return sortOption === 'created' ? '생성일순' : sortOption === 'name' ? '이름순' : '수정일순'
+  }
+
+  const handleDeleteProject = (
+    e: React.MouseEvent,
+    projectId: number,
+    projectName: string
+  ): void => {
+    e.stopPropagation()
+
+    showConfirm(
+      `"${projectName}" 프로젝트를 삭제하시겠습니까?`,
+      async () => {
+        try {
+          const success = await window.api.project.delete(projectId)
+          if (success) {
+            showToast('프로젝트가 삭제되었습니다.', 'success', '삭제 성공')
+            await loadProjects()
+          } else {
+            window.api.logger.warn(`프로젝트 삭제 실패: ${projectName} (ID: ${projectId})`)
+            showToast('프로젝트 삭제에 실패했습니다.', 'error', '삭제 실패')
+          }
+        } catch (error) {
+          window.api.logger.error('프로젝트 삭제 중 오류:', error)
+          showToast('프로젝트 삭제 중 오류가 발생했습니다.', 'error', '삭제 실패')
+        }
+      },
+      {
+        title: '프로젝트 삭제',
+        confirmText: '삭제',
+        cancelText: '취소'
+      }
+    )
   }
 
   return (
@@ -155,8 +186,9 @@ const MainView: React.FC = () => {
                   ].map((option) => (
                     <div
                       key={option.key}
-                      className={`dropdown-item preRegular14 ${sortOption === option.key ? 'active' : ''
-                        }`}
+                      className={`dropdown-item preRegular14 ${
+                        sortOption === option.key ? 'active' : ''
+                      }`}
                       onClick={() =>
                         handleSortChange(option.key as 'modified' | 'created' | 'name')
                       }
@@ -207,6 +239,10 @@ const MainView: React.FC = () => {
                   key={project.id}
                   {...cardProps}
                   onClick={() => goToProject(project.id)}
+                  option={{
+                    icon: <IoTrashOutline size={20} />,
+                    onClick: (e) => handleDeleteProject(e, project.id, project.name)
+                  }}
                 />
               )
             })

@@ -1,7 +1,32 @@
 import { createAIGateway } from './ai/ai-factory'
-import { AIGenRequest, AIGenResult, ColumnSchemaInfo } from './types'
+import { AIGenRequest, AIGenResult, ColumnSchemaInfo, SqlDbType } from './types'
 import { getDomainGuideline } from './ai/domain-config'
 import { buildAjvValidator, enforceUniqueness, parseValuesArray } from '../../utils/validators'
+import { resolveModel } from './ai/model-map'
+import type { Column as SchemaColumn, Table } from '../../database/types'
+
+/**
+ * AI 스트림 생성 요청 파라미터
+ */
+export interface AIStreamGenerateRequest {
+  projectId: number
+  tableName: string
+  columnName: string
+  recordCnt: number
+  metaData: {
+    ruleId: number
+  }
+  schema: Table[]
+  database: {
+    id: number
+    dbms_name: string
+  }
+  rule: {
+    id: number
+    domain_name: string
+    model_id: number | null
+  }
+}
 
 /**
  * JSON Schema + Prompt 생성
@@ -145,6 +170,158 @@ function fallbackValues(domainName: string | undefined, count: number): string[]
     arr.push(`data_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`)
   }
   return arr
+}
+
+/**
+ * SQL 타입에서 제약조건 추출
+ */
+function extractConstraintsFromSqlType(
+  sqlType: string,
+  columnData: SchemaColumn
+): Record<string, unknown> {
+  const constraints: {
+    notNull?: boolean
+    unique?: boolean
+    maxLength?: number
+    numericRange?: { min?: number; max?: number }
+    enumValues?: string[]
+  } = {
+    notNull: columnData.notNull || false,
+    unique: columnData.unique || false
+  }
+
+  // VARCHAR(255) → maxLength: 255
+  const varcharMatch = sqlType.match(/VARCHAR\((\d+)\)/i)
+  if (varcharMatch) {
+    constraints.maxLength = parseInt(varcharMatch[1], 10)
+  }
+
+  // CHAR(10) → maxLength: 10
+  const charMatch = sqlType.match(/CHAR\((\d+)\)/i)
+  if (charMatch) {
+    constraints.maxLength = parseInt(charMatch[1], 10)
+  }
+
+  // INT, DECIMAL 등 숫자 타입
+  if (/INT|DECIMAL|NUMERIC|FLOAT|DOUBLE/i.test(sqlType)) {
+    constraints.numericRange = {}
+    // CHECK 제약조건에서 범위 추출 가능
+    if (columnData.check) {
+      const checkStr = columnData.check
+      const minMatch = checkStr.match(/>=?\s*(\d+)/)
+      const maxMatch = checkStr.match(/<=?\s*(\d+)/)
+      if (minMatch) constraints.numericRange.min = parseInt(minMatch[1], 10)
+      if (maxMatch) constraints.numericRange.max = parseInt(maxMatch[1], 10)
+    }
+  }
+
+  // ENUM
+  if (columnData.enum && Array.isArray(columnData.enum)) {
+    constraints.enumValues = columnData.enum
+  }
+
+  return constraints
+}
+
+/**
+ * AI 스트리밍 생성기 (1행씩 yield)
+ * - 배치 단위로 AI 생성 후, 한 행씩 yield
+ * - Worker에서 for-await-of로 순회하면서 바로 파일에 씀
+ */
+export async function* generateAIStream({
+  tableName,
+  columnName,
+  recordCnt,
+  schema,
+  database,
+  rule
+}: AIStreamGenerateRequest): AsyncGenerator<string, void, unknown> {
+  // 1. 전달받은 데이터 사용 (DB 조회 없음)
+  const dbType: SqlDbType = database.dbms_name as SqlDbType
+
+  // 2. Schema에서 테이블/컬럼 찾기
+  const table = schema.find((t) => t.name === tableName)
+  const column = table?.columns?.find((c) => c.name === columnName)
+
+  if (!column) {
+    console.warn(`Column ${tableName}.${columnName} not found in schema, using defaults`)
+  }
+
+  // 3. 제약조건 구성
+  const sqlType = column?.type || 'VARCHAR(255)'
+  const constraints = column
+    ? extractConstraintsFromSqlType(sqlType, column)
+    : {
+        notNull: true,
+        maxLength: 255
+      }
+
+  // 4. 외래키 정보 추가
+  if (table?.foreignKeys) {
+    const fk = table.foreignKeys.find((fk) => fk.column_name === columnName)
+    if (fk) {
+      constraints.referencedTable = fk.referenced_table
+      constraints.referencedColumn = fk.referenced_column
+    }
+  }
+
+  // 5. ColumnSchemaInfo 구성
+  const info: ColumnSchemaInfo = {
+    dbType,
+    tableName,
+    columnName,
+    sqlType,
+    constraints,
+    domainName: rule.domain_name
+  }
+
+  // 6. AI vendor/model 결정
+  const { vendor, model } = rule.model_id
+    ? resolveModel(rule.model_id)
+    : { vendor: 'openai', model: 'gpt-4.1-mini' }
+
+  const typedVendor = vendor as 'openai' | 'anthropic' | 'google'
+
+  // 7. AI 생성은 배치 단위로 처리
+  const BATCH_SIZE = 1000
+  const batches = Math.ceil(recordCnt / BATCH_SIZE)
+
+  const generator = new AIGenerator()
+
+  for (let batchIdx = 0; batchIdx < batches; batchIdx++) {
+    const start = batchIdx * BATCH_SIZE
+    const end = Math.min(start + BATCH_SIZE, recordCnt)
+    const batchCount = end - start
+
+    try {
+      // 배치 단위로 AI 생성
+      const result = await generator.generate({
+        databaseId: database.id,
+        vendor: typedVendor,
+        model,
+        count: batchCount,
+        info
+      })
+
+      // 생성된 값들을 하나씩 yield
+      for (const value of result.values) {
+        yield value
+      }
+
+      // 배치 간 잠깐 쉬기 (API rate limit 대응)
+      if (batchIdx < batches - 1) {
+        await new Promise((res) => setTimeout(res, 100))
+      }
+    } catch (error) {
+      console.error(`AI 생성 실패 (batch ${batchIdx + 1}/${batches}):`, error)
+
+      // 실패 시 fallback 사용
+      const fallback = fallbackValues(info.domainName, batchCount)
+      for (const value of fallback) {
+        yield value
+      }
+    }
+  }
 }
 
 /**

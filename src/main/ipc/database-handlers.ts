@@ -53,6 +53,10 @@ ipcMain.handle('db:project:delete', (_, id: number) => {
   return projectOps.deleteProject(id)
 })
 
+ipcMain.handle('db:project:updateUpdatedAt', (_, id: number) => {
+  return projectOps.updateProjectUpdatedAt(id)
+})
+
 // Database operations
 ipcMain.handle('db:database:getAll', () => {
   return databaseOps.getAllDatabases()

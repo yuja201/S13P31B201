@@ -1,7 +1,8 @@
 import React, { useCallback, useState } from 'react'
 import { CgSoftwareDownload } from 'react-icons/cg'
 import PageTitle from '@renderer/components/PageTitle'
-import Toast from '@renderer/components/Toast'
+import LoadingSpinner from '@renderer/components/LoadingSpinner'
+import { useToastStore } from '@renderer/stores/toastStore'
 
 export type FileType = 'csv' | 'json' | 'txt'
 
@@ -18,26 +19,15 @@ export interface FileUploadResult {
 interface FileUploadContentProps {
   tableName: string
   onNext: (result: FileUploadResult) => void
-  onError: (msg: string) => void
 }
 
 const SUPPORTED_EXTENSIONS: FileType[] = ['csv', 'json', 'txt']
-const MAX_PREVIEW_CHARS = 200_000 // about 200 KB of preview text
+const MAX_PREVIEW_CHARS = 200_000 // 약 200KB 미리보기
 
-const FileUploadContent: React.FC<FileUploadContentProps> = ({ tableName, onNext, onError }) => {
+const FileUploadContent: React.FC<FileUploadContentProps> = ({ tableName, onNext }) => {
   const [isDragging, setIsDragging] = useState(false)
-  const [showToast, setShowToast] = useState(false)
-  const [toastMessage, setToastMessage] = useState('')
-
-  const notifyError = useCallback(
-    (msg: string): void => {
-      setToastMessage(msg)
-      setShowToast(true)
-      setTimeout(() => setShowToast(false), 2500)
-      onError(msg)
-    },
-    [onError]
-  )
+  const [isLoading, setIsLoading] = useState(false)
+  const showToast = useToastStore((s) => s.showToast)
 
   const streamFileToCache = useCallback(async (file: File, ext: FileType) => {
     if (!window.api?.file?.cache?.stream?.open) {
@@ -97,29 +87,31 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ tableName, onNext
       throw error
     }
   }, [])
-
   const handleFile = async (file: File): Promise<void> => {
     if (!file) return
 
-    const ext = (file.name.split('.').pop() || '').toLowerCase() as FileType | ''
-    if (!SUPPORTED_EXTENSIONS.includes(ext as FileType)) {
-      notifyError('지원하지 않는 파일 형식입니다. (csv, json, txt만 지원)')
-      return
-    }
-
-    if (file.size === 0) {
-      notifyError('파일이 비어 있습니다.')
-      return
-    }
+    setIsLoading(true)
 
     try {
+      const ext = (file.name.split('.').pop() || '').toLowerCase() as FileType | ''
+
+      if (!SUPPORTED_EXTENSIONS.includes(ext as FileType)) {
+        showToast('지원하지 않는 파일 형식입니다. (csv, json, txt만 지원)', 'warning', '파일 오류')
+        return
+      }
+
+      if (file.size === 0) {
+        showToast('파일이 비어 있습니다.', 'warning', '파일 오류')
+        return
+      }
+
       const { filePath, preview, previewTruncated, lineCount } = await streamFileToCache(
         file,
         ext as FileType
       )
 
       if (!preview.trim()) {
-        notifyError('파일에서 유효한 데이터를 찾지 못했습니다.')
+        showToast('파일에서 유효한 데이터를 찾지 못했습니다.', 'warning', '파일 오류')
         return
       }
 
@@ -134,7 +126,9 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ tableName, onNext
       })
     } catch (error) {
       console.error('파일 처리 실패:', error)
-      notifyError('파일을 처리하는 중 오류가 발생했습니다.')
+      showToast('파일을 처리하는 중 오류가 발생했습니다.', 'warning', '파일 오류')
+    } finally {
+      setIsLoading(false)
     }
   }
 
@@ -147,84 +141,119 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ tableName, onNext
 
   return (
     <div className="file-content">
-      <PageTitle
-        title={`파일 불러오기 - ${tableName}`}
-        description="파일을 이용해 더미 데이터를 생성할 수 있습니다."
-        size="small"
-      />
-      <hr className="divider" />
+      {isLoading ? (
+        <div className="loading-layout">
+          <div className="loading-spinner-wrapper">
+            <LoadingSpinner background="transparent" text="" width={700} />
+          </div>
 
-      <div
-        className={`upload-zone ${isDragging ? 'dragging' : ''}`}
-        onDragOver={(e) => {
-          e.preventDefault()
-          setIsDragging(true)
-        }}
-        onDragLeave={() => setIsDragging(false)}
-        onDrop={handleDrop}
-      >
-        <CgSoftwareDownload size={140} color="var(--color-main-blue)" />
-        <p className="preSemiBold20">파일을 드래그하거나 선택해주세요</p>
-        <p className="preRegular16">지원 형식: csv, json, txt</p>
-        <input
-          type="file"
-          accept=".csv,.json,.txt"
-          className="file-input"
-          onChange={(e) => e.target.files && void handleFile(e.target.files[0])}
-        />
-      </div>
+          <div className="loading-text-top">유자가 파일을 읽는 중 입니다...</div>
+        </div>
+      ) : (
+        <>
+          <PageTitle
+            title={`파일 불러오기 - ${tableName}`}
+            description="파일을 이용해 더미 데이터를 생성할 수 있습니다."
+            size="small"
+          />
+          <hr className="divider" />
 
-      {showToast && (
-        <Toast type="warning" title="파일 오류">
-          {toastMessage}
-        </Toast>
+          <div
+            className={`upload-zone ${isDragging ? 'dragging' : ''}`}
+            onDragOver={(e) => {
+              e.preventDefault()
+              setIsDragging(true)
+            }}
+            onDragLeave={() => setIsDragging(false)}
+            onDrop={handleDrop}
+          >
+            <CgSoftwareDownload size={140} color="var(--color-main-blue)" />
+            <p className="preSemiBold20">파일을 드래그하거나 선택해주세요</p>
+            <p className="preRegular16">지원 형식: csv, json, txt</p>
+            <input
+              type="file"
+              accept=".csv,.json,.txt"
+              className="file-input"
+              onChange={(e) => e.target.files && void handleFile(e.target.files[0])}
+            />
+          </div>
+        </>
       )}
 
       <style>{`
-        .file-content {
-          display: flex;
-          flex-direction: column;
-          align-items: flex-start;
-          width: 640px;
-          padding: 28px 32px;
-        }
+      .file-content {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+        width: 640px;
+        padding: 28px 32px;
+      }
 
-        .divider {
-          width: 100%;
-          border: none;
-          border-top: 1px solid var(--color-dark-gray);
-          margin: 8px 0 16px;
-        }
+      .divider {
+        width: 100%;
+        border: none;
+        border-top: 1px solid var(--color-dark-gray);
+        margin: 8px 0 16px;
+      }
 
-        .upload-zone {
-          position: relative;
-          border: 2px solid var(--color-gray-200);
-          border-radius: 12px;
-          width: 100%;
-          height: 280px;
-          background-color: var(--color-white);
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          transition: all 0.25s;
-          cursor: pointer;
-        }
+      .upload-zone {
+        position: relative;
+        border: 2px solid var(--color-gray-200);
+        border-radius: 12px;
+        width: 100%;
+        height: 280px;
+        background-color: var(--color-white);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.25s;
+        cursor: pointer;
+      }
 
-        .upload-zone.dragging {
-          border-color: var(--color-main-blue);
-          background-color: var(--color-light-blue);
-        }
+      .upload-zone.dragging {
+        border-color: var(--color-main-blue);
+        background-color: var(--color-light-blue);
+      }
 
-        .file-input {
-          position: absolute;
-          opacity: 0;
-          inset: 0;
-          width: 100%;
-          height: 100%;
-          cursor: pointer;
-        }
-      `}</style>
+      .file-input {
+        position: absolute;
+        opacity: 0;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+      }
+
+      /* 로딩 UI */
+      .loading-layout {
+        width: 100%;
+        height: 280px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        gap: 22px;
+        background: var(--color-background);
+      }
+
+      .loading-spinner-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 650px;  
+        height: 160px;  
+      }
+
+      .loading-text-top,
+      .loading-text-bottom {
+        font-size: 22px;
+        font-weight: 600;
+        color: var(--color-black);
+        text-align: center;
+        user-select: none;
+      }
+    `}</style>
     </div>
   )
 }

@@ -1,120 +1,116 @@
 import { faker, Faker } from '@faker-js/faker'
-import type { GenerateRequest, FakerMetaData } from '../types'
 import { fakerMapper } from '../../utils/faker-mapper'
-
-// 제약조건 임시 타입
-type ColumnConstraints = {
-  min?: number
-  max?: number
-  length?: number
-}
-
-// 제약조건 임시 함수 (나중에 DB 제약조건 연결)
-declare const getColumnConstraints:
-  | ((projectId: number, tableName: string, columnName: string) => ColumnConstraints | null)
-  | undefined
+import type { FakerMetaData } from './types'
+import type { Table, Column as SchemaColumn } from '../../database/types'
 
 /**
- * faker 스트리밍 생성기 (1행씩 yield)
- * - 한 번에 하나씩 생성 → 메모리 부담 없음
- * - Worker에서 for-await-of로 순회하면서 바로 파일에 씀
+ * Faker 생성 요청 파라미터
+ */
+export interface FakerGenerateRequest {
+  projectId: number
+  tableName: string
+  columnName: string
+  recordCnt: number
+  metaData: Pick<FakerMetaData, 'ruleId'>
+  domainName: string
+  schema: Table[]
+}
+
+/**
+ * 숫자 범위 및 문자열 길이 제약 추출
+ */
+function extractSimpleConstraints(
+  sqlType: string,
+  columnData: SchemaColumn
+): {
+  min?: number
+  max?: number
+  maxLength?: number
+} {
+  const constraints: { min?: number; max?: number; maxLength?: number } = {}
+
+  // VARCHAR(255), CHAR(20) 등 문자열 길이 제한
+  const lengthMatch = sqlType.match(/\((\d+)\)/)
+  if (lengthMatch) {
+    constraints.maxLength = parseInt(lengthMatch[1], 10)
+  }
+
+  // CHECK (age >= 0 AND age <= 120)
+  if (columnData.check) {
+    const checkStr = columnData.check
+    const minMatch = checkStr.match(/>=?\s*(-?\d+(\.\d+)?)/)
+    const maxMatch = checkStr.match(/<=?\s*(-?\d+(\.\d+)?)/)
+    if (minMatch) constraints.min = Number(minMatch[1])
+    if (maxMatch) constraints.max = Number(maxMatch[1])
+  }
+
+  return constraints
+}
+
+/**
+ * faker 스트리밍 생성기
+ * - CHECK 제약조건(min/max)과 문자열 길이(maxLength)만 고려
  */
 export async function* generateFakeStream({
-  projectId,
   tableName,
   columnName,
   recordCnt,
-  metaData
-}: GenerateRequest): AsyncGenerator<string, void, unknown> {
-  // --- 제약조건 로딩 (예: min, max, length 등)
-  const constraints: ColumnConstraints | null =
-    typeof getColumnConstraints === 'function'
-      ? getColumnConstraints(projectId, tableName, columnName)
-      : null
+  schema,
+  domainName
+}: FakerGenerateRequest): AsyncGenerator<string, void, unknown> {
+  // 스키마에서 테이블/컬럼 찾기
+  const table = schema.find((t) => t.name === tableName)
+  const column = table?.columns.find((c) => c.name === columnName)
 
-  const ruleId = resolveRuleId(metaData)
+  const sqlType = column?.type ?? 'VARCHAR(255)'
+  const { min, max, maxLength } = column ? extractSimpleConstraints(sqlType, column) : {}
 
-  // --- 임시 도메인 rule 매핑 (DB 연결 전용 mock)
-  let rule = { domain_name: '이름' }
-  if (ruleId === 2) rule = { domain_name: '이메일' }
-  if (ruleId === 3) rule = { domain_name: '금액' }
-
-  const fakerPath = fakerMapper[rule.domain_name]
-  if (!fakerPath) throw new Error(`❌ No faker mapping for domain: ${rule.domain_name}`)
+  // faker 경로 매핑
+  const fakerPath = fakerMapper[domainName]
+  if (!fakerPath) {
+    throw new Error(`❌ No faker mapping for domain: ${domainName}`)
+  }
 
   const [category, method] = fakerPath.split('.') as [keyof Faker, string]
   const fakerCategory = faker[category]
   const fn = (fakerCategory as Record<string, unknown>)[method]
 
-  if (typeof fn !== 'function') throw new Error(`❌ Invalid faker path: ${fakerPath}`)
+  if (typeof fn !== 'function') {
+    throw new Error(`❌ Invalid faker path: ${fakerPath}`)
+  }
 
-  // --- 제약조건 파싱
-  const hasRange = constraints?.min !== undefined && constraints?.max !== undefined
-  const hasLength = constraints?.length !== undefined
-  const min = Number(constraints?.min)
-  const max = Number(constraints?.max)
-  const length = Number(constraints?.length)
-
-  // --- 메인 루프: recordCnt만큼 한 개씩 생성
+  // 데이터 생성 루프
   for (let i = 0; i < recordCnt; i++) {
-    let value: unknown
+    let value: string
 
-    if (constraints && (hasRange || hasLength)) {
-      if (!isNaN(min) && !isNaN(max) && (method === 'int' || method === 'float')) {
-        value = (fn as (opts: { min: number; max: number }) => number)({ min, max })
-      } else if (!isNaN(length)) {
-        const raw = String((fn as () => string)())
-        value = raw.slice(0, length)
-      } else {
-        value = (fn as () => unknown)()
-      }
-    } else {
-      value = (fn as () => unknown)()
+    // 숫자 범위 제약 적용
+    if (
+      typeof min === 'number' &&
+      typeof max === 'number' &&
+      /INT|DECIMAL|NUMERIC|FLOAT|DOUBLE/i.test(sqlType)
+    ) {
+      value = String(
+        (fn as (opts: { min: number; max: number }) => number)({
+          min,
+          max
+        })
+      )
+    }
+    // 문자열 길이 제약 적용
+    else if (typeof maxLength === 'number') {
+      const raw = String((fn as () => string)())
+      value = raw.slice(0, maxLength)
+    }
+    // 제약조건 없음
+    else {
+      value = String((fn as () => string | number)())
     }
 
-    // faker가 만든 값 하나를 즉시 내보냄
-    yield String(value)
+    yield value
 
-    // CPU 부하 완화용 잠깐의 쉬는 시간 (10만 단위)
+    // 대규모 생성 시 잠깐 쉬기 (성능 안정화)
     if (i > 0 && i % 100_000 === 0) {
       await new Promise((res) => setTimeout(res, 10))
     }
   }
-}
-
-/**
- * 단일 값 생성용 헬퍼 (기존 호환)
- * - 단일 테스트용 API에서 사용됨
- */
-export async function generateFakeValue(params: GenerateRequest): Promise<string> {
-  const gen = generateFakeStream({ ...params, recordCnt: 1 })
-  const { value } = await gen.next()
-  return value ?? ''
-}
-
-function resolveRuleId(metaData: GenerateRequest['metaData']): number {
-  if (!metaData) {
-    throw new Error('Faker 메타데이터가 없습니다.')
-  }
-
-  if (isFakerMeta(metaData)) {
-    return Number(metaData.ruleId)
-  }
-
-  if ('ruleId' in (metaData as Record<string, unknown>)) {
-    const ruleId = Number((metaData as Record<string, unknown>).ruleId)
-    if (!Number.isNaN(ruleId)) return ruleId
-  }
-
-  throw new Error('Faker 메타데이터 형식이 올바르지 않습니다.')
-}
-
-function isFakerMeta(meta: GenerateRequest['metaData']): meta is FakerMetaData {
-  return (
-    typeof meta === 'object' &&
-    meta !== null &&
-    'kind' in meta &&
-    (meta as { kind?: unknown }).kind === 'faker' &&
-    'ruleId' in meta
-  )
 }

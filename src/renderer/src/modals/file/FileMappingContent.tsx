@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState, useCallback } from 'react'
 import PageTitle from '@renderer/components/PageTitle'
 import Checkbox from '@renderer/components/Checkbox'
 import Button from '@renderer/components/Button'
-import Toast from '@renderer/components/Toast'
+import { useToastStore } from '@renderer/stores/toastStore'
 import type { Row } from '@renderer/components/Table'
 import type { MappingColumn, MappingSubmitPayload } from './types'
 
@@ -52,7 +52,6 @@ const FileMappingContent: React.FC<FileMappingContentProps> = ({
     normalizeRecordCount(recordCount)
   )
   const [allowDuplicates, setAllowDuplicates] = useState(true)
-  const [showToast, setShowToast] = useState(false)
 
   useEffect(() => {
     setMappings(
@@ -78,19 +77,12 @@ const FileMappingContent: React.FC<FileMappingContentProps> = ({
     )
   }, [fileHeaders])
 
-  useEffect(() => {
-    if (showToast) {
-      const timer = setTimeout(() => setShowToast(false), 2500)
-      return () => clearTimeout(timer)
-    }
-    return undefined
-  }, [showToast])
-
   const activeMappings = useMemo(() => mappings.filter((m) => m.selected && m.mappedTo), [mappings])
+  const showToast = useToastStore((s) => s.showToast)
 
   const handleConfirm = (): void => {
     if (!activeMappings.length) {
-      setShowToast(true)
+      showToast('매핑할 컬럼을 1개 이상 선택해주세요.', 'warning', '매핑 오류')
       return
     }
 
@@ -209,14 +201,6 @@ const FileMappingContent: React.FC<FileMappingContentProps> = ({
           완료
         </Button>
       </div>
-
-      {showToast && (
-        <div className="toast-wrapper">
-          <Toast type="warning" title="매핑 오류" duration={2500}>
-            매핑할 컬럼을 1개 이상 선택해주세요.
-          </Toast>
-        </div>
-      )}
 
       <style>{`
         .file-content {
@@ -370,14 +354,6 @@ const FileMappingContent: React.FC<FileMappingContentProps> = ({
           justify-content: flex-end;
           gap: 12px;
           margin-top: 24px;
-        }
-
-        .toast-wrapper {
-          position: fixed;
-          top: 50%;
-          left: 50%;
-          transform: translate(-50%, -50%);
-          z-index: 9999;
         }
       `}</style>
     </div>
