@@ -216,8 +216,7 @@ function convertValue(
     const trimmed = s.trim()
     const looksDateish = /^\d{4}-\d{2}-\d{2}(?:[ T]\d{2}:\d{2}:\d{2}(?:\.\d+)?)?/.test(trimmed)
     if (!looksDateish && trimmed.toLowerCase() !== 'now()') {
-      // 모호한 값은 일단 문자열 저장 (NOT NULL이면 INVALID가 더 안전하지만, 과도할 수 있음)
-      return notNull ? `'${trimmed.replace(/'/g, "''")}'` : `'${trimmed.replace(/'/g, "''")}'`
+      return notNull ? INVALID : 'NULL'
     }
     return trimmed.toLowerCase() === 'now()' ? 'now()' : `'${trimmed.replace(/'/g, "''")}'`
   }
