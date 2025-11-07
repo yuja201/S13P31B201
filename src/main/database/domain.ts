@@ -50,28 +50,6 @@ export function getAllDomains(): DomainCategory[] {
 }
 
 /**
- * 단일 도메인 조회
- */
-export function getDomainById(domainId: number): Domain | undefined {
-  const db = getDatabase()
-
-  const stmt = db.prepare(`
-    SELECT 
-      d.id,
-      d.name,
-      d.description,
-      d.logical_type,
-      d.category_id,
-      c.name AS category_name
-    FROM domains d
-    LEFT JOIN domain_categories c ON d.category_id = c.id
-    WHERE d.id = ?
-  `)
-
-  return stmt.get(domainId) as Domain | undefined
-}
-
-/**
  * 내부 유틸 - category별로 그룹화
  */
 function groupByCategory(rows: Domain[]): DomainCategory[] {

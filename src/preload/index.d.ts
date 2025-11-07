@@ -17,7 +17,8 @@ import type {
   Rule,
   RuleInput,
   RuleUpdate,
-  DatabaseSchema
+  DatabaseSchema,
+  DomainCategory
 } from '../main/database/types'
 import type { GenerateRequest, GenerationResult } from '../main/services/data-generator/types'
 
@@ -110,10 +111,9 @@ interface API {
     error: (...args: unknown[]) => void
     verbose: (...args: unknown[]) => void
   }
-  domian: {
+  domain: {
     getAll: () => Promise<DomainCategory[]>
     getByLogicalType: (logicalType: string) => Promise<DomainCategory[]>
-    getById: (domainId: number) => Promise<Domain | undefined>
   }
 }
 

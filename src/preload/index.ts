@@ -24,7 +24,6 @@ import {
   GenerateRequest,
   GenerationResult
 } from '../main/services/data-generator/types'
-import { Domain } from 'domain'
 
 // Custom APIs for renderer
 const api = {
@@ -153,12 +152,10 @@ const api = {
     error: (...args: unknown[]) => log.error(...args),
     verbose: (...args: unknown[]) => log.verbose(...args)
   },
-  domian: {
+  domain: {
     getAll: (): Promise<DomainCategory[]> => ipcRenderer.invoke('domain:getAll'),
     getByLogicalType: (logicalType: string): Promise<DomainCategory[]> =>
-      ipcRenderer.invoke('domain:getByLogicalType', logicalType),
-    getById: (domainId: number): Promise<Domain | undefined> =>
-      ipcRenderer.invoke('domain:getById', domainId)
+      ipcRenderer.invoke('domain:getByLogicalType', logicalType)
   }
 }
 

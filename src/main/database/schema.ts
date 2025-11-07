@@ -44,7 +44,7 @@ CREATE TABLE IF NOT EXISTS domain_categories (
 -- 도메인 테이블
 CREATE TABLE IF NOT EXISTS domains (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
-  category_id INTEGER,
+  category_id INTEGER NOT NULL,
   name TEXT NOT NULL UNIQUE,
   description TEXT,
   logical_type TEXT NOT NULL DEFAULT 'string',
