@@ -135,7 +135,8 @@ const DummyInsertView: React.FC = () => {
 
               return {
                 columnName: col.columnName,
-                dataSource: col.dataSource as DataSourceType,
+                dataSource:
+                  col.dataSource === 'REFERENCE' ? 'FIXED' : (col.dataSource as DataSourceType),
                 metaData: col.metaData as ColumnMetaData, // ✅ 타입 정확히 지정
                 isNullable: columnSchema ? !columnSchema.notNull : true
               }

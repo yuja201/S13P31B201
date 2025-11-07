@@ -17,7 +17,8 @@ import type {
   Rule,
   RuleInput,
   RuleUpdate,
-  DatabaseSchema
+  DatabaseSchema,
+  DomainCategory
 } from '../main/database/types'
 import type { GenerateRequest, GenerationResult } from '../main/services/data-generator/types'
 
@@ -55,6 +56,7 @@ interface API {
     delete: (id: number) => Promise<boolean>
     createFaker: (data: FakerRuleInput) => Promise<Rule>
     createAI: (data: AIRuleInput) => Promise<Rule>
+    getByLogicalType: (logicalType: string) => Promise<Rule[]>
   }
   testConnection: (config: {
     dbType: 'MySQL' | 'PostgreSQL'
@@ -73,7 +75,21 @@ interface API {
   }>
   schema: {
     fetch: (databaseId: number) => Promise<DatabaseSchema>
+
+    getRandomSample: (params: {
+      databaseId: number
+      table: string
+      column: string
+    }) => Promise<{ sample: any }>
+
+    validateFkValue: (params: {
+      databaseId: number
+      table: string
+      column: string
+      value: any
+    }) => Promise<{ isValid: boolean }>
   }
+
   file: {
     cache: {
       write: (payload: { content: string; encoding?: string; extension?: string }) => Promise<{
@@ -108,6 +124,10 @@ interface API {
     warn: (...args: unknown[]) => void
     error: (...args: unknown[]) => void
     verbose: (...args: unknown[]) => void
+  }
+  domain: {
+    getAll: () => Promise<DomainCategory[]>
+    getByLogicalType: (logicalType: string) => Promise<DomainCategory[]>
   }
 }
 
