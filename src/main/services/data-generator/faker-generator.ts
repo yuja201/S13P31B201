@@ -11,7 +11,7 @@ export interface FakerGenerateRequest {
   tableName: string
   columnName: string
   recordCnt: number
-  metaData: Pick<FakerMetaData, 'ruleId'>
+  metaData: FakerMetaData
   domainName: string
   schema: Table[]
 }
@@ -56,7 +56,8 @@ export async function* generateFakeStream({
   columnName,
   recordCnt,
   schema,
-  domainName
+  domainName,
+  metaData
 }: FakerGenerateRequest): AsyncGenerator<string, void, unknown> {
   // 스키마에서 테이블/컬럼 찾기
   const table = schema.find((t) => t.name === tableName)
@@ -79,17 +80,15 @@ export async function* generateFakeStream({
     throw new Error(`❌ Invalid faker path: ${fakerPath}`)
   }
 
-  // 데이터 생성 루프
-  for (let i = 0; i < recordCnt; i++) {
-    let value: string
-
+  // 단일 값을 생성하는 헬퍼 함수
+  const generateSingleValue = (): string => {
     // 숫자 범위 제약 적용
     if (
       typeof min === 'number' &&
       typeof max === 'number' &&
       /INT|DECIMAL|NUMERIC|FLOAT|DOUBLE/i.test(sqlType)
     ) {
-      value = String(
+      return String(
         (fn as (opts: { min: number; max: number }) => number)({
           min,
           max
@@ -97,18 +96,46 @@ export async function* generateFakeStream({
       )
     }
     // 문자열 길이 제약 적용
-    else if (typeof maxLength === 'number') {
+    if (typeof maxLength === 'number') {
       const raw = String((fn as () => string)())
-      value = raw.slice(0, maxLength)
+      return raw.slice(0, maxLength)
     }
     // 제약조건 없음
-    else {
-      value = String((fn as () => string | number)())
-    }
+    return String((fn as () => string | number)())
+  }
 
+  // 고유값 보장이 필요 없는 경우 (기존 로직과 동일)
+  if (!metaData.ensureUnique) {
+    for (let i = 0; i < recordCnt; i++) {
+      yield generateSingleValue()
+      if (i > 0 && i % 100_000 === 0) {
+        await new Promise((res) => setTimeout(res, 10))
+      }
+    }
+    return
+  }
+
+  // 고유값 보장이 필요한 경우
+  const generatedValues = new Set<string>()
+  const MAX_RETRIES = recordCnt * 3 + 100 // 재시도 횟수 (넉넉하게 설정)
+
+  for (let i = 0; i < recordCnt; i++) {
+    let value: string
+    let retries = 0
+
+    do {
+      value = generateSingleValue()
+      if (retries++ > MAX_RETRIES) {
+        console.warn(`[${tableName}.${columnName}] 고유값 생성 재시도 횟수 초과.      
+       임의의 값을 생성합니다.`)
+        value = `${value}_${Date.now()}_${Math.random()}`
+        break // do-while 루프 탈출
+      }
+    } while (generatedValues.has(value))
+
+    generatedValues.add(value)
     yield value
 
-    // 대규모 생성 시 잠깐 쉬기 (성능 안정화)
     if (i > 0 && i % 100_000 === 0) {
       await new Promise((res) => setTimeout(res, 10))
     }
