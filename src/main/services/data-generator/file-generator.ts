@@ -24,17 +24,12 @@ const parseCache = new Map<ParseCacheKey, Promise<ParsedFile>>()
 export function createFileValueStream(
   meta: FileMetaData,
   recordCnt: number
-): AsyncGenerator<string> {
+): AsyncGenerator<string | null> {
   return (async function* generator() {
     const parsed = await parseFile(meta)
 
     for (let rowIndex = 0; rowIndex < recordCnt; rowIndex++) {
       const value = extractValue(parsed, meta, rowIndex)
-      if (value === undefined) {
-        throw new Error(
-          `[파일 데이터 부족] ${meta.filePath}에서 ${rowIndex + 1}번째 행을 읽을 수 없습니다.`
-        )
-      }
       yield formatValue(value)
     }
   })()
@@ -257,8 +252,8 @@ function resolveSeparator(value: string | undefined, fallback: string): string {
   return value
 }
 
-function formatValue(value: unknown): string {
-  if (value === null || value === undefined) return null as unknown as string
+function formatValue(value: unknown): string | null {
+  if (value === null || value === undefined) return null
   if (value === '') return ''
   if (typeof value === 'object') return JSON.stringify(value)
   return String(value)

@@ -361,12 +361,14 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
               for (let j = 0; j < chunkSize; j++) {
                 try {
                   const { value } = await stream.next()
-                  const converted = convertValue(value, col.columnName, tableName, task.schema)
-                  if (converted === INVALID) {
-                    values.push(INVALID)
-                  } else {
-                    values.push(converted)
+
+                  if (value == null) {
+                    values.push(col.isNullable ? 'NULL' : INVALID)
+                    continue
                   }
+
+                  const converted = convertValue(value, col.columnName, tableName, task.schema)
+                  values.push(converted)
                 } catch {
                   values.push(INVALID) // 실패한 셀
                 }
