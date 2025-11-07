@@ -116,19 +116,32 @@ const DummyInsertView: React.FC = () => {
 
       const generationMode: GenerationMode = mode === 'db' ? 'DIRECT_DB' : 'SQL_FILE'
 
+      //스키마 조회 (NULL 여부 판단용)
+      const schemaResult = await window.api.schema.fetch(selectedProject.id)
+      const schema = schemaResult.tables // ← 여기 중요
+
       const payload: GenerateRequest = {
         projectId: selectedProject.id,
         mode: generationMode,
         skipInvalidRows,
-        tables: filteredTables.map((tableData) => ({
-          tableName: tableData.tableName,
-          recordCnt: tableData.recordCnt,
-          columns: tableData.columns.map((col) => ({
-            columnName: col.columnName,
-            dataSource: col.dataSource as DataSourceType,
-            metaData: col.metaData as ColumnMetaData
-          }))
-        }))
+        tables: filteredTables.map((tableData) => {
+          const tableSchema = schema.find((s) => s.name === tableData.tableName)
+
+          return {
+            tableName: tableData.tableName,
+            recordCnt: tableData.recordCnt,
+            columns: tableData.columns.map((col) => {
+              const columnSchema = tableSchema?.columns.find((c) => c.name === col.columnName)
+
+              return {
+                columnName: col.columnName,
+                dataSource: col.dataSource as DataSourceType,
+                metaData: col.metaData as ColumnMetaData, // ✅ 타입 정확히 지정
+                isNullable: columnSchema ? !columnSchema.notNull : true
+              }
+            })
+          }
+        })
       }
 
       const result = await window.api.dataGenerator.generate(payload)
