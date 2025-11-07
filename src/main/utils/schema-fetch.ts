@@ -415,6 +415,29 @@ async function fetchPostgreSQLColumns(client: Client, tableName: string): Promis
   }
 
   return (columnResult.rows as PgColumnRowWithDetails[]).map((row) => {
+    let enumFromCheck: string[] | undefined = undefined
+
+    if (row.checkConstraint) {
+      const inPattern = /IN\s*\((.+)\)/i
+      const inMatch = row.checkConstraint.match(inPattern)
+
+      if (inMatch) {
+        enumFromCheck = inMatch[1]
+          .split(',')
+          .map((v) => v.trim().replace(/'/g, ''))
+          .filter((v) => v.length > 0)
+      } else {
+        const arrayPattern = /ARRAY\[(.+)\]/i
+        const arrayMatch = row.checkConstraint.match(arrayPattern)
+
+        if (arrayMatch) {
+          enumFromCheck = arrayMatch[1]
+            .split(',')
+            .map((v) => v.replace(/::.*$/, '').trim().replace(/'/g, ''))
+            .filter((v) => v.length > 0)
+        }
+      }
+    }
     let typeStr = row.data_type
     if (row.max_length) {
       typeStr += `(${row.max_length})`
@@ -435,7 +458,7 @@ async function fetchPostgreSQLColumns(client: Client, tableName: string): Promis
         row.default_value && !row.default_value.includes('nextval') ? row.default_value : undefined,
 
       check: row.checkConstraint || undefined,
-      enum: row.enumList || undefined
+      enum: row.enumList?.length ? row.enumList : enumFromCheck
     }
 
     return column

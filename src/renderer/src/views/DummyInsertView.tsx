@@ -37,13 +37,10 @@ const DummyInsertView: React.FC = () => {
   } | null
 
   const skipInvalidRows = state?.skipInvalidRows ?? true
-
   const selectedTables = React.useMemo(() => state?.tables ?? [], [state?.tables])
-
   const mode: InsertMode = state?.mode ?? 'sql'
 
   const selectedTablesRef = useRef(selectedTables)
-
   useEffect(() => {
     selectedTablesRef.current = selectedTables
   }, [selectedTables])
@@ -71,7 +68,7 @@ const DummyInsertView: React.FC = () => {
   useEffect(() => {
     window.api.dataGenerator.onProgress((msg: unknown) => {
       const message = msg as ProgressMessage
-      setLogs((prev) => [...prev, `[DEBUG] ${JSON.stringify(message)}`])
+      setLogs((prev) => [...prev, `[DEBUG] ${JSON.stringify(message) ?? ''}`])
 
       if (message.type === 'row-progress' && message.progress !== undefined) {
         setProgress(message.progress)
@@ -116,20 +113,50 @@ const DummyInsertView: React.FC = () => {
 
       const generationMode: GenerationMode = mode === 'db' ? 'DIRECT_DB' : 'SQL_FILE'
 
+      // 스키마 조회 (안전 처리)
+      let schema: Array<{ name: string; columns: Array<{ name: string; notNull?: boolean }> }> = []
+      try {
+        const schemaResult = await window.api.schema.fetch(selectedProject.id)
+        schema = schemaResult?.tables ?? []
+
+        if (!schema.length) {
+          setErrors(['스키마를 조회할 수 없습니다.'])
+          return
+        }
+      } catch (error) {
+        setErrors(['스키마 조회 중 오류 발생: ' + (error as Error).message])
+        return
+      }
+
       const payload: GenerateRequest = {
         projectId: selectedProject.id,
         mode: generationMode,
         skipInvalidRows,
-        tables: filteredTables.map((tableData) => ({
-          tableName: tableData.tableName,
-          recordCnt: tableData.recordCnt,
-          columns: tableData.columns.map((col) => ({
-            columnName: col.columnName,
-            dataSource:
-              col.dataSource === 'REFERENCE' ? 'FIXED' : (col.dataSource as DataSourceType),
-            metaData: col.metaData as ColumnMetaData
-          }))
-        }))
+        tables: filteredTables.map((tableData) => {
+          const tableSchema = schema.find((s) => s.name === tableData.tableName)
+
+          return {
+            tableName: tableData.tableName,
+            recordCnt: tableData.recordCnt,
+            columns: tableData.columns.map((col) => {
+              const columnSchema = tableSchema?.columns.find((c) => c.name === col.columnName)
+
+              if (!columnSchema) {
+                console.warn(
+                  `[SCHEMA WARNING] 스키마 정보 없음 → ${tableData.tableName}.${col.columnName} → 기본값 isNullable=false 적용`
+                )
+              }
+
+              return {
+                columnName: col.columnName,
+                dataSource:
+                  col.dataSource === 'REFERENCE' ? 'FIXED' : (col.dataSource as DataSourceType),
+                metaData: col.metaData as ColumnMetaData,
+                isNullable: columnSchema ? !columnSchema.notNull : false
+              }
+            })
+          }
+        })
       }
 
       const result = await window.api.dataGenerator.generate(payload)
@@ -189,7 +216,6 @@ const DummyInsertView: React.FC = () => {
       </div>
 
       <div style={{ display: 'flex', gap: 16, flex: 1 }}>
-        {/* 왼쪽 테이블 목록 */}
         <div
           style={{
             width: 260,
@@ -216,7 +242,6 @@ const DummyInsertView: React.FC = () => {
           </ul>
         </div>
 
-        {/* 오른쪽 진행 상태 / 로그 */}
         <div
           style={{
             flex: 1,
