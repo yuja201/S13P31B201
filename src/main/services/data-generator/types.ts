@@ -24,10 +24,12 @@ export type FileMetaData = {
 
 export type FakerMetaData = {
   ruleId: number
+  ensureUnique?: boolean
 }
 
 export type AIMetaData = {
   ruleId: number
+  ensureUnique?: boolean
 }
 
 export type FixedMetaData = {

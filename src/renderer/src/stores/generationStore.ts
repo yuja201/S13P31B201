@@ -1,4 +1,3 @@
-// @renderer/stores/generationStore.ts
 import { create } from 'zustand'
 import { RuleSelection } from '@renderer/modals/rule/RuleSelectContent'
 
@@ -19,11 +18,13 @@ export type FileMetaData = {
 export type FakerMetaData = {
   kind: 'faker'
   ruleId: number
+  ensureUnique?: boolean
 }
 
 export type AIMetaData = {
   kind: 'ai'
   ruleId: number
+  ensureUnique?: boolean
 }
 
 export type FixedMetaData = {

@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import SimpleCard from '@renderer/components/SimpleCard'
 import InputField from '@renderer/components/InputField'
 import PageTitle from '@renderer/components/PageTitle'
 import SelectDomain from '@renderer/components/SelectDomain'
 import Button from '@renderer/components/Button'
 import { useToastStore } from '@renderer/stores/toastStore'
+import Checkbox from '@renderer/components/Checkbox'
+import { ColumnDetail } from '@renderer/views/CreateDummyView'
 
 export interface RuleCreationData {
   source: 'FAKER' | 'AI'
@@ -20,6 +22,7 @@ export interface RuleCreationData {
 }
 
 interface RuleCreationContentProps {
+  column: ColumnDetail
   columnType?: string
   columnName?: string
   onCancel: () => void
@@ -27,6 +30,7 @@ interface RuleCreationContentProps {
 }
 
 const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
+  column,
   columnType,
   columnName,
   onCancel,
@@ -39,6 +43,8 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
   const [prompt, setPrompt] = useState('')
   const [selectedModel, setSelectedModel] = useState('1')
   const [selectedDomain, setSelectedDomain] = useState<{ id: number; name: string } | null>(null)
+  const [ensureUnique, setEnsureUnique] = useState(false)
+  const isUniqueColumn = useMemo(() => column.constraints.includes('UNIQUE'), [column])
 
   const validateRequiredFields = (): boolean => {
     if (!settingName.trim()) {
@@ -209,6 +215,19 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
       <div style={{ width: '100%', overflow: 'hidden' }}>
         <SelectDomain source={selectedSource} onChange={(value) => setSelectedDomain(value)} />
       </div>
+      {(selectedSource === 'FAKER' || selectedSource === 'AI') && isUniqueColumn && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
+          <Checkbox
+            id="ensure-unique"
+            label="고유값 보장 (Ensure Uniqueness)"
+            checked={ensureUnique}
+            onChange={(e) => setEnsureUnique(e.target.checked)}
+          />
+          <p style={{ margin: '0 0 0 28px', fontSize: '13px', color: 'var(--color-gray-600)' }}>
+            데이터 생성 시 중복되지 않는 값을 보장합니다. 생성 속도가 느려질 수 있습니다.
+          </p>
+        </div>
+      )}
 
       {/* AI 생성 선택 시에만 표시되는 섹션 */}
       {selectedSource === 'AI' && (
