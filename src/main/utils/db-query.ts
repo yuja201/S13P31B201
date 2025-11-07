@@ -3,7 +3,11 @@ import { Client as PgClient } from 'pg'
 import { ConnectionConfig } from './db-connection-test'
 
 // --- MySQL 헬퍼 함수 ---
-async function fetchMySQLRandomSample(config: ConnectionConfig, table: string, column: string) {
+async function fetchMySQLRandomSample(
+  config: ConnectionConfig,
+  table: string,
+  column: string
+): Promise<{ sample: unknown }> {
   let connection
   try {
     connection = await mysql.createConnection({
@@ -19,12 +23,12 @@ async function fetchMySQLRandomSample(config: ConnectionConfig, table: string, c
       table
     ])
     await connection.end()
-    const result = (rows as any[])[0]
+    const result = (rows as { [key: string]: unknown }[])[0]
     if (!result) {
       throw new Error('테이블에 데이터가 없습니다.')
     }
     return { sample: result[column] }
-  } catch (error) {
+  } catch (error: unknown) {
     if (connection) await connection.end().catch(() => {})
     throw error
   }
@@ -34,8 +38,8 @@ async function checkMySQLFkValue(
   config: ConnectionConfig,
   table: string,
   column: string,
-  value: any
-) {
+  value: string | number
+): Promise<{ isValid: boolean }> {
   let connection
   try {
     connection = await mysql.createConnection({
@@ -52,11 +56,15 @@ async function checkMySQLFkValue(
       value
     ])
     await connection.end()
-    return { isValid: (rows as any[]).length > 0 }
-  } catch (error) {
+    return { isValid: (rows as unknown[]).length > 0 }
+  } catch (error: unknown) {
     if (connection) await connection.end().catch(() => {})
     throw error
   }
+}
+
+function quoteIdentifier(identifier: string): string {
+  return `"${identifier.replace(/"/g, '""')}"`
 }
 
 // --- PostgreSQL 헬퍼 함수 ---
@@ -64,7 +72,7 @@ async function fetchPostgreSQLRandomSample(
   config: ConnectionConfig,
   table: string,
   column: string
-) {
+): Promise<{ sample: unknown }> {
   const client = new PgClient({
     host: config.host,
     port: config.port,
@@ -75,7 +83,9 @@ async function fetchPostgreSQLRandomSample(
   })
   try {
     await client.connect()
-    const query = `SELECT "${column}" FROM "${table}" ORDER BY RANDOM() LIMIT 1`
+    const query = `SELECT ${quoteIdentifier(column)} FROM ${quoteIdentifier(
+      table
+    )} ORDER BY RANDOM() LIMIT 1`
     const result = await client.query(query)
     await client.end()
 
@@ -83,7 +93,7 @@ async function fetchPostgreSQLRandomSample(
       throw new Error('테이블에 데이터가 없습니다.')
     }
     return { sample: result.rows[0][column] }
-  } catch (error) {
+  } catch (error: unknown) {
     await client.end().catch(() => {})
     throw error
   }
@@ -93,8 +103,8 @@ async function checkPostgreSQLFkValue(
   config: ConnectionConfig,
   table: string,
   column: string,
-  value: any
-) {
+  value: string | number
+): Promise<{ isValid: boolean }> {
   const client = new PgClient({
     host: config.host,
     port: config.port,
@@ -105,7 +115,8 @@ async function checkPostgreSQLFkValue(
   })
   try {
     await client.connect()
-    const query = `SELECT 1 FROM "${table}" WHERE "${column}" = $1 LIMIT 1`
+    const query = `SELECT 1 FROM ${quoteIdentifier(table)} WHERE 
+     ${quoteIdentifier(column)} = $1 LIMIT 1`
     const result = await client.query(query, [value])
     await client.end()
     return { isValid: result.rows.length > 0 }
@@ -122,7 +133,7 @@ export async function fetchRandomSample(
   config: ConnectionConfig,
   table: string,
   column: string
-): Promise<{ sample: any }> {
+): Promise<{ sample: unknown }> {
   if (config.dbType === 'MySQL') {
     return fetchMySQLRandomSample(config, table, column)
   } else if (config.dbType === 'PostgreSQL') {
@@ -138,7 +149,7 @@ export async function checkFkValueExists(
   config: ConnectionConfig,
   table: string,
   column: string,
-  value: any
+  value: string | number
 ): Promise<{ isValid: boolean }> {
   if (config.dbType === 'MySQL') {
     return checkMySQLFkValue(config, table, column, value)
