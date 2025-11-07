@@ -145,15 +145,15 @@ function convertValue(
   if (!colSchema) return INVALID
 
   // NULL 처리
-  if (raw === null || raw === '') {
+  if (raw === null) {
     console.log(`[NULL] ${tableName}.${columnName} → NULL`)
     return colSchema.notNull ? INVALID : 'NULL'
   }
 
   // CSV에서 "값" 형태면 외부 따옴표 제거
-  if (typeof raw === 'string' && /^".*"$/.test(raw)) {
+  if (typeof raw === 'string' && raw.length >= 2 && raw[0] === '"' && raw[raw.length - 1] === '"') {
     console.log(`[QUOTE STRIP] BEFORE: ${raw}`)
-    raw = raw.slice(1, -1)
+    raw = raw.slice(1, -1).replace(/""/g, '"') // Handle escaped quotes
     console.log(`[QUOTE STRIP] AFTER: ${raw}`)
   }
 
@@ -183,7 +183,7 @@ function convertValue(
     return `'${raw.replace(/'/g, "''")}'`
   }
 
-  // 숫자
+  // 숫자 타입 검증
   if (
     type.includes('int') ||
     type.includes('numeric') ||
@@ -191,6 +191,16 @@ function convertValue(
     type.includes('float') ||
     type.includes('double')
   ) {
+    // 빈 문자열 처리
+    if (raw.trim() === '') {
+      return colSchema.notNull ? INVALID : 'NULL'
+    }
+
+    // 숫자 형식 검증 (정수 또는 소수)
+    if (!/^-?\d+(\.\d+)?$/.test(raw.trim())) {
+      return INVALID
+    }
+
     const num = Number(raw)
     console.log(`[NUM CHECK] ${raw} -> ${num}`)
     return Number.isNaN(num) ? INVALID : String(num)
