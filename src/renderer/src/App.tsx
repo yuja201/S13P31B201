@@ -2,7 +2,9 @@ import React from 'react'
 import { createHashRouter, RouterProvider } from 'react-router-dom'
 import { createPortal } from 'react-dom'
 import { useToastStore } from '@renderer/stores/toastStore'
+import { useConfirmStore } from '@renderer/stores/confirmStore'
 import Toast from '@renderer/components/Toast'
+import ConfirmDialog from '@renderer/components/ConfirmDialog'
 
 import LandingView from '@renderer/views/LandingView'
 import MainView from '@renderer/views/MainView'
@@ -59,6 +61,16 @@ const router = createHashRouter([
 
 const App: React.FC = () => {
   const { show, msg, type, title, hideToast } = useToastStore()
+  const {
+    show: showConfirm,
+    type: confirmType,
+    title: confirmTitle,
+    message: confirmMessage,
+    confirmText,
+    cancelText,
+    handleConfirm,
+    hideConfirm
+  } = useConfirmStore()
 
   return (
     <>
@@ -69,6 +81,20 @@ const App: React.FC = () => {
           <Toast type={type} title={title} onClose={hideToast}>
             {msg}
           </Toast>,
+          document.body
+        )}
+
+      {showConfirm &&
+        createPortal(
+          <ConfirmDialog
+            type={confirmType}
+            title={confirmTitle}
+            message={confirmMessage}
+            confirmText={confirmText}
+            cancelText={cancelText}
+            onConfirm={handleConfirm}
+            onCancel={hideConfirm}
+          />,
           document.body
         )}
     </>
