@@ -55,6 +55,7 @@ interface API {
     delete: (id: number) => Promise<boolean>
     createFaker: (data: FakerRuleInput) => Promise<Rule>
     createAI: (data: AIRuleInput) => Promise<Rule>
+    getByLogicalType: (logicalType: string) => Promise<Rule[]>
   }
   testConnection: (config: {
     dbType: 'MySQL' | 'PostgreSQL'
@@ -108,6 +109,11 @@ interface API {
     warn: (...args: unknown[]) => void
     error: (...args: unknown[]) => void
     verbose: (...args: unknown[]) => void
+  }
+  domian: {
+    getAll: () => Promise<DomainCategory[]>
+    getByLogicalType: (logicalType: string) => Promise<DomainCategory[]>
+    getById: (domainId: number) => Promise<Domain | undefined>
   }
 }
 

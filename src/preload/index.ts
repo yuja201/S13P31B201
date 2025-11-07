@@ -14,7 +14,8 @@ import type {
   Rule,
   RuleInput,
   RuleUpdate,
-  DatabaseSchema
+  DatabaseSchema,
+  DomainCategory
 } from '../main/database/types'
 
 import {
@@ -23,6 +24,7 @@ import {
   GenerateRequest,
   GenerationResult
 } from '../main/services/data-generator/types'
+import { Domain } from 'domain'
 
 // Custom APIs for renderer
 const api = {
@@ -77,7 +79,9 @@ const api = {
     delete: (id: number): Promise<boolean> => ipcRenderer.invoke('db:rule:delete', id),
     createFaker: (data: FakerRuleInput): Promise<Rule> =>
       ipcRenderer.invoke('db:rule:createFaker', data),
-    createAI: (data: AIRuleInput): Promise<Rule> => ipcRenderer.invoke('db:rule:createAI', data)
+    createAI: (data: AIRuleInput): Promise<Rule> => ipcRenderer.invoke('db:rule:createAI', data),
+    getByLogicalType: (logicalType: string) =>
+      ipcRenderer.invoke('rule:getByLogicalType', logicalType)
   },
 
   // Database connection test
@@ -148,6 +152,13 @@ const api = {
     warn: (...args: unknown[]) => log.warn(...args),
     error: (...args: unknown[]) => log.error(...args),
     verbose: (...args: unknown[]) => log.verbose(...args)
+  },
+  domian: {
+    getAll: (): Promise<DomainCategory[]> => ipcRenderer.invoke('domain:getAll'),
+    getByLogicalType: (logicalType: string): Promise<DomainCategory[]> =>
+      ipcRenderer.invoke('domain:getByLogicalType', logicalType),
+    getById: (domainId: number): Promise<Domain | undefined> =>
+      ipcRenderer.invoke('domain:getById', domainId)
   }
 }
 
