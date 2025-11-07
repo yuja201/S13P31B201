@@ -26,6 +26,8 @@ const SelectDomain: React.FC<SelectDomainProps> = ({ source, columnType, onChang
         const logicalType = mapColumnToLogicalType(dbms, columnType)
         const data: DomainCategory[] = await window.api.domain.getByLogicalType(logicalType)
         setCategories(data)
+        setSelected(null)
+        onChange({ id: 0, name: '' })
       } catch (err) {
         console.error('도메인 불러오기 실패:', err)
       }
