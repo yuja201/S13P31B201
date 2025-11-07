@@ -150,6 +150,16 @@ function convertValue(
     return colSchema.notNull ? INVALID : 'NULL'
   }
 
+  const type = colSchema.type.toLowerCase()
+
+  // 빈 문자열 처리
+  if (raw === '') {
+    if (type.includes('char') || type.includes('text')) {
+      return "''"
+    }
+    return colSchema.notNull ? INVALID : 'NULL'
+  }
+
   // CSV에서 "값" 형태면 외부 따옴표 제거
   if (typeof raw === 'string' && raw.length >= 2 && raw[0] === '"' && raw[raw.length - 1] === '"') {
     console.log(`[QUOTE STRIP] BEFORE: ${raw}`)
@@ -164,10 +174,9 @@ function convertValue(
   }
 
   // Boolean
-  if (raw.toLowerCase() === 'true') return 'TRUE'
-  if (raw.toLowerCase() === 'false') return 'FALSE'
-
-  const type = colSchema.type.toLowerCase()
+  const lower = raw.toLowerCase()
+  if (lower === 'true' || raw === '1') return 'TRUE'
+  if (lower === 'false' || raw === '0') return 'FALSE'
 
   // ENUM 처리 + 로그
   if (colSchema.enum && colSchema.enum.length > 0) {
@@ -197,13 +206,11 @@ function convertValue(
     }
 
     // 숫자 형식 검증 (정수 또는 소수)
-    if (!/^-?\d+(\.\d+)?$/.test(raw.trim())) {
+    if (!/^-?\d+(\.\d+)?$/.test(raw.trim().replace(/,/g, ''))) {
       return INVALID
     }
 
-    const num = Number(raw)
-    console.log(`[NUM CHECK] ${raw} -> ${num}`)
-    return Number.isNaN(num) ? INVALID : String(num)
+    return String(Number(raw.replace(/,/g, '')))
   }
 
   // 날짜 / now()
@@ -369,19 +376,13 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
 
               const values: (string | typeof INVALID)[] = []
               for (let j = 0; j < chunkSize; j++) {
-                try {
-                  const { value } = await stream.next()
-
-                  if (value == null) {
-                    values.push(col.isNullable ? 'NULL' : INVALID)
-                    continue
-                  }
-
-                  const converted = convertValue(value, col.columnName, tableName, task.schema)
-                  values.push(converted)
-                } catch {
-                  values.push(INVALID) // 실패한 셀
+                const { value } = await stream.next()
+                if (value === null && col.isNullable === false) {
+                  values.push(INVALID)
+                  continue
                 }
+                const converted = convertValue(value, col.columnName, tableName, task.schema)
+                values.push(converted)
               }
 
               const colDuration = ((Date.now() - colStart) / 1000).toFixed(2)
