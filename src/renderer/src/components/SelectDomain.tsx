@@ -28,11 +28,9 @@ const SelectDomain: React.FC<SelectDomainProps> = ({ source, columnType, onChang
         const data: DomainCategory[] = await window.api.domain.getByLogicalType(logicalType)
         setCategories(data)
         setSelected(null)
-        onChange({ id: 0, name: '' })
       } catch (err) {
-        // 전역 에러 핸들러가 잡도록 로깅만 수행
         window.api.logger.error('도메인 불러오기 실패: ', err)
-        throw err // ❗ 전역 ErrorBoundary로 전달
+        throw err
       }
     }
 
