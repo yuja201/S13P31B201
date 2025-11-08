@@ -14,6 +14,7 @@ const SelectDomain: React.FC<SelectDomainProps> = ({ source, columnType, onChang
   const [selected, setSelected] = useState<number | null>(null)
   const [categories, setCategories] = useState<DomainCategory[]>([])
   const { selectedProject } = useProjectStore()
+
   const dbms = selectedProject?.dbms?.name ?? 'mysql'
 
   // faker가 지원하지 않는 도메인 ID 목록
@@ -29,12 +30,14 @@ const SelectDomain: React.FC<SelectDomainProps> = ({ source, columnType, onChang
         setSelected(null)
         onChange({ id: 0, name: '' })
       } catch (err) {
-        console.error('도메인 불러오기 실패:', err)
+        // 전역 에러 핸들러가 잡도록 로깅만 수행
+        window.api.logger.error('도메인 불러오기 실패: ', err)
+        throw err // ❗ 전역 ErrorBoundary로 전달
       }
     }
 
     if (columnType) fetchDomains()
-  }, [columnType, dbms])
+  }, [columnType, dbms, onChange])
 
   /** 도메인 선택 핸들러 */
   const handleSelect = (id: number, name: string): void => {

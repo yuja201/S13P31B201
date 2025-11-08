@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import SimpleCard from '@renderer/components/SimpleCard'
 import InputField from '@renderer/components/InputField'
 import PageTitle from '@renderer/components/PageTitle'
@@ -45,6 +45,13 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
   const [selectedDomain, setSelectedDomain] = useState<{ id: number; name: string } | null>(null)
   const [ensureUnique, setEnsureUnique] = useState(false)
   const isUniqueColumn = useMemo(() => column.constraints.includes('UNIQUE'), [column])
+
+  const handleDomainChange = useCallback(
+    (domain: { id: number; name: string }) => {
+      setSelectedDomain(domain)
+    },
+    [setSelectedDomain]
+  )
 
   const validateRequiredFields = (): boolean => {
     if (!settingName.trim()) {
@@ -216,7 +223,7 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
         <SelectDomain
           source={selectedSource}
           columnType={columnType}
-          onChange={(value) => setSelectedDomain(value)}
+          onChange={handleDomainChange}
         />
       </div>
       {(selectedSource === 'FAKER' || selectedSource === 'AI') && isUniqueColumn && (
