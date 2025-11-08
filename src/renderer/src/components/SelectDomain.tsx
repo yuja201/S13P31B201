@@ -27,7 +27,6 @@ const SelectDomain: React.FC<SelectDomainProps> = ({ source, columnType, onChang
     const fetchDomains = async (): Promise<void> => {
       setIsLoading(true)
       try {
-        console.log('불러온다')
         const logicalType = mapColumnToLogicalType(dbms, columnType)
         const data: DomainCategory[] = await window.api.domain.getByLogicalType(logicalType)
         setCategories(data)
