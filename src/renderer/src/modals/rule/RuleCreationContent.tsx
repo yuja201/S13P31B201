@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import SimpleCard from '@renderer/components/SimpleCard'
 import InputField from '@renderer/components/InputField'
 import PageTitle from '@renderer/components/PageTitle'
@@ -14,7 +14,7 @@ export interface RuleCreationData {
   apiToken?: string
   prompt?: string
   model?: string
-  columnType?: string
+  columnType: string
   columnName?: string
   result?: number
   domainId?: number
@@ -23,7 +23,7 @@ export interface RuleCreationData {
 
 interface RuleCreationContentProps {
   column: ColumnDetail
-  columnType?: string
+  columnType: string
   columnName?: string
   onCancel: () => void
   onSubmit?: (data: RuleCreationData) => void
@@ -45,6 +45,13 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
   const [selectedDomain, setSelectedDomain] = useState<{ id: number; name: string } | null>(null)
   const [ensureUnique, setEnsureUnique] = useState(false)
   const isUniqueColumn = useMemo(() => column.constraints.includes('UNIQUE'), [column])
+
+  const handleDomainChange = useCallback(
+    (domain: { id: number; name: string }) => {
+      setSelectedDomain(domain)
+    },
+    [setSelectedDomain]
+  )
 
   const validateRequiredFields = (): boolean => {
     if (!settingName.trim()) {
@@ -213,7 +220,11 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
 
       {/* 도메인 선택 */}
       <div style={{ width: '100%', overflow: 'hidden' }}>
-        <SelectDomain source={selectedSource} onChange={(value) => setSelectedDomain(value)} />
+        <SelectDomain
+          source={selectedSource}
+          columnType={columnType}
+          onChange={handleDomainChange}
+        />
       </div>
       {(selectedSource === 'FAKER' || selectedSource === 'AI') && isUniqueColumn && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
