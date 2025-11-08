@@ -3,6 +3,7 @@ import SimpleCard from '@renderer/components/SimpleCard'
 import { mapColumnToLogicalType } from '@renderer/utils/logicalTypeMap'
 import { useProjectStore } from '@renderer/stores/projectStore'
 import type { DomainCategory, Domain } from '@main/database/types'
+import Loading from '@renderer/components/LoadingSpinner'
 
 interface SelectDomainProps {
   source: 'FAKER' | 'AI'
@@ -14,6 +15,7 @@ const SelectDomain: React.FC<SelectDomainProps> = ({ source, columnType, onChang
   const [selected, setSelected] = useState<number | null>(null)
   const [categories, setCategories] = useState<DomainCategory[]>([])
   const { selectedProject } = useProjectStore()
+  const [isLoading, setIsLoading] = useState(false)
 
   const dbms = selectedProject?.dbms?.name ?? 'mysql'
 
@@ -23,7 +25,9 @@ const SelectDomain: React.FC<SelectDomainProps> = ({ source, columnType, onChang
   /** DB에서 logical_type 기준으로 도메인 불러오기 */
   useEffect(() => {
     const fetchDomains = async (): Promise<void> => {
+      setIsLoading(true)
       try {
+        console.log('불러온다')
         const logicalType = mapColumnToLogicalType(dbms, columnType)
         const data: DomainCategory[] = await window.api.domain.getByLogicalType(logicalType)
         setCategories(data)
@@ -31,11 +35,13 @@ const SelectDomain: React.FC<SelectDomainProps> = ({ source, columnType, onChang
       } catch (err) {
         window.api.logger.error('도메인 불러오기 실패: ', err)
         throw err
+      } finally {
+        setIsLoading(false)
       }
     }
 
     if (columnType) fetchDomains()
-  }, [columnType, dbms, onChange])
+  }, [columnType, dbms])
 
   /** 도메인 선택 핸들러 */
   const handleSelect = (id: number, name: string): void => {
@@ -63,25 +69,31 @@ const SelectDomain: React.FC<SelectDomainProps> = ({ source, columnType, onChang
         </div>
 
         <div className="select-domain">
-          <div className="select-domain__scroll">
-            {filteredCategories.map((category) => (
-              <div key={category.category} className="select-domain__group">
-                <h3 className="select-domain__category">{category.category}</h3>
-                <div className="select-domain__grid">
-                  {category.items.map((item) => (
-                    <SimpleCard
-                      key={item.id}
-                      title={item.name}
-                      description={item.description}
-                      size="sm"
-                      selected={selected === item.id}
-                      onSelect={() => handleSelect(item.id, item.name)}
-                    />
-                  ))}
+          {isLoading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '32px 0' }}>
+              <Loading background="white" text="도메인을 불러오는 중..." />
+            </div>
+          ) : (
+            <div className="select-domain__scroll">
+              {filteredCategories.map((category) => (
+                <div key={category.category} className="select-domain__group">
+                  <h3 className="select-domain__category">{category.category}</h3>
+                  <div className="select-domain__grid">
+                    {category.items.map((item) => (
+                      <SimpleCard
+                        key={item.id}
+                        title={item.name}
+                        description={item.description}
+                        size="sm"
+                        selected={selected === item.id}
+                        onSelect={() => handleSelect(item.id, item.name)}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
