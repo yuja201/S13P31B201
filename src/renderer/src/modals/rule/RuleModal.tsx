@@ -104,6 +104,7 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, tableNam
             />
           ) : (
             <RuleSelectContent
+              column={column}
               columnType={columnType}
               columnName={columnName}
               onCancel={onClose}

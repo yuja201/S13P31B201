@@ -7,6 +7,7 @@ import { Rule } from '@main/database/types'
 import { FileType } from '@renderer/modals/file/FileUploadContent'
 import { mapColumnToLogicalType } from '@renderer/utils/logicalTypeMap'
 import { useProjectStore } from '@renderer/stores/projectStore'
+import { ColumnDetail } from '@renderer/views/CreateDummyView'
 
 export interface RuleCreationData {
   source: 'Faker' | 'AI'
@@ -39,6 +40,7 @@ export interface RuleSelection {
 }
 
 interface RuleSelectContentProps {
+  column: ColumnDetail
   columnName: string
   columnType: string
   onCancel: () => void
@@ -47,6 +49,7 @@ interface RuleSelectContentProps {
 }
 
 const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
+  column,
   columnName,
   columnType,
   onCancel,
@@ -87,9 +90,25 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
 
   const handleConfirmFixed = (): void => {
     if (!fixedValue.trim()) {
+      // NOT NULL 컬럼인데 빈 값을 입력한 경우
+      if (column.constraints.includes('NOT NULL')) {
+        alert(`'${column.name}' 컬럼은 NOT NULL 제약이 있습니다. 값을 입력해주세요.`)
+        return
+      }
+      // NOT NULL이 아니면 빈 값 허용
+      onConfirm({
+        columnName,
+        dataSource: 'FIXED',
+        metaData: { fixedValue: '' }
+      })
       return
     }
+    // NOT NULL 컬럼인데 'NULL' 문자열을 입력한 경우
+    if (column.constraints.includes('NOT NULL') && fixedValue.trim().toUpperCase() === 'NULL') {
+      alert(`'${column.name}' 컬럼은 NOT NULL 제약이 있습니다. 'NULL' 값을 입력할 수 없습니다.`)
+      return
 
+    }
     // Fixed value를 부모로 전달
     onConfirm({
       columnName,
