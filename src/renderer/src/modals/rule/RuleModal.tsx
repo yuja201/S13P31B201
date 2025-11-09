@@ -97,6 +97,7 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, tableNam
             />
           ) : hasEnumList ? (
             <EnumSelectContent
+              column={column}
               columnName={columnName}
               enumList={column.enumList!}
               onCancel={onClose}

@@ -174,6 +174,11 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
           title={`새 규칙 만들기 - ${columnName}`}
           description="데이터 생성 방식을 선택하고, 관련 정보를 입력하세요."
         />
+        {column.checkConstraint && (
+          <div className="check-constraint-notice">
+            ※ 참고: 이 컬럼에는 <span>{column.checkConstraint}</span> 제약 조건이 있습니다.
+          </div>
+        )}
         <br />
         <hr className="rule-create__divider" />
       </div>
@@ -333,6 +338,21 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
 
         .rule-create__header {
           margin-bottom: 4px;
+        }
+
+        .check-constraint-notice {
+          background-color: var(--color-light-yellow);
+          border: 1px solid var(--color-orange);
+          border-radius: 8px;
+          padding: 10px 12px;
+          font: var(--preRegular14);
+          color: var(--color-dark-gray);
+          margin-top: 16px;
+         }
+
+        .check-constraint-notice span {
+          font-weight: var(--fw-semiBold);
+          color: var(--color-black);
         }
 
         .rule-create__divider {

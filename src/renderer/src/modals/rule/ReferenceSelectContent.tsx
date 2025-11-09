@@ -183,6 +183,11 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
         description="참조 컬럼에서 값을 가져올 방식을 선택하세요."
         size="small"
       />
+      {column.checkConstraint && (
+        <div className="check-constraint-notice">
+          ※ 참고: 이 컬럼에는 <span>{column.checkConstraint}</span> 제약 조건이 있습니다.
+        </div>
+      )}
       <div className="divider" />
       <div className="ref-select__content">
         {/* ---  참조 정보 (고정) --- */}
@@ -328,6 +333,22 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
           gap: 25px;
           padding: 0 14px 14px 0;
         }
+
+        .check-constraint-notice {
+          background-color: var(--color-light-yellow);
+          border: 1px solid var(--color-orange);
+          border-radius: 8px;
+          padding: 10px 12px;
+          font: var(--preRegular14);
+          color: var(--color-dark-gray);
+          margin-top: 16px;
+         }
+
+        .check-constraint-notice span {
+          font-weight: var(--fw-semiBold);
+          color: var(--color-black);
+        }
+
         .divider {
           border: none;
           border-top: 1px solid var(--color-gray-200);
