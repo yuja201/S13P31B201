@@ -19,6 +19,7 @@ export interface RuleCreationData {
   result?: number
   domainId?: number
   domainName?: string
+  ensureUnique?: boolean
 }
 
 interface RuleCreationContentProps {
@@ -106,7 +107,8 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
           columnName,
           result: result.id,
           domainId: selectedDomain!.id,
-          domainName: selectedDomain!.name
+          domainName: selectedDomain!.name,
+          ensureUnique: ensureUnique
         })
 
         showToast('Faker 규칙이 저장되었습니다.', 'success', '성공')
@@ -129,7 +131,8 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
           columnName,
           result: result.id,
           domainId: selectedDomain!.id,
-          domainName: selectedDomain!.name
+          domainName: selectedDomain!.name,
+          ensureUnique: ensureUnique
         })
 
         showToast('AI 규칙이 저장되었습니다.', 'success', '성공')

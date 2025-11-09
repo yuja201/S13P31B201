@@ -197,7 +197,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
           return
         }
         dataSource = 'FAKER'
-        metaData = { kind: 'faker', ruleId }
+        metaData = { kind: 'faker', ruleId, ensureUnique: rule.metaData.ensureUnique }
         break
       }
 
@@ -208,7 +208,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
           return
         }
         dataSource = 'AI'
-        metaData = { kind: 'ai', ruleId }
+        metaData = { kind: 'ai', ruleId, ensureUnique: rule.metaData.ensureUnique }
         break
       }
 
