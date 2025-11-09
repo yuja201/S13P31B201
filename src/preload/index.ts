@@ -14,7 +14,8 @@ import type {
   Rule,
   RuleInput,
   RuleUpdate,
-  DatabaseSchema
+  DatabaseSchema,
+  DomainCategory
 } from '../main/database/types'
 
 import {
@@ -77,7 +78,9 @@ const api = {
     delete: (id: number): Promise<boolean> => ipcRenderer.invoke('db:rule:delete', id),
     createFaker: (data: FakerRuleInput): Promise<Rule> =>
       ipcRenderer.invoke('db:rule:createFaker', data),
-    createAI: (data: AIRuleInput): Promise<Rule> => ipcRenderer.invoke('db:rule:createAI', data)
+    createAI: (data: AIRuleInput): Promise<Rule> => ipcRenderer.invoke('db:rule:createAI', data),
+    getByLogicalType: (logicalType: string) =>
+      ipcRenderer.invoke('db:rule:getByLogicalType', logicalType)
   },
 
   // Database connection test
@@ -162,6 +165,11 @@ const api = {
     warn: (...args: unknown[]) => log.warn(...args),
     error: (...args: unknown[]) => log.error(...args),
     verbose: (...args: unknown[]) => log.verbose(...args)
+  },
+  domain: {
+    getAll: (): Promise<DomainCategory[]> => ipcRenderer.invoke('domain:getAll'),
+    getByLogicalType: (logicalType: string): Promise<DomainCategory[]> =>
+      ipcRenderer.invoke('domain:getByLogicalType', logicalType)
   }
 }
 

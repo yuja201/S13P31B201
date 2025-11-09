@@ -11,6 +11,7 @@ import './ipc/data-generator-handlers'
 import './ipc/rule-handlers'
 import './ipc/file-handlers'
 import './ipc/env-handlers'
+import './ipc/domain-handler'
 
 const logger = createLogger('Main')
 

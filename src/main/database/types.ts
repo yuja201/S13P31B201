@@ -144,3 +144,18 @@ export interface DatabaseSchema {
   tables: Table[]
   fetchedAt: number
 }
+
+// 도메인 관련
+export interface DomainCategory {
+  category: string
+  items: Domain[]
+}
+
+export interface Domain {
+  id: number
+  name: string
+  description: string
+  logical_type: string
+  category_id: number
+  category_name: string
+}

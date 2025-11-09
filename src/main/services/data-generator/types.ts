@@ -54,6 +54,7 @@ export interface ColumnConfig {
   columnName: string
   dataSource: DataSourceType
   metaData: ColumnMetaData
+  isNullable: boolean
 }
 
 /**
@@ -123,6 +124,7 @@ export interface WorkerTask {
     password: string
     database: string
   }
+  skipInvalidRows?: boolean
 }
 
 export interface WorkerResult {

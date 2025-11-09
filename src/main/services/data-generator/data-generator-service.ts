@@ -96,7 +96,8 @@ export async function runDataGenerator(
       database: databaseInfo,
       rules,
       mode,
-      connection: connectionInfo
+      connection: connectionInfo,
+      skipInvalidRows: payload.skipInvalidRows ?? true
     }
     const isPackaged = app.isPackaged
     const baseDir = isPackaged

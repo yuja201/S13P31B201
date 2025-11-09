@@ -5,6 +5,8 @@ import PageTitle from '@renderer/components/PageTitle'
 import Label from '@renderer/components/Label'
 import { Rule } from '@main/database/types'
 import { FileType } from '@renderer/modals/file/FileUploadContent'
+import { mapColumnToLogicalType } from '@renderer/utils/logicalTypeMap'
+import { useProjectStore } from '@renderer/stores/projectStore'
 
 export interface RuleCreationData {
   source: 'Faker' | 'AI'
@@ -53,6 +55,8 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
 }) => {
   const [fixedValue, setFixedValue] = useState('')
   const [rules, setRules] = useState<Rule[]>([])
+  const { selectedProject } = useProjectStore()
+  const dbms = selectedProject?.dbms?.name ?? 'mysql'
 
   const handleSelectRule = (rule: Rule): void => {
     // 선택한 rule을 부모로 전달
@@ -71,15 +75,15 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
   useEffect(() => {
     const fetchRules = async (): Promise<void> => {
       try {
-        const data = await window.api.rule.getAll()
+        const logicalType = mapColumnToLogicalType(dbms, columnType)
+        const data = await window.api.rule.getByLogicalType(logicalType)
         setRules(data)
       } catch (err) {
         console.error('규칙 불러오기 실패:', err)
       }
     }
-
-    fetchRules()
-  }, [columnName])
+    if (columnType) fetchRules()
+  }, [columnType, dbms])
 
   const handleConfirmFixed = (): void => {
     if (!fixedValue.trim()) {

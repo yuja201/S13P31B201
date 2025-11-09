@@ -167,3 +167,32 @@ export function deleteRule(id: number): boolean {
 
   return result.changes > 0
 }
+
+/**
+ * 특정 logical_type(문자열/숫자/날짜 등)에 해당하는 생성 규칙 목록 조회
+ * - domain.logical_type으로 필터링
+ */
+export function getRulesByLogicalType(logicalType: string): Rule[] {
+  const db = getDatabase()
+
+  const stmt = db.prepare(`
+    SELECT
+      r.id,
+      r.name,
+      r.data_source,
+      r.domain_id,
+      d.name AS domain_name,
+      c.name AS category_name,
+      r.model_id,
+      r.prompt,
+      r.created_at,
+      r.updated_at
+    FROM rules r
+    JOIN domains d ON r.domain_id = d.id
+    JOIN domain_categories c ON d.category_id = c.id
+    WHERE d.logical_type = ?
+    ORDER BY c.id, r.created_at DESC
+  `)
+
+  return stmt.all(logicalType) as Rule[]
+}
