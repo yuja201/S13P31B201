@@ -8,6 +8,8 @@ import { FileType } from '@renderer/modals/file/FileUploadContent'
 import { mapColumnToLogicalType } from '@renderer/utils/logicalTypeMap'
 import { useProjectStore } from '@renderer/stores/projectStore'
 import { ColumnDetail } from '@renderer/views/CreateDummyView'
+import { useToastStore } from '@renderer/stores/toastStore'
+import { formatCheckConstraint } from '@renderer/utils/formatConstraint'
 
 export interface RuleCreationData {
   source: 'Faker' | 'AI'
@@ -60,6 +62,7 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
   const [rules, setRules] = useState<Rule[]>([])
   const { selectedProject } = useProjectStore()
   const dbms = selectedProject?.dbms?.name ?? 'mysql'
+  const showToast = useToastStore((s) => s.showToast)
 
   const handleSelectRule = (rule: Rule): void => {
     // 선택한 rule을 부모로 전달
@@ -94,14 +97,22 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
     // NOT NULL 검증
     if (!trimmedValue) {
       if (column.constraints.includes('NOT NULL')) {
-        alert(`'${column.name}' 컬럼은 NOT NULL 제약이 있습니다. 값을 입력해주세요.`)
+        showToast(
+          `'${column.name}' 컬럼은 NOT NULL 제약이 있습니다. 값을 입력해주세요.`,
+          'warning',
+          '입력 오류'
+        )
         return
       }
       onConfirm({ columnName, dataSource: 'FIXED', metaData: { fixedValue: '' } })
       return
     }
     if (column.constraints.includes('NOT NULL') && trimmedValue.toUpperCase() === 'NULL') {
-      alert(`'${column.name}' 컬럼은 NOT NULL 제약이 있습니다. 'NULL' 값을 입력할 수 없습니다.`)
+      showToast(
+        `'${column.name}' 컬럼은 NOT NULL 제약이 있습니다. 'NULL' 값을 입력할 수 없습니다.`,
+        'warning',
+        '입력 오류'
+      )
       return
     }
 
@@ -120,8 +131,10 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
           if (operator === '<=' && !(num <= checkValue)) isValid = false
 
           if (!isValid) {
-            alert(
-              `입력한 값 '${num}'이(가) CHECK 제약 조건 '${column.checkConstraint}'을(를) 위반합니다.`
+            showToast(
+              `입력한 값 '${num}'이(가) CHECK 제약 조건 '${column.checkConstraint}'을(를) 위반합니다.`,
+              'warning',
+              '입력 오류'
             )
             return
           }
@@ -150,7 +163,8 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
         />
         {column.checkConstraint && (
           <div className="check-constraint-notice">
-            ※ 참고: 이 컬럼에는 <span>{column.checkConstraint}</span> 제약 조건이 있습니다.
+            ※ 참고: 이 컬럼에는 <span>{formatCheckConstraint(column.checkConstraint)}</span>제약
+            조건이 있습니다.
           </div>
         )}
         <br />

@@ -1,3 +1,4 @@
+import { formatCheckConstraint } from '@renderer/utils/formatConstraint'
 import React, { useState } from 'react'
 import PageTitle from '@renderer/components/PageTitle'
 import Button from '@renderer/components/Button'
@@ -40,7 +41,7 @@ const EnumSelectContent: React.FC<EnumSelectContentProps> = ({
       />
       {column.checkConstraint && (
         <div className="check-constraint-notice">
-          ※ 참고: 이 컬럼에는 <span>{column.checkConstraint}</span> 제약 조건이 있습니다.
+          ※ 참고: 이 컬럼에는 <span>{formatCheckConstraint(column.checkConstraint)}</span> 제약 조건이 있습니다.
         </div>
       )}
       <div className="divider" />

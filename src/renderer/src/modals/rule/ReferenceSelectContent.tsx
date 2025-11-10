@@ -1,9 +1,11 @@
+import { useToastStore } from '@renderer/stores/toastStore'
 import React, { useState, useMemo, useEffect } from 'react'
 import PageTitle from '@renderer/components/PageTitle'
 import Button from '@renderer/components/Button'
 import { useProjectStore } from '@renderer/stores/projectStore'
 import { ColumnDetail } from '@renderer/views/CreateDummyView'
 import { RuleSelection } from './RuleSelectContent'
+import { formatCheckConstraint } from '@renderer/utils/formatConstraint'
 
 type ReferenceStrategy = 'RANDOM_SAMPLE' | 'FIXED_VALUE'
 type SampleState = { status: 'idle' | 'loading' | 'success' | 'error'; value: string }
@@ -21,6 +23,7 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
   onConfirm
 }) => {
   const { selectedProject } = useProjectStore()
+  const showToast = useToastStore((s) => s.showToast)
 
   const databaseId = selectedProject?.database?.id
   const isUnique = useMemo(() => column.constraints.includes('UNIQUE'), [column])
@@ -92,11 +95,11 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
   //  고정값 검증
   const handleValidateValue = (): void => {
     if (!searchValue.trim()) {
-      alert('검색할 값을 입력하세요.')
+      showToast('검색할 값을 입력하세요.', 'warning', '입력 오류')
       return
     }
     if (!databaseId) {
-      alert('데이터베이스 연결을 찾을 수 없습니다.')
+      showToast('데이터베이스 연결을 찾을 수 없습니다.', 'warning', '연결 오류')
       return
     }
 
@@ -127,7 +130,11 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
   const handleSave = (): void => {
     if (strategy === 'RANDOM_SAMPLE') {
       if (samplePreview.status === 'error') {
-        alert('샘플 로딩에 실패했지만, "무작위 샘플링" 규칙은 저장됩니다.')
+        showToast(
+          '샘플 로딩에 실패했지만, "무작위 샘플링" 규칙은 저장됩니다.',
+          'warning',
+          '샘플링 오류'
+        )
       }
       onConfirm({
         columnName: column.name,
@@ -142,7 +149,7 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
       })
     } else {
       if (validationState !== 'valid') {
-        alert('유효한 값을 입력하고 "검증하기"를 완료해야 합니다.')
+        showToast('유효한 값을 입력하고 "검증하기"를 완료해야 합니다.', 'warning', '검증 필요')
         return
       }
       onConfirm({
@@ -185,7 +192,8 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
       />
       {column.checkConstraint && (
         <div className="check-constraint-notice">
-          ※ 참고: 이 컬럼에는 <span>{column.checkConstraint}</span> 제약 조건이 있습니다.
+          ※ 참고: 이 컬럼에는 <span>{formatCheckConstraint(column.checkConstraint)}</span>
+          제약 조건이 있습니다.
         </div>
       )}
       <div className="divider" />
