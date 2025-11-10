@@ -36,7 +36,6 @@ export type ReferenceMetaData = {
   kind: 'reference'
   refTable: string
   refColumn: string
-  fixedValue: string
   ensureUnique?: boolean
 }
 
