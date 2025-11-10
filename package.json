@@ -1,6 +1,6 @@
 {
   "name": "heresdummy",
-  "version": "1.0.1",
+  "version": "1.1.0",
   "productName": "Here's Dummy",
   "description": "An Electron application with React and TypeScript",
   "main": "out/main/index.js",
