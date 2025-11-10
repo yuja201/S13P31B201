@@ -43,19 +43,23 @@ const convertColumn = (col: Column, table: Table): ColumnDetail => {
   if (col.autoIncrement) constraints.push('AUTO INCREMENT')
   if (col.default) constraints.push('DEFAULT')
   if (col.check) constraints.push('CHECK')
-  if (col.enum) constraints.push('ENUM')
-  if (col.domain) constraints.push('DOMAIN')
+
+  const isEnum =
+    (Array.isArray(col.enum) && col.enum.length > 0) ||
+    col.type.toLowerCase() === 'user-defined' ||
+    col.type.toLowerCase().startsWith('enum')
+
+  if (isEnum) constraints.push('ENUM')
+
+  const displayType = isEnum && col.enum ? `enum(${col.enum.join(', ')})` : col.type
 
   const columnForeignKeys = table.foreignKeys?.filter((fk) => fk.column_name === col.name) || null
   const isForeignKey = (columnForeignKeys && columnForeignKeys.length > 0) || false
 
-  if (isForeignKey) {
-    constraints.push('FK')
-  }
-  // ---  생성 방식 & 설정 자동 채우기 로직 ---
+  if (isForeignKey) constraints.push('FK')
+
   let generation = ''
   let setting = ''
-
   if (col.autoIncrement) {
     generation = 'Auto Increment'
     setting = '자동 증가'
@@ -66,14 +70,14 @@ const convertColumn = (col: Column, table: Table): ColumnDetail => {
 
   return {
     name: col.name,
-    type: col.type,
+    type: displayType,
     constraints,
     generation,
     setting,
     defaultValue: col.default || null,
     checkConstraint: col.check || null,
-    enumList: col.enum || null,
-    isForeignKey: isForeignKey,
+    enumList: Array.isArray(col.enum) && col.enum.length > 0 ? col.enum : null,
+    isForeignKey,
     foreignKeys: columnForeignKeys
   }
 }
