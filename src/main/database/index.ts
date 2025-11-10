@@ -36,6 +36,18 @@ export function initDatabase(): Database.Database {
 
   // 데이터베이스 스키마 생성
   db.exec(createTablesSQL)
+  try {
+    // domains 테이블에 logical_type 컬럼이 없으면 추가
+    db.prepare("ALTER TABLE domains ADD COLUMN logical_type TEXT NOT NULL DEFAULT 'string'").run()
+    console.log('Database migration: Added logical_type to domains table.')
+  } catch (err) {
+    const isDuplicateColumnError =
+      err instanceof Error && err.message.includes('duplicate column name')
+
+    if (!isDuplicateColumnError) {
+      throw err
+    }
+  }
 
   // DBMS 종류 저장
   db.exec(insertDefaultDBMSData)
