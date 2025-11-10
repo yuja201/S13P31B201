@@ -1,10 +1,6 @@
 {
   "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
   "include": ["electron.vite.config.*", "src/main/**/*", "src/preload/**/*"],
-  "exclude": [
-    "src/main/services/data-generator/types.ts",
-    "src/main/database/types.ts"
-  ],
   "compilerOptions": {
     "composite": true,
     "types": ["electron-vite/node"],
