@@ -1,6 +1,6 @@
 import { ipcMain, BrowserWindow, dialog } from 'electron'
 import { runDataGenerator } from '../services/data-generator/data-generator-service'
-import { GenerateRequest } from '../services/data-generator/types'
+import { GenerateRequest } from '@shared/types'
 import fs from 'node:fs'
 import path from 'node:path'
 

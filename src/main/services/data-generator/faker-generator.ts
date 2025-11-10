@@ -1,6 +1,6 @@
 import { faker, Faker } from '@faker-js/faker'
 import { fakerMapper } from '../../utils/faker-mapper'
-import type { FakerMetaData } from './types'
+import type { FakerMetaData } from '@shared/types'
 import type { Table, Column as SchemaColumn } from '../../database/types'
 
 /**

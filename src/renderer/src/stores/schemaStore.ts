@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import type { DatabaseSchema, Table } from '../../../main/database/types'
+import type { DatabaseSchema, Table } from '@main/database/types'
 
 interface SchemaState {
   // 데이터베이스 ID별로 스키마 캐싱

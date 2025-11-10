@@ -6,7 +6,7 @@ import {
   SqlDbType,
   AIMetaData,
   ColumnConstraint
-} from './types'
+} from '@shared/types'
 import { getDomainGuideline } from './ai/domain-config'
 import { buildAjvValidator, enforceUniqueness, parseValuesArray } from '../../utils/validators'
 import { resolveModel } from './ai/model-map'

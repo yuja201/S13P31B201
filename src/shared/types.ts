@@ -1,5 +1,5 @@
-import { DBMS_MAP } from '../../utils/dbms-map'
-import { Table } from '../../database/types'
+import { DBMS_MAP } from '../main/utils/dbms-map'
+import { Table } from '../main/database/types'
 
 /**
  * 데이터 소스 타입

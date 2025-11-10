@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import mysql from 'mysql2/promise'
 import { Client as PgClient } from 'pg'
-import type { WorkerTask, WorkerResult } from './types.js'
+import type { WorkerTask, WorkerResult } from '@shared/types.js'
 import { DBMS_MAP } from '../../utils/dbms-map.js'
 import { generateFakeStream } from './faker-generator.js'
 import { generateAIStream } from './ai-generator.js'
@@ -18,7 +18,7 @@ import {
   FileMetaData,
   FixedMetaData,
   ReferenceMetaData
-} from './types.js'
+} from '@shared/types'
 
 const INVALID = { __invalid: true } as const
 type CellValue = string | typeof INVALID

@@ -18,12 +18,7 @@ import type {
   DomainCategory
 } from '../main/database/types'
 
-import {
-  FakerRuleInput,
-  AIRuleInput,
-  GenerateRequest,
-  GenerationResult
-} from '../main/services/data-generator/types'
+import { FakerRuleInput, AIRuleInput, GenerateRequest, GenerationResult } from '@shared/types'
 
 // Custom APIs for renderer
 const api = {

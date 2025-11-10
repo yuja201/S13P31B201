@@ -7,12 +7,7 @@ import Button from '@renderer/components/Button'
 import { useProjectStore } from '@renderer/stores/projectStore'
 import { useGenerationStore } from '@renderer/stores/generationStore'
 import { useLocation, useNavigate } from 'react-router-dom'
-import type {
-  ColumnMetaData,
-  DataSourceType,
-  GenerationMode,
-  GenerateRequest
-} from '@main/services/data-generator/types'
+import type { ColumnMetaData, DataSourceType, GenerationMode, GenerateRequest } from '@shared/types'
 
 type InsertMode = 'sql' | 'db'
 

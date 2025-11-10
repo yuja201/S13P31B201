@@ -1,4 +1,4 @@
-import { FakerRuleInput, AIRuleInput } from './../services/data-generator/types'
+import { FakerRuleInput, AIRuleInput } from '@shared/types'
 import { ipcMain } from 'electron'
 import { createFakerRule } from '../services/faker-rule-service'
 import { createAIRule } from '../services/creation-rule/ai-rule-service'

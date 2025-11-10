@@ -1,8 +1,4 @@
-import {
-  FakerRuleInput,
-  AIRuleInput,
-  GenerationResult
-} from './../main/services/data-generator/types'
+import { FakerRuleInput, AIRuleInput, GenerationResult } from '@shared/types'
 import { ElectronAPI } from '@electron-toolkit/preload'
 import type {
   DBMS,
@@ -20,7 +16,7 @@ import type {
   DatabaseSchema,
   DomainCategory
 } from '../main/database/types'
-import type { GenerateRequest, GenerationResult } from '../main/services/data-generator/types'
+import type { GenerateRequest, GenerationResult } from '@shared/types'
 
 interface API {
   dbms: {

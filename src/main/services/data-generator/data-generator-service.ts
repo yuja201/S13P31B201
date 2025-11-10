@@ -2,7 +2,7 @@
 import os from 'node:os'
 import { spawn } from 'node:child_process'
 import { app, BrowserWindow } from 'electron'
-import type { WorkerTask, WorkerResult, GenerateRequest, GenerationResult } from './types'
+import type { WorkerTask, WorkerResult, GenerateRequest, GenerationResult } from '@shared/types'
 import { getDatabaseByProjectId } from '../../database/databases'
 import { getDBMSById } from '../../database/dbms'
 import { getRuleById } from '../../database/rules'
