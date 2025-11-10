@@ -80,13 +80,13 @@ interface API {
       databaseId: number
       table: string
       column: string
-    }) => Promise<{ sample: any }>
+    }) => Promise<{ sample: unknown }>
 
     validateFkValue: (params: {
       databaseId: number
       table: string
       column: string
-      value: any
+      value: unknown
     }) => Promise<{ isValid: boolean }>
   }
 
