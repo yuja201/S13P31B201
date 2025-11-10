@@ -34,7 +34,7 @@ const DBTableList: React.FC<DBTableListProps> = ({
         {/* --- 테이블 목록 헤더 --- */}
         <div className="list-header">
           <h3 className="preSemiBold20">테이블 목록</h3>
-          <span className="preRegular14">{filteredTables.length}tables</span>
+          <span className="preRegular14">{filteredTables.length} tables</span>
         </div>
 
         {/* --- 검색창 --- */}

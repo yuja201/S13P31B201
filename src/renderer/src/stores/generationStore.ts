@@ -37,6 +37,7 @@ export type ReferenceMetaData = {
   refTable: string
   refColumn: string
   ensureUnique?: boolean
+  previewValue?: string | number
 }
 
 export type ColumnMetaData =
@@ -89,6 +90,7 @@ interface GenerationState {
   clearSelectedTables: () => void
 
   resetTable: (tableName: string) => void
+  resetColumnRule: (tableName: string, columnName: string) => void
   clearAll: () => void
 
   exportRulesForTable: (tableName: string) => {
@@ -136,7 +138,6 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
   setSelectedTables: (tables) => set({ selectedTables: tables }),
   clearSelectedTables: () => set({ selectedTables: new Set() }),
 
-  // ------------------------
   // 파일 매핑
   applyFileMapping: (tableName, payload) => {
     set((state) => {
@@ -247,7 +248,8 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
           kind: 'reference',
           refTable,
           refColumn,
-          ensureUnique: rule.metaData.ensureUnique
+          ensureUnique: rule.metaData.ensureUnique,
+          previewValue: rule.metaData.previewValue
         }
         break
       }
@@ -292,6 +294,25 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
       const next = { ...state.tables }
       delete next[tableName]
       return { tables: next }
+    }),
+
+  resetColumnRule: (tableName, columnName) =>
+    set((state) => {
+      const tableConfig = state.tables[tableName]
+      if (!tableConfig) return state
+
+      const newColumns = { ...tableConfig.columns }
+      delete newColumns[columnName]
+
+      return {
+        tables: {
+          ...state.tables,
+          [tableName]: {
+            ...tableConfig,
+            columns: newColumns
+          }
+        }
+      }
     }),
 
   clearAll: () => set({ tables: {} }),
