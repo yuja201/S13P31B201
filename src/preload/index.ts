@@ -104,14 +104,14 @@ const api = {
       databaseId: number
       table: string
       column: string
-    }): Promise<{ sample: any }> => ipcRenderer.invoke('db:get-random-sample', params),
+    }): Promise<{ sample: unknown }> => ipcRenderer.invoke('db:get-random-sample', params),
 
     // FK Value Verification Function
     validateFkValue: (params: {
       databaseId: number
       table: string
       column: string
-      value: any
+      value: unknown
     }): Promise<{ isValid: boolean }> => ipcRenderer.invoke('db:validate-fk-value', params)
   },
 
