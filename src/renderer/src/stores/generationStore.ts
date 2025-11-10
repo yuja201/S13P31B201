@@ -37,6 +37,7 @@ export type ReferenceMetaData = {
   refTable: string
   refColumn: string
   ensureUnique?: boolean
+  previewValue?: string | number
 }
 
 export type ColumnMetaData =
@@ -247,7 +248,8 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
           kind: 'reference',
           refTable,
           refColumn,
-          ensureUnique: rule.metaData.ensureUnique
+          ensureUnique: rule.metaData.ensureUnique,
+          previewValue: rule.metaData.previewValue
         }
         break
       }

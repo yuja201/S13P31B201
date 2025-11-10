@@ -6,6 +6,7 @@ import { useProjectStore } from '@renderer/stores/projectStore'
 import { ColumnDetail } from '@renderer/views/CreateDummyView'
 import { RuleSelection } from './RuleSelectContent'
 import { formatCheckConstraint } from '@renderer/utils/formatConstraint'
+import { ColumnConfig } from '@renderer/stores/generationStore'
 
 type ReferenceStrategy = 'RANDOM_SAMPLE' | 'FIXED_VALUE'
 type SampleState = { status: 'idle' | 'loading' | 'success' | 'error'; value: string }
@@ -15,12 +16,14 @@ interface ReferenceSelectContentProps {
   column: ColumnDetail
   onCancel: () => void
   onConfirm: (result: RuleSelection) => void
+  initialConfig?: ColumnConfig
 }
 
 const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
   column,
   onCancel,
-  onConfirm
+  onConfirm,
+  initialConfig
 }) => {
   const { selectedProject } = useProjectStore()
   const showToast = useToastStore((s) => s.showToast)
@@ -34,15 +37,16 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
   const referencedColumnName = schemaRef?.referenced_column || ''
 
   const [strategy, setStrategy] = useState<ReferenceStrategy>(() => {
-    if (column.generation === '고정값') {
+    if (initialConfig?.dataSource === 'FIXED') {
       return 'FIXED_VALUE'
+
     }
     return 'RANDOM_SAMPLE'
   })
 
   const [searchValue, setSearchValue] = useState(() => {
-    if (column.generation === '고정값') {
-      return column.setting || ''
+    if (initialConfig?.dataSource === 'FIXED' && initialConfig.metaData.kind === 'fixed') {
+      return initialConfig.metaData.fixedValue || ''
     }
     return ''
   })
@@ -55,16 +59,22 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
   })
 
   const [samplePreview, setSamplePreview] = useState<SampleState>(() => {
-    if (column.generation === '참조' && column.previewValue) {
-      return { status: 'success', value: String(column.previewValue) }
+    if (
+      initialConfig?.dataSource === 'REFERENCE' &&
+      initialConfig.metaData.kind === 'reference' &&
+      initialConfig.metaData.previewValue
+    ) {
+      // 있다면 그 값을 초기 상태로 설정
+      return { status: 'success', value: String(initialConfig.metaData.previewValue) }
     }
+    // 없다면 초기 상태
     return { status: 'idle', value: '' }
   })
 
   // 무작위 샘플링
   useEffect(() => {
     if (strategy === 'RANDOM_SAMPLE' && databaseId) {
-      if (column.generation === '참조' && column.previewValue) {
+      if (samplePreview.status === 'success' || samplePreview.status === 'loading') {
         return
       }
 
@@ -83,14 +93,7 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
           setSamplePreview({ status: 'error', value: '샘플 로딩 실패' })
         })
     }
-  }, [
-    strategy,
-    referencedTableName,
-    referencedColumnName,
-    databaseId,
-    column.generation,
-    column.previewValue
-  ])
+  }, [strategy, databaseId, referencedTableName, referencedColumnName, samplePreview.status])
 
   //  고정값 검증
   const handleValidateValue = (): void => {

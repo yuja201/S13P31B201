@@ -32,9 +32,12 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
   const setTableRecordCount = useGenerationStore((s) => s.setTableRecordCount)
   const [rows, setRows] = useState<number>(() => getTableRecordCount(table.name))
 
+
   const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false)
   const [isRuleModalOpen, setIsRuleModalOpen] = useState(false)
   const [selectedColumn, setSelectedColumn] = useState<ColumnDetail | null>(null)
+
+  const selectedColumnConfig = selectedColumn ? columnConfigs[selectedColumn.name] : undefined
 
   useEffect(() => {
     setRows(getTableRecordCount(table.name))
@@ -152,12 +155,9 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
             break
           case 'REFERENCE':
             generation = '참조'
-            if (config.metaData.kind === 'reference') {
-              setting = `${config.metaData.refTable}.${config.metaData.refColumn}`
-            } else {
-              setting = '참조 설정됨'
-            }
+            setting = col.setting
             break
+
         }
 
         return { ...col, generation, setting }
@@ -334,6 +334,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
           onClose={closeRuleModal}
           column={selectedColumn}
           onConfirm={handleRuleConfirm}
+          initialConfig={selectedColumnConfig}
         />
       )}
 
