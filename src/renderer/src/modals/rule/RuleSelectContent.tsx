@@ -4,9 +4,10 @@ import InputField from '@renderer/components/InputField'
 import PageTitle from '@renderer/components/PageTitle'
 import Label from '@renderer/components/Label'
 import { Rule } from '@main/database/types'
-import { FileType } from '../file/FileUploadContent'
+import { FileType } from '@renderer/modals/file/FileUploadContent'
 import { mapColumnToLogicalType } from '@renderer/utils/logicalTypeMap'
 import { useProjectStore } from '@renderer/stores/projectStore'
+import { ColumnDetail } from '@renderer/views/CreateDummyView'
 
 export interface RuleCreationData {
   source: 'Faker' | 'AI'
@@ -34,10 +35,12 @@ export interface RuleSelection {
     refTable?: string
     refColumn?: string
     previewValue?: string
+    ensureUnique?: boolean
   }
 }
 
 interface RuleSelectContentProps {
+  column: ColumnDetail
   columnName: string
   columnType: string
   onCancel: () => void
@@ -46,6 +49,7 @@ interface RuleSelectContentProps {
 }
 
 const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
+  column,
   columnName,
   columnType,
   onCancel,
@@ -85,8 +89,44 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
   }, [columnType, dbms])
 
   const handleConfirmFixed = (): void => {
-    if (!fixedValue.trim()) {
+    const trimmedValue = fixedValue.trim()
+
+    // NOT NULL 검증
+    if (!trimmedValue) {
+      if (column.constraints.includes('NOT NULL')) {
+        alert(`'${column.name}' 컬럼은 NOT NULL 제약이 있습니다. 값을 입력해주세요.`)
+        return
+      }
+      onConfirm({ columnName, dataSource: 'FIXED', metaData: { fixedValue: '' } })
       return
+    }
+    if (column.constraints.includes('NOT NULL') && trimmedValue.toUpperCase() === 'NULL') {
+      alert(`'${column.name}' 컬럼은 NOT NULL 제약이 있습니다. 'NULL' 값을 입력할 수 없습니다.`)
+      return
+    }
+
+    // CHECK 제약 조건 검증 (간단한 숫자 비교만 처리)
+    if (column.checkConstraint) {
+      const num = Number(trimmedValue)
+      if (!Number.isNaN(num)) {
+        const checkMatch = column.checkConstraint.match(/(>|>=|<|<=)\s*(\d+)/)
+        if (checkMatch) {
+          const [, operator, valueStr] = checkMatch
+          const checkValue = Number(valueStr)
+          let isValid = true
+          if (operator === '>' && !(num > checkValue)) isValid = false
+          if (operator === '>=' && !(num >= checkValue)) isValid = false
+          if (operator === '<' && !(num < checkValue)) isValid = false
+          if (operator === '<=' && !(num <= checkValue)) isValid = false
+
+          if (!isValid) {
+            alert(
+              `입력한 값 '${num}'이(가) CHECK 제약 조건 '${column.checkConstraint}'을(를) 위반합니다.`
+            )
+            return
+          }
+        }
+      }
     }
 
     // Fixed value를 부모로 전달
@@ -96,7 +136,6 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
       metaData: { fixedValue }
     })
   }
-
   return (
     <div className="rule-select">
       {/* 상단 타입 표시 */}
@@ -109,6 +148,11 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
           description="고정값을 입력하거나 생성한 규칙을 적용해보세요."
           size="small"
         />
+        {column.checkConstraint && (
+          <div className="check-constraint-notice">
+            ※ 참고: 이 컬럼에는 <span>{column.checkConstraint}</span> 제약 조건이 있습니다.
+          </div>
+        )}
         <br />
         <hr className="rule-select__divider" />
       </div>
@@ -183,6 +227,20 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
 
         .rule-select__header {
           margin-bottom: 4px;
+        }
+
+        .check-constraint-notice {
+           background-color: var(--color-light-yellow);
+           border: 1px solid var(--color-orange);
+           border-radius: 8px;
+           padding: 10px 12px;
+           font: var(--preRegular14);
+           color: var(--color-dark-gray);
+           margin-top: 16px;
+        }
+        .check-constraint-notice span {
+          font-weight: var(--fw-semiBold);
+          color: var(--color-black);
         }
 
         .rule-select__divider {

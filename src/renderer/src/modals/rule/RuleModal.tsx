@@ -2,10 +2,11 @@ import React, { useState, useEffect } from 'react'
 import Modal from '@renderer/components/Modal'
 import RuleSelectContent, { RuleSelection } from '@renderer/modals/rule/RuleSelectContent'
 import { useGenerationStore } from '@renderer/stores/generationStore'
-import RuleCreationContent from '@renderer/modals/rule/RuleCreationContent'
+import RuleCreationContent, { RuleCreationData } from '@renderer/modals/rule/RuleCreationContent'
 import { ColumnDetail } from '@renderer/views/CreateDummyView'
 import EnumSelectContent from '@renderer/modals/rule/EnumSelectContent'
 import ReferenceSelectContent from '@renderer/modals/rule/ReferenceSelectContent'
+
 
 export type GenerationType = 'Faker.js' | 'AI' | '참조' | '파일 업로드' | '고정값' | 'ENUM'
 
@@ -56,6 +57,23 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, tableNam
     onClose()
   }
 
+  const handleRuleCreated = (data: RuleCreationData): void => {
+    if (!column) return
+
+    const ruleSelection: RuleSelection = {
+      columnName: column.name,
+      dataSource: data.source,
+      metaData: {
+        ruleId: data.result,
+        ruleName: data.settingName,
+        domainId: data.domainId,
+        domainName: data.domainName,
+        ensureUnique: data.ensureUnique
+      }
+    }
+    handleConfirmSelect(ruleSelection)
+  }
+
   useEffect(() => {
     if (!isOpen) {
       setMode('select')
@@ -79,6 +97,7 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, tableNam
             />
           ) : hasEnumList ? (
             <EnumSelectContent
+              column={column}
               columnName={columnName}
               enumList={column.enumList!}
               onCancel={onClose}
@@ -86,6 +105,7 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, tableNam
             />
           ) : (
             <RuleSelectContent
+              column={column}
               columnType={columnType}
               columnName={columnName}
               onCancel={onClose}
@@ -99,6 +119,7 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, tableNam
             columnName={columnName}
             onCancel={handleBack}
             column={column}
+            onSubmit={handleRuleCreated}
           />
         )}
       </div>

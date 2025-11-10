@@ -161,3 +161,89 @@ export async function checkFkValueExists(
   }
   throw new Error(`지원되지 않는 DB 타입입니다: ${config.dbType}`)
 }
+
+/**
+ * FK 참조를 위한 샘플 데이터 조회 (중복 허용)
+ */
+export async function fetchReferenceRandomSamples(
+  config: ConnectionConfig,
+  table: string,
+  column: string,
+  count: number
+): Promise<Record<string, unknown>[]> {
+  if (config.dbType === 'MySQL') {
+    let connection
+    try {
+      connection = await mysql.createConnection(config)
+      // mysql2 라이브러리의 ??, ? 문법으로 SQL Injection을 방지합니다.
+      const [rows] = await connection.query('SELECT ?? FROM ?? ORDER BY RAND() LIMIT ?', [
+        column,
+        table,
+        count
+      ])
+      await connection.end()
+      return rows as Record<string, unknown>[]
+    } catch (error) {
+      if (connection) await connection.end().catch(() => {})
+      throw error
+    }
+  } else {
+    // PostgreSQL
+    const client = new PgClient(config)
+    try {
+      await client.connect()
+      // quoteIdentifier 헬퍼 함수로 테이블/컬럼명을 안전하게 처리합니다.
+      const query = `SELECT ${quoteIdentifier(column)} FROM ${quoteIdentifier(
+        table
+      )} ORDER BY RANDOM() LIMIT ${count}`
+      const result = await client.query(query)
+      await client.end()
+      return result.rows
+    } catch (error) {
+      await client.end().catch(() => {})
+      throw error
+    }
+  }
+}
+
+/**
+ * FK 참조를 위한 고유 샘플 데이터 조회 (중복 없음)
+ */
+export async function fetchReferenceUniqueSamples(
+  config: ConnectionConfig,
+  table: string,
+  column: string,
+  count: number
+): Promise<Record<string, unknown>[]> {
+  if (config.dbType === 'MySQL') {
+    let connection
+    try {
+      connection = await mysql.createConnection(config)
+      // DISTINCT 키워드를 추가하여 고유값을 조회합니다.
+      const [rows] = await connection.query(
+        'SELECT DISTINCT ?? FROM ?? ORDER BY    RAND() LIMIT ?',
+        [column, table, count]
+      )
+      await connection.end()
+      return rows as Record<string, unknown>[]
+    } catch (error) {
+      if (connection) await connection.end().catch(() => {})
+      throw error
+    }
+  } else {
+    // PostgreSQL
+    const client = new PgClient(config)
+    try {
+      await client.connect()
+      // DISTINCT 키워드를 추가하여 고유값을 조회합니다.
+      const query = `SELECT DISTINCT ${quoteIdentifier(column)} FROM
+  ${quoteIdentifier(table)} ORDER BY RANDOM() LIMIT ${count}`
+      const result = await client.query(query)
+      await client.end()
+      return result.rows
+    } catch (error) {
+      await client.end().catch(() => {})
+      throw error
+    }
+  }
+}

@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState, useMemo } from 'react'
 import { TableInfo } from '@renderer/views/CreateDummyView'
 import MiniSearchBox from '@renderer/components/MiniSearchBox'
 
@@ -17,25 +17,36 @@ const DBTableList: React.FC<DBTableListProps> = ({
   handleCheckboxChange,
   onTableSelect
 }) => {
+  const [searchQuery, setSearchQuery] = useState('')
+
+  // 검색어에 따라 테이블 목록 필터링
+  const filteredTables = useMemo(() => {
+    if (!searchQuery) {
+      return tables
+    }
+    const lowerCaseQuery = searchQuery.toLowerCase()
+    return tables.filter((table) => table.name.toLowerCase().includes(lowerCaseQuery))
+  }, [tables, searchQuery])
+
   return (
     <>
       <div className="table-list-container shadow">
         {/* --- 테이블 목록 헤더 --- */}
         <div className="list-header">
           <h3 className="preSemiBold20">테이블 목록</h3>
-          <span className="preRegular14">{tables.length} table</span>
+          <span className="preRegular14">{filteredTables.length}tables</span>
         </div>
+
         {/* --- 검색창 --- */}
         <div className="search-bar">
-          <MiniSearchBox placeholder="테이블 검색" />
+          <MiniSearchBox placeholder="테이블 검색" onSearch={setSearchQuery} />
         </div>
 
         {/* --- 테이블 리스트 --- */}
         <ul className="table-list">
-          {tables.map((table) => (
+          {filteredTables.map((table) => (
             <li
               key={table.id}
-              // 현재 포커스된 테이블인지 확인하고 'active' 클래스 부여
               className={`table-list-item ${table.id === focusedTableId ? 'active' : ''}`}
               onClick={() => onTableSelect(table)}
             >

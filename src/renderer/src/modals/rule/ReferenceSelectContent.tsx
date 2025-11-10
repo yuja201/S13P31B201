@@ -23,6 +23,7 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
   const { selectedProject } = useProjectStore()
 
   const databaseId = selectedProject?.database?.id
+  const isUnique = useMemo(() => column.constraints.includes('UNIQUE'), [column])
 
   // --- FK 참조 정보 ---
   const schemaRef = useMemo(() => column.foreignKeys?.[0], [column.foreignKeys])
@@ -135,7 +136,8 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
           refTable: referencedTableName,
           refColumn: referencedColumnName,
           previewValue: samplePreview.value,
-          fixedValue: samplePreview.value
+          fixedValue: samplePreview.value,
+          ensureUnique: isUnique
         }
       })
     } else {
@@ -181,6 +183,11 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
         description="참조 컬럼에서 값을 가져올 방식을 선택하세요."
         size="small"
       />
+      {column.checkConstraint && (
+        <div className="check-constraint-notice">
+          ※ 참고: 이 컬럼에는 <span>{column.checkConstraint}</span> 제약 조건이 있습니다.
+        </div>
+      )}
       <div className="divider" />
       <div className="ref-select__content">
         {/* ---  참조 정보 (고정) --- */}
@@ -219,9 +226,12 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
                 onChange={() => setStrategy('RANDOM_SAMPLE')}
               />
               <div className="radio-label">
-                <span className="preSemiBold16">무작위 샘플링 (권장)</span>
+                <span className="preSemiBold16">
+                  {isUnique ? '고유값 샘플링 (Unique Sampling)' : '무작위 샘플링 (권장)'}
+                </span>
                 <span className="preRegular14">
-                  {referencedTableName} 테이블의 값 중 무작위 선택
+                  {referencedTableName} 테이블의 값 중 {isUnique ? '중복 없이' : '무작위'}
+                  선택
                 </span>
               </div>
             </label>
@@ -236,7 +246,11 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
               />
               <div className="radio-label">
                 <span className="preSemiBold16">고정값 검색/지정</span>
-                <span className="preRegular14">참조할 특정 값을 검색하여 지정</span>
+                <span className="preRegular14">
+                  {isUnique
+                    ? 'UNIQUE 컬럼에는 고정값을 사용할 수 없습니다.'
+                    : '참조할 특정 값을 검색하여 지정'}
+                </span>
               </div>
             </label>
           </div>
@@ -284,7 +298,7 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
               {validationState === 'valid' && <span className="valid"> 유효한 값입니다.</span>}
               {validationState === 'invalid' && (
                 <span className="invalid">
-                  ❌ '{searchValue}'는 {referencedTableName} 테이블에 없습니다.
+                  ❌ `{searchValue}`는 {referencedTableName} 테이블에 없습니다.
                 </span>
               )}
             </div>
@@ -319,6 +333,22 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
           gap: 25px;
           padding: 0 14px 14px 0;
         }
+
+        .check-constraint-notice {
+          background-color: var(--color-light-yellow);
+          border: 1px solid var(--color-orange);
+          border-radius: 8px;
+          padding: 10px 12px;
+          font: var(--preRegular14);
+          color: var(--color-dark-gray);
+          margin-top: 16px;
+         }
+
+        .check-constraint-notice span {
+          font-weight: var(--fw-semiBold);
+          color: var(--color-black);
+        }
+
         .divider {
           border: none;
           border-top: 1px solid var(--color-gray-200);

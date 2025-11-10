@@ -4,7 +4,7 @@ import { Table } from '../../database/types'
 /**
  * 데이터 소스 타입
  */
-export type DataSourceType = 'FAKER' | 'AI' | 'FILE' | 'FIXED'
+export type DataSourceType = 'FAKER' | 'AI' | 'FILE' | 'FIXED' | 'REFERENCE'
 export type SqlDbType = 'MySQL' | 'PostgreSQL'
 
 /**
@@ -35,8 +35,19 @@ export type AIMetaData = {
 export type FixedMetaData = {
   fixedValue: string
 }
+export type ReferenceMetaData = {
+  kind: 'reference'
+  refTable: string
+  refColumn: string
+  ensureUnique?: boolean
+}
 
-export type ColumnMetaData = FakerMetaData | AIMetaData | FileMetaData | FixedMetaData
+export type ColumnMetaData =
+  | FakerMetaData
+  | AIMetaData
+  | FileMetaData
+  | FixedMetaData
+  | ReferenceMetaData
 
 export interface ColumnConfig {
   columnName: string
