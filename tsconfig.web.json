@@ -22,5 +22,8 @@
       "@renderer/*": ["src/renderer/src/*"],
       "@main/*": ["src/main/*"]
     }
-  }
+  },
+   "references": [                                                                                              
+    { "path": "./tsconfig.shared.json" }                                                                       
+  ] 
 }

@@ -1,0 +1,16 @@
+ {                                                                                                                
+  "compilerOptions": {                                                                                           
+    "composite": true,                                                                                           
+    "declaration": true,                                                                                         
+    "declarationMap": true,                                                                                      
+    "outDir": "./dist/shared",                                                                                   
+    "baseUrl": ".",                                                                                              
+    "paths": {                                                                                                   
+     "@main/*": ["src/main/*"]                                                                                  
+    }                                                                                                           
+  },                                                                                                             
+   "include": [                                                                                                   
+     "src/main/services/data-generator/types.ts",                                                                 
+     "src/main/database/types.ts"                                                                                 
+   ]                                                                                                              
+ }                                                                                                                
