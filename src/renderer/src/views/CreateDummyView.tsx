@@ -123,7 +123,9 @@ const CreateDummyView: React.FC = () => {
     if (!isInitialized && tables.length > 0) {
       tables.forEach((table) => {
         table.columnDetails.forEach((col) => {
-          if (col.defaultValue) {
+          if (col.constraints.includes('AUTO INCREMENT')) {
+            return
+          } else if (col.defaultValue) {
             // DB 기본값이 존재 → DEFAULT로 초기 설정
             setColumnRule(table.name, col.name, {
               columnName: col.name,

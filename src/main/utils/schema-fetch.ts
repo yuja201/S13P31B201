@@ -353,11 +353,50 @@ async function fetchPostgreSQLColumns(
       c.column_default,
       col_description((quote_ident(c.table_schema)||'.'||quote_ident(c.table_name))::regclass, c.ordinal_position) AS comment,
 
+      -- PRIMARY KEY 감지
+      EXISTS (
+        SELECT 1
+        FROM information_schema.table_constraints tc
+        JOIN information_schema.key_column_usage kcu
+          ON tc.constraint_name = kcu.constraint_name
+         AND tc.table_schema    = kcu.table_schema
+       WHERE tc.table_schema = c.table_schema
+         AND tc.table_name   = c.table_name
+         AND kcu.column_name = c.column_name
+         AND tc.constraint_type = 'PRIMARY KEY'
+      ) AS is_primary_key,
+
+      -- UNIQUE 감지
+      EXISTS (
+        SELECT 1
+        FROM information_schema.table_constraints tc
+        JOIN information_schema.key_column_usage kcu
+          ON tc.constraint_name = kcu.constraint_name
+         AND tc.table_schema    = kcu.table_schema
+       WHERE tc.table_schema = c.table_schema
+         AND tc.table_name   = c.table_name
+         AND kcu.column_name = c.column_name
+         AND tc.constraint_type = 'UNIQUE'
+      ) AS is_unique,
+
+      -- CHECK 제약조건 조회
+      (
+        SELECT cc.check_clause
+        FROM information_schema.check_constraints cc
+        JOIN information_schema.constraint_column_usage ccu
+          ON cc.constraint_name = ccu.constraint_name
+       WHERE ccu.table_schema = c.table_schema
+         AND ccu.table_name   = c.table_name
+         AND ccu.column_name  = c.column_name
+       LIMIT 1
+      ) AS check_constraint,
+
+      -- ENUM 여부 및 값 목록
       (t.typtype = 'e') AS is_enum,
       (
         SELECT json_agg(e.enumlabel ORDER BY e.enumsortorder)
         FROM pg_enum e
-        WHERE e.enumtypid = t.oid
+       WHERE e.enumtypid = t.oid
       ) AS enumList
 
     FROM information_schema.columns c
@@ -365,7 +404,7 @@ async function fetchPostgreSQLColumns(
       ON t.typname = c.udt_name
      AND t.typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = c.udt_schema)
     WHERE c.table_schema = $1
-      AND c.table_name = $2
+      AND c.table_name   = $2
     ORDER BY c.ordinal_position
     `,
     [tableSchema, tableName]
@@ -376,15 +415,16 @@ async function fetchPostgreSQLColumns(
 
     return {
       name: row.name,
-      type: row.is_enum && enumValues ? `enum(${enumValues.join(', ')})` : row.data_type,
+      type: enumValues ? `enum(${enumValues.join(', ')})` : row.data_type,
       enum: enumValues,
-      isPrimaryKey: false,
-      isForeignKey: false,
+
+      isPrimaryKey: row.is_primary_key,
+      isForeignKey: false, // ✅ FK는 fetchPostgreSQLForeignKeys에서 처리됨
       notNull: row.is_nullable === 'NO',
-      unique: false,
+      unique: row.is_unique,
       autoIncrement: row.column_default?.includes('nextval(') || false,
       default: row.column_default || null,
-      check: null,
+      check: row.check_constraint || null,
       comment: row.comment || null
     }
   })
