@@ -10,7 +10,5 @@
     "esModuleInterop": true,
     "isolatedModules": true                 
   },
-  "references": [                                                                                              
-    { "path": "./tsconfig.shared.json" }                                                                       
-  ] 
+  "exclude": ["dist", "node_modules"]
 }
