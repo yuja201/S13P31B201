@@ -17,7 +17,6 @@ const DBTableList: React.FC<DBTableListProps> = ({
   handleCheckboxChange,
   onTableSelect
 }) => {
-
   const [searchQuery, setSearchQuery] = useState('')
 
   // 검색어에 따라 테이블 목록 필터링
@@ -35,13 +34,12 @@ const DBTableList: React.FC<DBTableListProps> = ({
         {/* --- 테이블 목록 헤더 --- */}
         <div className="list-header">
           <h3 className="preSemiBold20">테이블 목록</h3>
-          <span className="preRegular14">{filteredTables.length}table</span>
+          <span className="preRegular14">{filteredTables.length}tables</span>
         </div>
+
         {/* --- 검색창 --- */}
         <div className="search-bar">
-          <MiniSearchBox
-            placeholder="테이블 검색"
-            onSearch={setSearchQuery} />
+          <MiniSearchBox placeholder="테이블 검색" onSearch={setSearchQuery} />
         </div>
 
         {/* --- 테이블 리스트 --- */}

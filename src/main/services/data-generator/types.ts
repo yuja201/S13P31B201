@@ -40,7 +40,6 @@ export type ReferenceMetaData = {
   refTable: string
   refColumn: string
   ensureUnique?: boolean
-  fixedValue?: string
 }
 
 export type ColumnMetaData =

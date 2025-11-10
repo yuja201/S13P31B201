@@ -25,8 +25,9 @@ export async function* generateReferenceStream({
     )
 
     if (samples.length < recordCnt) {
-      console.warn(`[${refTable}.${refColumn}] 고유 참조값이 요청된 개수(${recordCnt}
-      )보다 적습니다. (${samples.length}개만 생성)`)
+      console.warn(
+        `[${refTable}.${refColumn}] 고유 참조값이 요청된 개수(${recordCnt})보다 적습니다. (${samples.length}개만 생성)`
+      )
     }
 
     for (const row of samples) {
