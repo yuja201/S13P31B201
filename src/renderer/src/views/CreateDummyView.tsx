@@ -44,14 +44,13 @@ const convertColumn = (col: Column, table: Table): ColumnDetail => {
   if (col.default) constraints.push('DEFAULT')
   if (col.check) constraints.push('CHECK')
 
-  const isEnum =
-    (Array.isArray(col.enum) && col.enum.length > 0) ||
-    col.type.toLowerCase() === 'user-defined' ||
-    col.type.toLowerCase().startsWith('enum')
+  const enumValues = Array.isArray(col.enum) ? col.enum : []
+  const hasEnumValues = enumValues.length > 0
+  const isEnum = hasEnumValues || col.type.toLowerCase().startsWith('enum')
 
   if (isEnum) constraints.push('ENUM')
 
-  const displayType = isEnum && col.enum ? `enum(${col.enum.join(', ')})` : col.type
+  const displayType = hasEnumValues ? `enum(${enumValues.join(', ')})` : col.type
 
   const columnForeignKeys = table.foreignKeys?.filter((fk) => fk.column_name === col.name) || null
   const isForeignKey = (columnForeignKeys && columnForeignKeys.length > 0) || false
@@ -76,7 +75,7 @@ const convertColumn = (col: Column, table: Table): ColumnDetail => {
     setting,
     defaultValue: col.default || null,
     checkConstraint: col.check || null,
-    enumList: Array.isArray(col.enum) && col.enum.length > 0 ? col.enum : null,
+    enumList: hasEnumValues ? enumValues : null,
     isForeignKey,
     foreignKeys: columnForeignKeys
   }
