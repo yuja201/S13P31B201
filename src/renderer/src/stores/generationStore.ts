@@ -247,7 +247,6 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
           kind: 'reference',
           refTable,
           refColumn,
-          fixedValue: rule.metaData.fixedValue ?? '',
           ensureUnique: rule.metaData.ensureUnique
         }
         break
