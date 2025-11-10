@@ -26,6 +26,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
   const { columns: columnConfigs } = useGenerationStore((state) => state.tables[table.name] || { columns: {}, recordCnt: 1000 })
   const applyFileMapping = useGenerationStore((state) => state.applyFileMapping)
   const resetColumnRule = useGenerationStore((state) => state.resetColumnRule)
+  const setColumnRule = useGenerationStore((state) => state.setColumnRule)
 
   const getTableRecordCount = useGenerationStore((s) => s.getTableRecordCount)
   const setTableRecordCount = useGenerationStore((s) => s.setTableRecordCount)
@@ -93,9 +94,21 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
     setTableRecordCount(table.name, safeValue)
   }
 
-  const handleResetRule = (columnName: string): void => {
-    resetColumnRule(table.name, columnName)
-    onColumnUpdate(columnName, '', '')
+  const handleResetRule = (column: ColumnDetail): void => {
+    resetColumnRule(table.name, column.name)
+    if (column.defaultValue) {
+      // 기본값이 있다면, '고정값' 규칙을 다시 적용
+      const newRule = {
+        columnName: column.name,
+        dataSource: 'FIXED' as const,
+        metaData: { fixedValue: column.defaultValue }
+      }
+      setColumnRule(table.name, column.name, newRule)
+      onColumnUpdate(column.name, '고정값', column.defaultValue)
+    } else {
+      // 기본값이 없다면, 완전히 초기화
+      onColumnUpdate(column.name, '', '')
+    }
   }
 
   const displayColumnDetails = useMemo(() => {
@@ -250,7 +263,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
                       <td>
                         {hasSetting ? (
                           isEditableSetting ? (
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
                               <button
                                 onClick={() => handleSelectGenerationClick(col)}
                                 className="setting-edit-button"
@@ -258,7 +271,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
                                 {col.setting}
                               </button>
                               <button
-                                onClick={() => handleResetRule(col.name)}
+                                onClick={() => handleResetRule(col)}
                                 className="setting-reset-button"
                               >
                                 ×
@@ -269,10 +282,8 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
                               style={{
                                 display: 'inline-block',
                                 whiteSpace: 'nowrap',
-                                backgroundColor: 'var(--color-gray-200)',
                                 color: 'var(--color-dark-gray)',
                                 borderRadius: '10px',
-                                padding: '4px 12px',
                                 font: 'var(--preRegular14)'
                               }}
                             >
@@ -446,12 +457,10 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
         }
 
         .setting-reset-button {
-          background-color: var(--color-gray-200);
+          background-color: transparent;
           color: var(--color-dark-gray);
           border: none;
           border-radius: 50%;
-          width: 24px;
-          height: 24px;
           display: flex;
           align-items: center;
           justify-content: center;
@@ -463,7 +472,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
         }
         .setting-reset-button:hover {
           background-color: var(--color-red-500);
-          color: white;
+          color: var(--dark-gray);
         }
     
         .constraint-badges {
