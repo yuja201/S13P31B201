@@ -6,6 +6,7 @@ import failureIcon from '@renderer/assets/imgs/failure.svg'
 import Button from '@renderer/components/Button'
 import { useProjectStore } from '@renderer/stores/projectStore'
 import { useGenerationStore } from '@renderer/stores/generationStore'
+import { useSchemaStore } from '@renderer/stores/schemaStore'
 import { useLocation, useNavigate } from 'react-router-dom'
 import type { ColumnMetaData, DataSourceType, GenerationMode, GenerateRequest } from '@shared/types'
 
@@ -55,6 +56,7 @@ const DummyInsertView: React.FC = () => {
   const { selectedProject } = useProjectStore()
   const { exportAllTables } = useGenerationStore()
   const { clearAll, clearSelectedTables } = useGenerationStore()
+  const { refreshSchema } = useSchemaStore()
 
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -84,13 +86,20 @@ const DummyInsertView: React.FC = () => {
         const total = (message.successCount ?? 0) + (message.failCount ?? 0)
         setTotalCount(total)
         setInsertedCount(message.successCount ?? 0)
+
+        // DB 직접 삽입 모드는 스키마 새로고침
+        if (mode === 'db' && selectedProject?.id) {
+          refreshSchema(selectedProject.id).catch((error) => {
+            window.api.logger.error('Failed to refresh schema after data insertion:', error)
+          })
+        }
       }
     })
 
     return () => {
       window.api.dataGenerator.removeProgressListeners()
     }
-  }, [])
+  }, [mode, selectedProject?.id, refreshSchema])
 
   useEffect(() => {
     const startGeneration = async (): Promise<void> => {
