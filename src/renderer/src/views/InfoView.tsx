@@ -6,6 +6,7 @@ import PageTitle from '@renderer/components/PageTitle'
 import RadioButton from '@renderer/components/RadioButton'
 import { useToastStore } from '@renderer/stores/toastStore'
 import { useProjectStore } from '@renderer/stores/projectStore'
+import { useSchemaStore } from '@renderer/stores/schemaStore'
 
 interface ProjectInfo {
   projectName: string
@@ -24,6 +25,7 @@ const InfoView: React.FC = () => {
   const setSelectedProject = useProjectStore((state) => state.setSelectedProject)
   const updateProjectInList = useProjectStore((state) => state.updateProjectInList)
   const showToast = useToastStore((s) => s.showToast)
+  const clearSchema = useSchemaStore((state) => state.clearSchema)
 
   const [formData, setFormData] = useState<ProjectInfo>({
     projectName: '',
@@ -175,6 +177,10 @@ const InfoView: React.FC = () => {
 
         setSelectedProject(updatedProjectWithDetails)
         updateProjectInList(selectedProject.id, updatedProjectWithDetails)
+
+        if (updatedDatabase) {
+          clearSchema(updatedDatabase.id)
+        }
       }
 
       // SchemaView로 이동

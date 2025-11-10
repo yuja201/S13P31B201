@@ -9,7 +9,7 @@ const MainLayout: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>()
   const selectedProject = useProjectStore((state) => state.selectedProject)
   const selectProjectById = useProjectStore((state) => state.selectProjectById)
-  const fetchSchema = useSchemaStore((state) => state.fetchSchema)
+  const refreshSchema = useSchemaStore((state) => state.refreshSchema)
   const isLocked = location.pathname === '/' || location.pathname === '/error'
 
   useEffect(() => {
@@ -27,9 +27,9 @@ const MainLayout: React.FC = () => {
   useEffect(() => {
     if (!isLocked && selectedProject?.database?.id) {
       const databaseId = selectedProject.database.id
-      fetchSchema(databaseId)
+      refreshSchema(databaseId)
     }
-  }, [isLocked, selectedProject, fetchSchema])
+  }, [isLocked, selectedProject, refreshSchema])
 
   return (
     <div className="layout">
