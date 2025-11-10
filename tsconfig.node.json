@@ -1,6 +1,6 @@
 {
   "extends": "@electron-toolkit/tsconfig/tsconfig.node.json",
-  "include": ["electron.vite.config.*", "src/main/**/*", "src/preload/**/*"],
+  "include": ["electron.vite.config.*", "src/main/**/*", "src/preload/**/*", "src/shared/types.ts"],
   "compilerOptions": {
     "composite": true,
     "types": ["electron-vite/node"],
@@ -8,7 +8,13 @@
     "moduleResolution": "bundler",
     "allowSyntheticDefaultImports": true,   
     "esModuleInterop": true,
-    "isolatedModules": true                 
+    "isolatedModules": true,
+    "baseUrl": ".",
+    "paths": {
+          "@renderer/*": ["src/renderer/src/*"],
+          "@main/*": ["src/main/*"],
+          "@shared/*": ["src/shared/*"]
+        }                 
   },
-  "exclude": ["dist", "node_modules"]
+  
 }

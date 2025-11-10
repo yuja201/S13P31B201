@@ -1,3 +1,4 @@
+import { formatCheckConstraint } from '@renderer/utils/formatConstraint'
 import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import SimpleCard from '@renderer/components/SimpleCard'
 import InputField from '@renderer/components/InputField'
@@ -176,7 +177,7 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
         />
         {column.checkConstraint && (
           <div className="check-constraint-notice">
-            ※ 참고: 이 컬럼에는 <span>{column.checkConstraint}</span> 제약 조건이 있습니다.
+            ※ 참고: 이 컬럼에는 <span>{formatCheckConstraint(column.checkConstraint)}</span> 제약 조건이 있습니다.
           </div>
         )}
         <br />

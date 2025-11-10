@@ -1,1 +1,1 @@
-export * from './data-generator/types'
+export * from '@shared/types'

@@ -1,5 +1,5 @@
 import { fetchReferenceRandomSamples, fetchReferenceUniqueSamples } from '../../utils/db-query'
-import type { ReferenceMetaData } from './types'
+import type { ReferenceMetaData } from '@shared/types'
 import type { ConnectionConfig } from '../../utils/db-connection-test'
 
 export interface ReferenceGenerateRequest {
