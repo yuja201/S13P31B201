@@ -81,9 +81,12 @@
       "artifactName": "heresdummy-${version}-setup.${ext}"
     },
     "nsis": {
-      "oneClick": false,
+      "oneClick": true,
       "perMachine": false,
-      "allowToChangeInstallationDirectory": true
+      "allowElevation": false,
+      "allowToChangeInstallationDirectory": false,
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false
     }
   }
 }
