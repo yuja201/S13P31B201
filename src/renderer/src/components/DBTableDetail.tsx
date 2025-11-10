@@ -191,7 +191,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
               {/* 테이블 헤더 */}
               <thead>
                 <tr>
-                  <th>컬럼명</th>
+                  <th style={{ width: '120px' }}>컬럼명</th>
                   <th>타입</th>
                   <th>제약조건</th>
                   <th>생성 방식</th>
@@ -250,7 +250,6 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
                               size="sm"
                               onClick={() => handleSelectGenerationClick(col)}
                               style={{
-                                whiteSpace: 'nowrap',
                                 backgroundColor: 'var(--color-sky-blue)',
                                 color: 'var(--color-main-blue)',
                                 borderRadius: '10px',
@@ -376,11 +375,13 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
           flex-grow: 1; 
           overflow-y: auto; 
           min-height: 0; 
+          overflow-x: auto;
         }
         .column-table {
           width: 100%;
           border-collapse: collapse;
           border-top: 1px solid var(--color-gray-200);
+          table-layout: fixed;
         }
 
         .column-table th {
@@ -388,6 +389,9 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
           text-align: center;
           padding: 16px 8px;
           font: var(--preMedium14);
+          position: sticky;
+          top: 0;
+          z-index: 2;
         }
         .column-table td {
           padding: 16px;
@@ -396,6 +400,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
           border-bottom: 1px solid var(--color-gray-200);
           background-color: var(--color-white); 
           transition: background-color 0.2s ease;
+          word-break: break-word;
         }
         .column-table tr.has-generation-method td {
           background-color: var(--color-light-blue); 

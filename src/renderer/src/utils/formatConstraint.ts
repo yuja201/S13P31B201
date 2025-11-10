@@ -14,9 +14,8 @@ export function formatCheckConstraint(constraint: string | undefined): string {
 
   if (match && match[1]) {
     // "IN" 구문인 경우: 값 목록만 추출
-    // match[1]은 "G,PG,PG-13,R,NC-17"
     const values = match[1].split(',').map((v) => v.trim())
-    return `다음 값들만 허용됩니다: ${values.join(', ')}`
+    return `${values.join(', ')}`
   } else {
     // "IN"이 아닌 "조건" 구문인 경우
     return `${cleanConstraint} `
