@@ -119,7 +119,15 @@ const CreateDummyView: React.FC = () => {
     if (!isInitialized && tables.length > 0) {
       tables.forEach((table) => {
         table.columnDetails.forEach((col) => {
-          if (col.generation === '고정값') {
+          if (col.defaultValue) {
+            // DB 기본값이 존재 → DEFAULT로 초기 설정
+            setColumnRule(table.name, col.name, {
+              columnName: col.name,
+              dataSource: 'DEFAULT',
+              metaData: { fixedValue: col.setting }
+            })
+          } else if (col.generation === '고정값') {
+            // 사용자가 직접 고정값 지정한 경우만 FIXED로 처리
             setColumnRule(table.name, col.name, {
               columnName: col.name,
               dataSource: 'FIXED',

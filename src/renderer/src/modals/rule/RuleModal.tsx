@@ -7,7 +7,6 @@ import { ColumnDetail } from '@renderer/views/CreateDummyView'
 import EnumSelectContent from '@renderer/modals/rule/EnumSelectContent'
 import ReferenceSelectContent from '@renderer/modals/rule/ReferenceSelectContent'
 
-
 export type GenerationType = 'Faker.js' | 'AI' | '참조' | '파일 업로드' | '고정값' | 'ENUM'
 
 export type RuleResult = {
@@ -41,7 +40,8 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, tableNam
     FILE: '파일 업로드',
     FIXED: '고정값',
     ENUM: 'ENUM',
-    REFERENCE: '참조'
+    REFERENCE: '참조',
+    DEFAULT: '고정값'
   }
 
   const handleConfirmSelect = (value: RuleSelection): void => {
