@@ -23,8 +23,9 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
   hasMissing,
   warningMessage
 }) => {
-  const tableGenerationConfig = useGenerationStore((state) => state.tables[table.name])
+  const { columns: columnConfigs } = useGenerationStore((state) => state.tables[table.name] || { columns: {}, recordCnt: 1000 })
   const applyFileMapping = useGenerationStore((state) => state.applyFileMapping)
+  const resetColumnRule = useGenerationStore((state) => state.resetColumnRule)
 
   const getTableRecordCount = useGenerationStore((s) => s.getTableRecordCount)
   const setTableRecordCount = useGenerationStore((s) => s.setTableRecordCount)
@@ -39,7 +40,6 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
   }, [table.name])
 
   useEffect(() => {
-    if (!tableGenerationConfig) return
     setTableRecordCount(table.name, rows)
   }, [rows])
 
@@ -93,11 +93,16 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
     setTableRecordCount(table.name, safeValue)
   }
 
+  const handleResetRule = (columnName: string): void => {
+    resetColumnRule(table.name, columnName)
+    onColumnUpdate(columnName, '', '')
+  }
+
   const displayColumnDetails = useMemo(() => {
-    const columnConfigs = tableGenerationConfig?.columns ?? {}
+    const configs = columnConfigs ?? {}
 
     return table.columnDetails.map((col) => {
-      const config = columnConfigs[col.name]
+      const config = configs[col.name]
 
       if (config) {
         let generation = '',
@@ -146,7 +151,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
       }
       return col
     })
-  }, [table.columnDetails, tableGenerationConfig?.columns])
+  }, [table.columnDetails, columnConfigs])
 
   return (
     <>
@@ -245,19 +250,20 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
                       <td>
                         {hasSetting ? (
                           isEditableSetting ? (
-                            <Button
-                              variant="gray"
-                              size="sm"
-                              onClick={() => handleSelectGenerationClick(col)}
-                              style={{
-                                backgroundColor: 'var(--color-sky-blue)',
-                                color: 'var(--color-main-blue)',
-                                borderRadius: '10px',
-                                padding: '4px 12px'
-                              }}
-                            >
-                              {col.setting} 🖊️
-                            </Button>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <button
+                                onClick={() => handleSelectGenerationClick(col)}
+                                className="setting-edit-button"
+                              >
+                                {col.setting}
+                              </button>
+                              <button
+                                onClick={() => handleResetRule(col.name)}
+                                className="setting-reset-button"
+                              >
+                                ×
+                              </button>
+                            </div>
                           ) : (
                             <span
                               style={{
@@ -420,6 +426,44 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
         }
         .select-generation-link:hover {
            color: var(--color-main-blue);
+        }
+        .setting-edit-button {
+          background-color: var(--color-sky-blue);
+          color: var(--color-main-blue);
+          border-radius: 10px;
+          padding: 4px 12px;
+          border: none;
+          cursor: pointer;
+          font: var(--preSemiBold14);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 120px;
+          transition: background-color 0.2s;
+        }
+        .setting-edit-button:hover {
+          background-color: #cceeff;
+        }
+
+        .setting-reset-button {
+          background-color: var(--color-gray-200);
+          color: var(--color-dark-gray);
+          border: none;
+          border-radius: 50%;
+          width: 24px;
+          height: 24px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 16px;
+          line-height: 1;
+          cursor: pointer;
+          transition: background-color 0.2s, color 0.2s;
+          flex-shrink: 0;
+        }
+        .setting-reset-button:hover {
+          background-color: var(--color-red-500);
+          color: white;
         }
     
         .constraint-badges {
