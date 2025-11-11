@@ -200,40 +200,28 @@ export async function runDataGenerator(
   )
 
   //파일 있는 경우에만 zip 생성
-  const zipPath =
-    fileResults.length > 0
-      ? await createZipFromSqlFilesStreaming(
-          fileResults.map((r) => ({ filename: r.tableName, path: r.sqlPath })),
-          projectId
-        )
-      : null
+  let zipPath: string | null = null
 
-  if (fileResults.length > 0) {
-    for (const result of fileResults) {
-      try {
-        if (fs.existsSync(result.sqlPath)) {
-          await fs.promises.unlink(result.sqlPath)
-          logger.info(`SQL 파일 삭제 완료: ${result.sqlPath}`)
-        }
-      } catch (err) {
-        if (err instanceof Error && 'code' in err) {
-          const code = (err as NodeJS.ErrnoException).code
-          if (code === 'EBUSY' || code === 'EPERM') {
-            logger.warn(`파일 잠금 상태로 재시도 예정: ${result.sqlPath}`)
-            await new Promise((r) => setTimeout(r, 500))
-            try {
-              await fs.promises.unlink(result.sqlPath)
-              logger.info(`SQL 파일 재삭제 성공: ${result.sqlPath}`)
-            } catch (retryErr) {
-              if (retryErr instanceof Error) {
-                logger.error(`여전히 삭제 실패 (${result.sqlPath}): ${retryErr.message}`)
-              }
-            }
-          } else {
-            logger.error(`삭제 실패 (${result.sqlPath}): ${err.message}`)
-          }
-        } else {
-          logger.error(`예상치 못한 오류로 SQL 파일 삭제 실패: ${result.sqlPath}`)
+  try {
+    if (fileResults.length > 0) {
+      zipPath = await createZipFromSqlFilesStreaming(
+        fileResults.map((r) => ({ filename: r.tableName, path: r.sqlPath })),
+        projectId
+      )
+    }
+  } catch (err) {
+    logger.error(`ZIP 생성 실패: ${(err as Error).message}`)
+  } finally {
+    // ZIP 생성 성공 여부와 관계없이 정리 시도
+    if (fileResults.length > 0) {
+      // ZIP 스트림 닫힘 대기
+      await new Promise((r) => setTimeout(r, 200))
+
+      for (const result of fileResults) {
+        try {
+          await deleteWithRetry(result.sqlPath)
+        } catch (err) {
+          logger.error(`SQL 파일 삭제 최종 실패: ${result.sqlPath}`, err)
         }
       }
     }
@@ -283,6 +271,30 @@ function parseDatabaseUrl(rawUrl: string, dbType: SupportedDBMS): { host: string
     return {
       host: hostPart || 'localhost',
       port: Number.isFinite(port) ? port : defaultPort
+    }
+  }
+}
+
+// 재시도 기반 파일 삭제
+async function deleteWithRetry(filePath: string, maxRetries = 3, delayMs = 500): Promise<void> {
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      if (fs.existsSync(filePath)) {
+        await fs.promises.unlink(filePath)
+        logger.info(`SQL 파일 삭제 완료: ${filePath} (시도 ${attempt + 1}/${maxRetries})`)
+        return
+      }
+    } catch (err) {
+      const code = (err as NodeJS.ErrnoException).code
+      if ((code === 'EBUSY' || code === 'EPERM' || code === 'EACCES') && attempt < maxRetries) {
+        const delay = delayMs * Math.pow(2, attempt) // 지수 백오프
+        logger.warn(
+          `파일 잠금 중, ${delay}ms 후 재시도 (${attempt + 1}/${maxRetries}): ${filePath}`
+        )
+        await new Promise((r) => setTimeout(r, delay))
+        continue
+      }
+      throw err // 그 외 에러는 전파
     }
   }
 }
