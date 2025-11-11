@@ -23,7 +23,7 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({ mainCard, subCard }) => {
   // ====== 공통 스타일 ======
   const wrapperStyle: React.CSSProperties = {
     display: 'grid',
-    gridTemplateColumns: '0.8fr 2fr', //왼쪽 1/3, 오른쪽 2/3
+    gridTemplateColumns: '0.8fr 2fr', // 왼쪽 1/3, 오른쪽 2/3
     gap: '24px',
     width: '100%',
     margin: '20px 0',
@@ -34,55 +34,64 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({ mainCard, subCard }) => {
     backgroundColor: 'var(--color-white)',
     borderRadius: '16px',
     boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
-    padding: '28px 36px',
+    padding: '28px 50px',
     display: 'flex',
-    alignItems: 'center',
+    alignItems: 'flex-start',
     justifyContent: 'center',
     boxSizing: 'border-box',
     minHeight: '120px'
   }
 
-  // 아이콘 크기 30% 증가
   const iconStyle: React.CSSProperties = {
     width: 60,
     height: 60,
-    flexShrink: 0
+    flexShrink: 0,
+    marginTop: '4px'
   }
 
-  // 텍스트와 퍼센트를 세로로 배치하는 그룹
   const textGroupStyle: React.CSSProperties = {
     display: 'flex',
     flexDirection: 'column',
     alignItems: 'flex-start',
     justifyContent: 'center',
-    marginLeft: '12px'
+    marginLeft: '14px'
   }
 
   const titleStyle: React.CSSProperties = {
-    font: 'var(--preRegular18)',
-    color: 'var(--color-dark-gray)',
-    marginBottom: '4px'
+    font: 'var(--preRegular16)',
+    color: 'var(--color-dark-gray)'
+  }
+
+  const getMainCardColor = (color?: string): string => {
+    switch (color) {
+      case 'orange':
+        return 'var(--color-orange)'
+      case 'blue':
+        return 'var(--color-main-blue)'
+      case 'green':
+        return '#2ecc71'
+      default:
+        return 'var(--color-gray-500)'
+    }
   }
 
   const mainValueStyle: React.CSSProperties = {
     font: 'var(--preBold32)',
-    color:
-      mainCard.color === 'orange'
-        ? 'var(--color-orange)'
-        : mainCard.color === 'blue'
-          ? 'var(--color-main-blue)'
-          : mainCard.color === 'green'
-            ? '#2ecc71'
-            : 'var(--color-gray-500)'
+    color: getMainCardColor(mainCard.color),
+    lineHeight: '1.0'
   }
 
   // 오른쪽 통계 카드
   const statCardStyle: React.CSSProperties = {
-    ...cardBaseStyle,
+    backgroundColor: 'var(--color-white)',
+    borderRadius: '16px',
+    boxShadow: '0 2px 8px rgba(0, 0, 0, 0.05)',
+    padding: '28px 36px',
     display: 'flex',
     flexDirection: 'row',
     justifyContent: 'space-evenly',
-    alignItems: 'center'
+    alignItems: 'center',
+    minHeight: '120px'
   }
 
   const statItemStyle: React.CSSProperties = {
@@ -112,7 +121,8 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({ mainCard, subCard }) => {
 
   const statValueStyle = (color?: string): React.CSSProperties => ({
     font: 'var(--preBold32)',
-    color: getColor(color)
+    color: getColor(color),
+    lineHeight: '1.0'
   })
 
   // ====== 렌더링 ======
