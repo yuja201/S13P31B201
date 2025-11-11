@@ -92,7 +92,6 @@ async function fetchMySQLSchema(config: DatabaseConfig): Promise<DatabaseSchema>
     const databaseName = config.database || (await getCurrentDatabase(connection))
     const tables: Table[] = []
 
-    // 테이블 목록 조회
     const [tableRows] = await connection.execute(
       `SELECT
         TABLE_NAME as name,
@@ -100,7 +99,7 @@ async function fetchMySQLSchema(config: DatabaseConfig): Promise<DatabaseSchema>
         TABLE_ROWS as rowCount
       FROM INFORMATION_SCHEMA.TABLES
       WHERE TABLE_SCHEMA = ?
-      AND TABLE_TYPE = 'BASE TABLE'
+        AND TABLE_TYPE = 'BASE TABLE'
       ORDER BY TABLE_NAME`,
       [databaseName]
     )
@@ -109,17 +108,15 @@ async function fetchMySQLSchema(config: DatabaseConfig): Promise<DatabaseSchema>
       const tableName = tableRow.name
 
       const [countRows] = await connection.execute(`SELECT COUNT(*) as count FROM \`${tableName}\``)
-      const rowCount = (countRows as { count: number }[])[0].count
+      const rowCount = (countRows as { count: number }[])[0]?.count ?? tableRow.rowCount ?? 0
 
       const columns = await fetchMySQLColumns(connection, databaseName, tableName)
-
       const foreignKeys = await fetchMySQLForeignKeys(connection, databaseName, tableName)
-
       const indexes = await fetchMySQLIndexes(connection, databaseName, tableName)
 
       tables.push({
         name: tableName,
-        rowCount: rowCount,
+        rowCount,
         comment: tableRow.comment || undefined,
         columns,
         foreignKeys,
@@ -350,6 +347,9 @@ async function fetchPostgreSQLColumns(
     SELECT
       c.column_name AS name,
       c.data_type,
+      c.character_maximum_length,
+      c.numeric_precision,
+      c.numeric_scale,
       c.udt_name,
       c.udt_schema,
       c.is_nullable,
@@ -415,14 +415,19 @@ async function fetchPostgreSQLColumns(
 
   return columnResult.rows.map((row) => {
     const enumValues = row.is_enum && Array.isArray(row.enumlist) ? row.enumlist : null
+    const typeLower = row.data_type.toLowerCase()
 
-    return {
+    const column: Column = {
       name: row.name,
       type: enumValues ? `enum(${enumValues.join(', ')})` : row.data_type,
       enum: enumValues,
 
+      maxLength: row.character_maximum_length ?? undefined,
+      numericPrecision: row.numeric_precision ?? undefined,
+      numericScale: row.numeric_scale ?? undefined,
+
       isPrimaryKey: row.is_primary_key,
-      isForeignKey: false, // ✅ FK는 fetchPostgreSQLForeignKeys에서 처리됨
+      isForeignKey: false,
       notNull: row.is_nullable === 'NO',
       unique: row.is_unique,
       autoIncrement: row.column_default?.includes('nextval(') || false,
@@ -430,6 +435,23 @@ async function fetchPostgreSQLColumns(
       check: row.check_constraint || null,
       comment: row.comment || null
     }
+
+    if (/smallint/.test(typeLower)) {
+      column.minValue = -32768
+      column.maxValue = 32767
+    } else if (/integer/.test(typeLower)) {
+      column.minValue = -2147483648
+      column.maxValue = 2147483647
+    } else if (/bigint/.test(typeLower)) {
+      column.minValue = -9007199254740991
+      column.maxValue = 9007199254740991
+    }
+
+    if (/character varying|varchar|text/.test(typeLower) && !column.maxLength) {
+      column.maxLength = 255
+    }
+
+    return column
   })
 }
 

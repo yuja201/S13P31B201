@@ -29,13 +29,20 @@ function extractSimpleConstraints(
 } {
   const constraints: { min?: number; max?: number; maxLength?: number } = {}
 
-  // VARCHAR(255), CHAR(20) 등 문자열 길이 제한
-  const lengthMatch = sqlType.match(/\((\d+)\)/)
-  if (lengthMatch) {
-    constraints.maxLength = parseInt(lengthMatch[1], 10)
+  // 스키마에서 직접 전달된 제약이 있으면 최우선 사용
+  if (columnData.minValue !== undefined) constraints.min = columnData.minValue
+  if (columnData.maxValue !== undefined) constraints.max = columnData.maxValue
+  if (columnData.maxLength !== undefined) constraints.maxLength = columnData.maxLength
+
+  // 문자열 타입 정규식 기반 백업
+  if (!constraints.maxLength) {
+    const lengthMatch = sqlType.match(/\((\d+)\)/)
+    if (lengthMatch) {
+      constraints.maxLength = parseInt(lengthMatch[1], 10)
+    }
   }
 
-  // CHECK (age >= 0 AND age <= 120)
+  // CHECK 제약이 있다면 추가로 반영
   if (columnData.check) {
     const checkStr = columnData.check
     const minMatch = checkStr.match(/>=?\s*(-?\d+(\.\d+)?)/)
@@ -69,7 +76,7 @@ export async function* generateFakeStream({
   // faker 경로 매핑
   const fakerPath = fakerMapper[domainName]
   if (!fakerPath) {
-    throw new Error(`❌ No faker mapping for domain: ${domainName}`)
+    throw new Error(`No faker mapping for domain: ${domainName}`)
   }
 
   const [category, method] = fakerPath.split('.') as [keyof Faker, string]
@@ -104,7 +111,7 @@ export async function* generateFakeStream({
     return String((fn as () => string | number)())
   }
 
-  // 고유값 보장이 필요 없는 경우 (기존 로직과 동일)
+  // 고유값 보장이 필요 없는 경우
   if (!metaData.ensureUnique) {
     for (let i = 0; i < recordCnt; i++) {
       yield generateSingleValue()
@@ -117,7 +124,7 @@ export async function* generateFakeStream({
 
   // 고유값 보장이 필요한 경우
   const generatedValues = new Set<string>()
-  const MAX_RETRIES = recordCnt * 3 + 100 // 재시도 횟수 (넉넉하게 설정)
+  const MAX_RETRIES = recordCnt * 3 + 100 // 재시도 횟수
 
   for (let i = 0; i < recordCnt; i++) {
     let value: string
