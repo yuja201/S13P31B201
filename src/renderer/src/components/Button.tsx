@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 
 export type ButtonVariant = 'orange' | 'yellow' | 'blue' | 'gray'
 export type ButtonSize = 'sm' | 'md' | 'lg'
@@ -17,8 +17,6 @@ const Button: React.FC<ButtonProps> = ({
   disabled,
   ...props
 }) => {
-  useEffect(() => {}, [])
-
   const classNames = [
     'button',
     `button--${variant}`,
