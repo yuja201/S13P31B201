@@ -143,6 +143,12 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
               setting = `Rule #${config.metaData.ruleId}`
             }
             break
+          case 'DEFAULT':
+            generation = '고정값'
+            if (config.metaData.kind === 'default') {
+              setting = config.metaData.fixedValue
+            }
+            break
           case 'REFERENCE':
             generation = '참조'
             setting = col.setting
