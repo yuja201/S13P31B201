@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import { TableInfo, ColumnDetail } from '@renderer/views/CreateDummyView'
 import Button from '@renderer/components/Button'
 import FileModal from '@renderer/modals/file/FileModal'
@@ -23,31 +23,22 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
   hasMissing,
   warningMessage
 }) => {
-  const { columns: columnConfigs } = useGenerationStore((state) => state.tables[table.name] || { columns: {}, recordCnt: 1000 })
+  const tableConfig = useGenerationStore((state) => state.tables[table.name])
+
+  const { columns: columnConfigs } = tableConfig || { columns: {}, recordCnt: 1000 }
   const applyFileMapping = useGenerationStore((state) => state.applyFileMapping)
   const resetColumnRule = useGenerationStore((state) => state.resetColumnRule)
   const setColumnRule = useGenerationStore((state) => state.setColumnRule)
 
   const getTableRecordCount = useGenerationStore((s) => s.getTableRecordCount)
   const setTableRecordCount = useGenerationStore((s) => s.setTableRecordCount)
-  const [rows, setRows] = useState<number>(() => getTableRecordCount(table.name))
-
-
+  const rows = getTableRecordCount(table.name)
   const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false)
   const [isRuleModalOpen, setIsRuleModalOpen] = useState(false)
   const [selectedColumn, setSelectedColumn] = useState<ColumnDetail | null>(null)
 
   const selectedColumnConfig = selectedColumn ? columnConfigs[selectedColumn.name] : undefined
 
-  useEffect(() => {
-    setRows(getTableRecordCount(table.name))
-  }, [table.name])
-
-  useEffect(() => {
-    setTableRecordCount(table.name, rows)
-  }, [rows])
-
-  // ----------------------------
   // File Upload Modal
   const openFileUploadModal = (): void => {
     setIsFileUploadModalOpen(true)
@@ -61,11 +52,11 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
     (payload: FileModalApplyPayload): void => {
       applyFileMapping(table.name, payload)
       if (payload.recordCount !== undefined) {
-        setRows(payload.recordCount)
+        setTableRecordCount(table.name, payload.recordCount)
       }
       closeFileUploadModal()
     },
-    [applyFileMapping, table.name]
+    [applyFileMapping, table.name, setTableRecordCount]
   )
 
   // ----------------------------
@@ -93,7 +84,6 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
     const MAX_ROWS = 50_000_000
     const normalized = Number.isFinite(value) ? Math.trunc(value) : 1
     const safeValue = Math.min(Math.max(1, normalized), MAX_ROWS)
-    setRows(safeValue)
     setTableRecordCount(table.name, safeValue)
   }
 
@@ -157,7 +147,6 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
             generation = '참조'
             setting = col.setting
             break
-
         }
 
         return { ...col, generation, setting }
@@ -263,7 +252,14 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
                       <td>
                         {hasSetting ? (
                           isEditableSetting ? (
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
+                            <div
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '4px'
+                              }}
+                            >
                               <button
                                 onClick={() => handleSelectGenerationClick(col)}
                                 className="setting-edit-button"
