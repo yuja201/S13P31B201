@@ -8,6 +8,7 @@ type DBTableListProps = {
   selectedTables: Set<string>
   handleCheckboxChange: (tableId: string, checked: boolean) => void
   onTableSelect: (table: TableInfo) => void
+  validationStatus: Map<string, boolean>
 }
 
 const DBTableList: React.FC<DBTableListProps> = ({
@@ -15,7 +16,8 @@ const DBTableList: React.FC<DBTableListProps> = ({
   focusedTableId,
   selectedTables,
   handleCheckboxChange,
-  onTableSelect
+  onTableSelect,
+  validationStatus
 }) => {
   const [searchQuery, setSearchQuery] = useState('')
 
@@ -44,29 +46,40 @@ const DBTableList: React.FC<DBTableListProps> = ({
 
         {/* --- 테이블 리스트 --- */}
         <ul className="table-list">
-          {filteredTables.map((table) => (
-            <li
-              key={table.id}
-              className={`table-list-item ${table.id === focusedTableId ? 'active' : ''}`}
-              onClick={() => onTableSelect(table)}
-            >
-              <input
-                type="checkbox"
-                checked={selectedTables.has(table.id)}
-                onChange={(e) => {
-                  handleCheckboxChange(table.id, e.target.checked)
-                  onTableSelect(table)
-                }}
-                onClick={(e) => e.stopPropagation()}
-              />
-              <div className="table-item-info">
-                <span className="preMedium16">{table.name}</span>
-                <span className="preRegular12">
-                  {table.columns} columns · {table.rows} row
-                </span>
-              </div>
-            </li>
-          ))}
+          {filteredTables.map((table) => {
+            // 경고 상태 확인 
+            const isSelected = selectedTables.has(table.id)
+            const isReady = validationStatus.get(table.id) ?? true
+            const needsAttention = isSelected && !isReady
+
+            return (
+              <li
+                key={table.id}
+                className={`table-list-item ${table.id === focusedTableId ? 'active' : ''} ${needsAttention ? 'needs-attention' : ''
+                  }`}
+                onClick={() => onTableSelect(table)}
+              >
+                <input
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={(e) => {
+                    handleCheckboxChange(table.id, e.target.checked)
+                    onTableSelect(table)
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                />
+                <div className="table-item-info">
+                  <div className="table-name-wrapper">
+                    <span className="preMedium16">{table.name}</span>
+                    {needsAttention && <span className="attention-icon">⚠️</span>}
+                  </div>
+                  <span className="preRegular12">
+                    {table.columns} columns · {table.rows} row
+                  </span>
+                </div>
+              </li>
+            )
+          })}
         </ul>
 
         {/* --- 하단 선택 개수 --- */}
@@ -192,6 +205,18 @@ const DBTableList: React.FC<DBTableListProps> = ({
         /* 핸들에 마우스 올렸을 때 */
         .table-list::-webkit-scrollbar-thumb:hover {
           background-color: var(--color-placeholder); 
+        }
+
+        .table-name-wrapper {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+        .table-list-item.needs-attention .preMedium16 {
+          color: #B45309; 
+        }
+        .attention-icon {
+          font-size: 12px;
         }
       `}</style>
     </>

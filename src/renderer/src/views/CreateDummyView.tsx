@@ -167,6 +167,10 @@ const CreateDummyView: React.FC = () => {
       }))
   }, [tables, selectedTables, generationTables])
 
+  const validationStatus = useMemo(() => {
+    return new Map(validationResults.map((v) => [v.table.name, v.isReady]))
+  }, [validationResults])
+
   // 선택된 테이블이 없으면 false
   const hasSelectedTables = selectedTables.size > 0
 
@@ -245,6 +249,7 @@ const CreateDummyView: React.FC = () => {
             selectedTables={selectedTables}
             handleCheckboxChange={handleToggleTable}
             onTableSelect={(table) => setFocusedTable({ ...table })}
+            validationStatus={validationStatus}
           />
           {focusedTable && (
             <DBTableDetail
