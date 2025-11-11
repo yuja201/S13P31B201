@@ -84,17 +84,23 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
     if (!column.checkConstraint) {
       return
     }
-    if (value === '') {
+    if (value.trim() === '') {
       setIsCheckValid(null)
       return
     }
 
-    const isValid = await window.api.schema.validateCheckConstraint({
-      value,
-      checkConstraint: column.checkConstraint,
-      columnName: column.name
-    })
-    setIsCheckValid(isValid)
+    try {
+      const isValid = await window.api.schema.validateCheckConstraint({
+        value: value.trim(),
+        checkConstraint: column.checkConstraint,
+        columnName: column.name
+      })
+      setIsCheckValid(isValid)
+    } catch (err) {
+      console.error('CHECK 제약 조건 검증 실패:', err)
+      showToast('제약 조건 검증 중 오류가 발생했습니다.', 'error', '검증 오류')
+      setIsCheckValid(null)
+    }
   }, 500)
 
   const handleFixedValueChange = (value: string): void => {
@@ -159,7 +165,12 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
       if (fixedValue.trim().toUpperCase() === 'NULL') {
         finalValue = null
       } else {
-        finalValue = Number(fixedValue)
+        const numValue = Number(fixedValue)
+        if (Number.isNaN(numValue)) {
+          showToast(`'${fixedValue}'는 유효한 숫자가 아닙니다.`, 'warning', '입력 오류')
+          return
+        }
+        finalValue = numValue
       }
     } else if (!column.checkConstraint) {
       if (fixedValue.trim().toUpperCase() === 'NULL') {

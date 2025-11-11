@@ -37,7 +37,7 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
   const referencedColumnName = schemaRef?.referenced_column || ''
 
   const [strategy, setStrategy] = useState<ReferenceStrategy>(() => {
-    if (initialConfig?.dataSource === 'FIXED') {
+    if (initialConfig?.dataSource === 'FIXED' || initialConfig?.dataSource === 'DEFAULT') {
       return 'FIXED_VALUE'
 
     }

@@ -211,40 +211,40 @@ ipcMain.handle(
       .replace(/\\'/g, "'")
       .replace(/`/g, '')
 
-    // 1. 컬럼명을 SQLite 파라미터 '?'로 변경
-    const expression = cleanedConstraint.replace(new RegExp(`\\b${columnName}\\b`, 'g'), '?')
+    // 컬럼명을 SQLite 파라미터 '?'로 변경
+    const escapedColumnName = columnName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const expression = cleanedConstraint.replace(new RegExp(`\\b${escapedColumnName}\\b`, 'g'), '?')
 
-    // 2. 이 연산이 문자열 비교(IN, LIKE)인지 추론
+    // 이 연산이 문자열 비교(IN, LIKE)인지 추론
     const isStringOperation = /IN\s*\(|LIKE/i.test(cleanedConstraint)
 
-    let bindingValue: string | number | null = value // DB에 바인딩할 최종 값
+    const trimmedValue = value.trim()
+    const expectsNumeric = /(>=|<=|>|<|BETWEEN)/i.test(cleanedConstraint)
+    let bindingValue: string | number | null = value
 
-    if (isStringOperation) {
-      // 3. 문자열 연산(IN, LIKE)이면 'value'를 그대로 사용
-      bindingValue = value
-    } else {
-      // 4. 숫자 연산(>=, <=, != 등)일 경우
-      if (value.trim().toUpperCase() === 'NULL') {
-        bindingValue = null // 'NULL' 문자열은 실제 null로 변환
-      } else {
-        const numericValue = Number(value)
-
-        if (isNaN(numericValue) || value.trim() === '') {
-          // 5. [버그 1 수정] 'abc' 또는 ''(공백)은 NaN이므로, 즉시 false 반환
-          console.error(`Check validation: '${value}' is not a valid number.`)
-          return false
-        }
-
-        // 6. [버그 2 수정] '-1' (문자열)을 -1 (숫자)로 변환
+    if (trimmedValue.toUpperCase() === 'NULL') {
+      bindingValue = null
+    } else if (!isStringOperation) {
+      const numericValue = Number(trimmedValue)
+      if (!Number.isNaN(numericValue)) {
         bindingValue = numericValue
+      } else if (expectsNumeric && trimmedValue !== '') {
+        return false
       }
     }
 
-    // 7. DB 실행
+    //  DB 실행
     const db = new Database(':memory:')
     try {
-      // 8. 준비된 bindingValue (숫자 -1 또는 문자열 'PG')를 get()에 전달
-      const result = db.prepare(`SELECT (${expression}) as isValid`).get(bindingValue)
+      const stmt = db.prepare(`SELECT (${expression}) as isValid`)
+      const placeholderCount = (expression.match(/\?/g) ?? []).length
+      if (placeholderCount === 0) {
+        const result = stmt.get()
+        return (result as { isValid: number }).isValid === 1
+      }
+      const bindings =
+        placeholderCount === 1 ? bindingValue : Array(placeholderCount).fill(bindingValue)
+      const result = stmt.get(bindings)
       return (result as { isValid: number }).isValid === 1
     } catch (error) {
       console.error('Check constraint validation error:', error)
