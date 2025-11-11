@@ -267,8 +267,7 @@ const DummyInsertView: React.FC = () => {
                   style={{
                     width: `${progress}%`,
                     height: '100%',
-                    backgroundColor: 'var(--color-main-blue)',
-                    transition: 'width 0.4s ease'
+                    backgroundColor: 'var(--color-main-blue)'
                   }}
                 />
               </div>
@@ -279,7 +278,10 @@ const DummyInsertView: React.FC = () => {
                   border: '1px solid var(--color-gray-blue)',
                   borderRadius: 12,
                   padding: '20px 30px',
-                  overflowY: 'auto'
+                  overflowY: 'auto',
+                  maxHeight: '400px',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word'
                 }}
               >
                 {logs.map((log, i) => (
