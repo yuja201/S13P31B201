@@ -87,9 +87,13 @@ const CreateDummyView: React.FC = () => {
     '테이블을 선택하고 컬럼별 데이터 생성 방식을 설정하세요.\nAI, Faker.js, 파일 업로드, 직접 입력 중 원하는 방식으로 데이터를 생성하세요.'
 
   const selectedProject = useProjectStore((state) => state.selectedProject)
-  const isLoading = useSchemaStore((state) => state.isLoading)
-  const error = useSchemaStore((state) => state.error)
-  const schemasMap = useSchemaStore((state) => state.schemas)
+  const { isLoading, error, schemas: schemasMap, refreshSchema } = useSchemaStore()
+
+  useEffect(() => {
+    if (selectedProject?.database?.id) {
+      refreshSchema(selectedProject.database.id)
+    }
+  }, [selectedProject, refreshSchema])
 
   const tables: TableInfo[] = useMemo(() => {
     const currentDatabaseId = selectedProject?.database?.id

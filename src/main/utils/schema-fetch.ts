@@ -108,6 +108,9 @@ async function fetchMySQLSchema(config: DatabaseConfig): Promise<DatabaseSchema>
     for (const tableRow of tableRows as MySQLTableRow[]) {
       const tableName = tableRow.name
 
+      const [countRows] = await connection.execute(`SELECT COUNT(*) as count FROM \`${tableName}\``)
+      const rowCount = (countRows as { count: number }[])[0].count
+
       const columns = await fetchMySQLColumns(connection, databaseName, tableName)
 
       const foreignKeys = await fetchMySQLForeignKeys(connection, databaseName, tableName)
@@ -116,7 +119,7 @@ async function fetchMySQLSchema(config: DatabaseConfig): Promise<DatabaseSchema>
 
       tables.push({
         name: tableName,
-        rowCount: tableRow.rowCount || 0,
+        rowCount: rowCount,
         comment: tableRow.comment || undefined,
         columns,
         foreignKeys,
