@@ -6,6 +6,7 @@ import * as ruleOps from '../database/rules'
 import { testDatabaseConnection, ConnectionConfig } from '../utils/db-connection-test'
 import { fetchDatabaseSchema } from '../utils/schema-fetch'
 import { fetchRandomSample, checkFkValueExists } from '../utils/db-query'
+import Database from 'better-sqlite3'
 
 /**
  * SQLite Database
@@ -176,22 +177,80 @@ ipcMain.handle(
       table,
       column,
       value
-    }: { databaseId: number; table: string; column: string; value: any }
+    }: { databaseId: number; table: string; column: string; value: string }
   ) => {
     try {
       const config = getConnectionConfig(databaseId)
       return await checkFkValueExists(config, table, column, value)
     } catch (error) {
-      // [수정] 타입 확인
       const errorMessage = error instanceof Error ? error.message : '검증 중 오류 발생'
       console.error('[IPC Error] db:validate-fk-value:', errorMessage)
 
-      // DB 드라이버 에러(예: 'ECONNREFUSED')는 프론트로 전파
       if (error && typeof error === 'object' && 'code' in error) {
         throw new Error(errorMessage)
       }
-      // 그 외 (예: 쿼리 결과 없음)는 'invalid'로 간주
       return { isValid: false }
+    }
+  }
+)
+
+// CHECK 제약조건 유효성 검사 핸들러
+ipcMain.handle(
+  'schema:validate-check-constraint',
+  async (
+    _event,
+    args: { value: string; checkConstraint: string; columnName: string }
+  ): Promise<boolean> => {
+    const { value, checkConstraint, columnName } = args
+    if (!checkConstraint) return true
+
+    const cleanedConstraint = checkConstraint
+      .trim()
+      .replace(/^\(|\)$/g, '')
+      .replace(/_utf8mb4/g, '')
+      .replace(/\\'/g, "'")
+      .replace(/`/g, '')
+
+    // 1. 컬럼명을 SQLite 파라미터 '?'로 변경
+    const expression = cleanedConstraint.replace(new RegExp(`\\b${columnName}\\b`, 'g'), '?')
+
+    // 2. 이 연산이 문자열 비교(IN, LIKE)인지 추론
+    const isStringOperation = /IN\s*\(|LIKE/i.test(cleanedConstraint)
+
+    let bindingValue: string | number | null = value // DB에 바인딩할 최종 값
+
+    if (isStringOperation) {
+      // 3. 문자열 연산(IN, LIKE)이면 'value'를 그대로 사용
+      bindingValue = value
+    } else {
+      // 4. 숫자 연산(>=, <=, != 등)일 경우
+      if (value.trim().toUpperCase() === 'NULL') {
+        bindingValue = null // 'NULL' 문자열은 실제 null로 변환
+      } else {
+        const numericValue = Number(value)
+
+        if (isNaN(numericValue) || value.trim() === '') {
+          // 5. [버그 1 수정] 'abc' 또는 ''(공백)은 NaN이므로, 즉시 false 반환
+          console.error(`Check validation: '${value}' is not a valid number.`)
+          return false
+        }
+
+        // 6. [버그 2 수정] '-1' (문자열)을 -1 (숫자)로 변환
+        bindingValue = numericValue
+      }
+    }
+
+    // 7. DB 실행
+    const db = new Database(':memory:')
+    try {
+      // 8. 준비된 bindingValue (숫자 -1 또는 문자열 'PG')를 get()에 전달
+      const result = db.prepare(`SELECT (${expression}) as isValid`).get(bindingValue)
+      return (result as { isValid: number }).isValid === 1
+    } catch (error) {
+      console.error('Check constraint validation error:', error)
+      return false
+    } finally {
+      db.close()
     }
   }
 )

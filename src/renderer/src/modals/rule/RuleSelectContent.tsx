@@ -10,6 +10,7 @@ import { useProjectStore } from '@renderer/stores/projectStore'
 import { ColumnDetail } from '@renderer/views/CreateDummyView'
 import { useToastStore } from '@renderer/stores/toastStore'
 import { formatCheckConstraint } from '@renderer/utils/formatConstraint'
+import { useDebouncedCallback } from 'use-debounce'
 
 export interface RuleCreationData {
   source: 'Faker' | 'AI'
@@ -31,7 +32,7 @@ export interface RuleSelection {
     domainName?: string
     filePath?: string
     columnIdx?: number
-    fixedValue?: string
+    fixedValue?: string | number | null
     fileType?: FileType
     useHeaderRow?: boolean
     refTable?: string
@@ -59,6 +60,7 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
   onCreateNew
 }) => {
   const [fixedValue, setFixedValue] = useState('')
+  const [isCheckValid, setIsCheckValid] = useState<boolean | null>(null)
   const [rules, setRules] = useState<Rule[]>([])
   const { selectedProject } = useProjectStore()
   const dbms = selectedProject?.dbms?.name ?? 'mysql'
@@ -76,6 +78,28 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
         domainName: rule.domain_name
       }
     })
+  }
+
+  const validateCheck = useDebouncedCallback(async (value: string) => {
+    if (!column.checkConstraint) {
+      return
+    }
+    if (value === '') {
+      setIsCheckValid(null)
+      return
+    }
+
+    const isValid = await window.api.schema.validateCheckConstraint({
+      value,
+      checkConstraint: column.checkConstraint,
+      columnName: column.name
+    })
+    setIsCheckValid(isValid)
+  }, 500)
+
+  const handleFixedValueChange = (value: string): void => {
+    setFixedValue(value)
+    validateCheck(value)
   }
 
   useEffect(() => {
@@ -116,29 +140,30 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
       return
     }
 
-    // CHECK 제약 조건 검증 (간단한 숫자 비교만 처리)
-    if (column.checkConstraint) {
-      const num = Number(trimmedValue)
-      if (!Number.isNaN(num)) {
-        const checkMatch = column.checkConstraint.match(/(>|>=|<|<=)\s*(\d+)/)
-        if (checkMatch) {
-          const [, operator, valueStr] = checkMatch
-          const checkValue = Number(valueStr)
-          let isValid = true
-          if (operator === '>' && !(num > checkValue)) isValid = false
-          if (operator === '>=' && !(num >= checkValue)) isValid = false
-          if (operator === '<' && !(num < checkValue)) isValid = false
-          if (operator === '<=' && !(num <= checkValue)) isValid = false
+    // CHECK 제약 조건 검증
+    if (column.checkConstraint && isCheckValid === false) {
+      showToast(
+        `입력한 값 '${trimmedValue}'이(가) CHECK 제약 조건 '
+       ${formatCheckConstraint(column.checkConstraint)}'을(를) 위반합니다.`,
+        'warning',
+        '입력 오류'
+      )
+      return
+    }
 
-          if (!isValid) {
-            showToast(
-              `입력한 값 '${num}'이(가) CHECK 제약 조건 '${column.checkConstraint}'을(를) 위반합니다.`,
-              'warning',
-              '입력 오류'
-            )
-            return
-          }
-        }
+    let finalValue: string | number | null = fixedValue
+
+    const isStringOperation = /IN\s*\(|LIKE/i.test(column.checkConstraint || '')
+
+    if (column.checkConstraint && !isStringOperation) {
+      if (fixedValue.trim().toUpperCase() === 'NULL') {
+        finalValue = null
+      } else {
+        finalValue = Number(fixedValue)
+      }
+    } else if (!column.checkConstraint) {
+      if (fixedValue.trim().toUpperCase() === 'NULL') {
+        finalValue = null
       }
     }
 
@@ -146,7 +171,7 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
     onConfirm({
       columnName,
       dataSource: 'FIXED',
-      metaData: { fixedValue }
+      metaData: { fixedValue: finalValue }
     })
   }
   return (
@@ -161,27 +186,42 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
           description="고정값을 입력하거나 생성한 규칙을 적용해보세요."
           size="small"
         />
-        {column.checkConstraint && (
-          <div className="check-constraint-notice">
-            ※ 참고: 이 컬럼에는 <span>{formatCheckConstraint(column.checkConstraint)}</span>제약
-            조건이 있습니다.
-          </div>
-        )}
-        <br />
+
         <hr className="rule-select__divider" />
       </div>
 
       {/* 고정값 입력 */}
       <div className="rule-select__section">
-        <InputField
-          title="고정값 입력"
-          placeholder="예: 홍길동, 20, 0.0, TRUE"
-          width="100%"
-          titleBold
-          size="md"
-          value={fixedValue}
-          onChange={setFixedValue}
-        />
+        <div className="relative">
+          <InputField
+            title="고정값 입력"
+            placeholder="예: 홍길동, 20, 0.0, TRUE"
+            width="100%"
+            titleBold
+            size="md"
+            value={fixedValue}
+            onChange={handleFixedValueChange}
+            className={
+              isCheckValid === false ? 'input-error' : isCheckValid === true ? 'input-success' : ''
+            }
+          />
+          {column.checkConstraint && (
+            <div
+              className={` constraint-helper
+              ${isCheckValid === null && 'notice'}
+              ${isCheckValid === true && 'success'}
+              ${isCheckValid === false && 'error'}`}
+            >
+              {isCheckValid === null && (
+                <>※ 참고: {formatCheckConstraint(column.checkConstraint)}</>
+              )}
+              {isCheckValid === true && <> 제약 조건을 만족합니다.</>}
+              {isCheckValid === false && (
+                <> {formatCheckConstraint(column.checkConstraint)}을(를) 위반합니다.</>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* 이전 설정 */}
@@ -219,7 +259,7 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
         <Button variant="gray" onClick={onCancel}>
           취소
         </Button>
-        <Button variant="orange" onClick={handleConfirmFixed}>
+        <Button variant="orange" onClick={handleConfirmFixed} disabled={isCheckValid === false}>
           확인
         </Button>
       </div>
@@ -243,24 +283,39 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
           margin-bottom: 4px;
         }
 
-        .check-constraint-notice {
-           background-color: var(--color-light-yellow);
-           border: 1px solid var(--color-orange);
-           border-radius: 8px;
-           padding: 10px 12px;
-           font: var(--preRegular14);
-           color: var(--color-dark-gray);
-           margin-top: 16px;
-        }
-        .check-constraint-notice span {
-          font-weight: var(--fw-semiBold);
-          color: var(--color-black);
-        }
-
         .rule-select__divider {
           border: none;
           border-top: 1px solid rgba(0, 0, 0, 0.15);
           margin-top: 12px;
+        }
+
+        .input-error {
+          border-color: #DC2626 !important; /* !important는 필요에 따라 사용 */
+          box-shadow: 0 0 0 2px rgba(220, 38, 38, 0.2) !important;
+        }
+        .input-success {
+          border-color: #16A34A !important;
+          box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2) !important;
+        }
+
+        .constraint-helper {
+          font: var(--preRegular14);
+          padding: 6px 12px;
+          margin-top: 8px; 
+          border-radius: 6px;
+          transition: all 0.2s ease;
+        }
+        .constraint-helper.notice {
+          color: #A16207; 
+          background-color: #FEFCE8; 
+        }
+        .constraint-helper.success {
+          color: #166534; 
+        }
+        .constraint-helper.error {
+          color: #991B1B;
+          background-color: #FEF2F2;
+          font-weight: var(--fw-medium);
         }
 
         .rule-select__section {

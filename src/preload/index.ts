@@ -106,13 +106,20 @@ const api = {
       column: string
     }): Promise<{ sample: unknown }> => ipcRenderer.invoke('db:get-random-sample', params),
 
-    // FK Value Verification Function
+    // FK
     validateFkValue: (params: {
       databaseId: number
       table: string
       column: string
       value: unknown
-    }): Promise<{ isValid: boolean }> => ipcRenderer.invoke('db:validate-fk-value', params)
+    }): Promise<{ isValid: boolean }> => ipcRenderer.invoke('db:validate-fk-value', params),
+
+    // CHECK
+    validateCheckConstraint: (args: {
+      value: string
+      checkConstraint: string
+      columnName: string
+    }): Promise<boolean> => ipcRenderer.invoke('schema:validate-check-constraint', args)
   },
 
   file: {

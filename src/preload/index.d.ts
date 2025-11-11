@@ -84,6 +84,12 @@ interface API {
       column: string
       value: unknown
     }) => Promise<{ isValid: boolean }>
+
+    validateCheckConstraint: (args: {
+      value: string
+      checkConstraint: string
+      columnName: string
+    }) => Promise<boolean>
   }
 
   file: {
