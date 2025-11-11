@@ -11,7 +11,9 @@ import { createZipFromSqlFilesStreaming } from './zip-generator'
 import { getFileCacheRoot } from '../../utils/cache-path'
 import { fetchSchema } from '../../utils/schema-fetch'
 import fs from 'node:fs'
+import { createLogger } from '../../utils/logger'
 
+const logger = createLogger('data-generator-service')
 const MAX_PARALLEL = Math.max(1, Math.floor(os.cpus().length / 2))
 
 export async function runDataGenerator(
@@ -205,6 +207,37 @@ export async function runDataGenerator(
           projectId
         )
       : null
+
+  if (fileResults.length > 0) {
+    for (const result of fileResults) {
+      try {
+        if (fs.existsSync(result.sqlPath)) {
+          await fs.promises.unlink(result.sqlPath)
+          logger.info(`SQL 파일 삭제 완료: ${result.sqlPath}`)
+        }
+      } catch (err) {
+        if (err instanceof Error && 'code' in err) {
+          const code = (err as NodeJS.ErrnoException).code
+          if (code === 'EBUSY' || code === 'EPERM') {
+            logger.warn(`파일 잠금 상태로 재시도 예정: ${result.sqlPath}`)
+            await new Promise((r) => setTimeout(r, 500))
+            try {
+              await fs.promises.unlink(result.sqlPath)
+              logger.info(`SQL 파일 재삭제 성공: ${result.sqlPath}`)
+            } catch (retryErr) {
+              if (retryErr instanceof Error) {
+                logger.error(`여전히 삭제 실패 (${result.sqlPath}): ${retryErr.message}`)
+              }
+            }
+          } else {
+            logger.error(`삭제 실패 (${result.sqlPath}): ${err.message}`)
+          }
+        } else {
+          logger.error(`예상치 못한 오류로 SQL 파일 삭제 실패: ${result.sqlPath}`)
+        }
+      }
+    }
+  }
 
   const executedTables = successResults.filter((r) => r.directInserted).map((r) => r.tableName)
 
