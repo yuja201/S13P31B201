@@ -1,10 +1,11 @@
-import React, { useState, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useCallback, useEffect } from 'react'
 import { TableInfo, ColumnDetail } from '@renderer/views/CreateDummyView'
 import Button from '@renderer/components/Button'
 import FileModal from '@renderer/modals/file/FileModal'
 import { useGenerationStore } from '@renderer/stores/generationStore'
 import type { FileModalApplyPayload } from '@renderer/modals/file/types'
 import RuleModal, { RuleResult } from '@renderer/modals/rule/RuleModal'
+import { useRuleStore } from '@renderer/stores/ruleStore'
 
 type DBTableDetailProps = {
   table: TableInfo
@@ -38,6 +39,13 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
   const [selectedColumn, setSelectedColumn] = useState<ColumnDetail | null>(null)
 
   const selectedColumnConfig = selectedColumn ? columnConfigs[selectedColumn.name] : undefined
+
+  const getRuleById = useRuleStore((state) => state.getRuleById)
+  const fetchRules = useRuleStore((state) => state.fetchRules)
+
+  useEffect(() => {
+    fetchRules()
+  }, [fetchRules])
 
   // File Upload Modal
   const openFileUploadModal = (): void => {
@@ -134,13 +142,15 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
           case 'FAKER':
             generation = 'Faker.js'
             if (config.metaData.kind === 'faker') {
-              setting = `Rule #${config.metaData.ruleId}`
+              const rule = getRuleById(config.metaData.ruleId)
+              setting = rule ? rule.name : `Rule #${config.metaData.ruleId}`
             }
             break
           case 'AI':
             generation = 'AI'
             if (config.metaData.kind === 'ai') {
-              setting = `Rule #${config.metaData.ruleId}`
+              const rule = getRuleById(config.metaData.ruleId)
+              setting = rule ? rule.name : `Rule #${config.metaData.ruleId}`
             }
             break
           case 'DEFAULT':
@@ -159,7 +169,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
       }
       return col
     })
-  }, [table.columnDetails, columnConfigs])
+  }, [table.columnDetails, columnConfigs, getRuleById])
 
   return (
     <>

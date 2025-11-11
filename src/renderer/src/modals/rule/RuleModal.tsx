@@ -60,7 +60,9 @@ const RuleModal: React.FC<RuleModalProps> = ({
 
     onConfirm({
       generation: generationLabelMap[value.dataSource],
-      setting: String(value.metaData.domainName ?? value.metaData.fixedValue ?? '')
+      setting: String(
+        value.metaData.ruleName ?? value.metaData.domainName ?? value.metaData.fixedValue ?? ''
+      )
     })
 
     onClose()
