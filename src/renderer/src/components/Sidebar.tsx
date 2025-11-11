@@ -7,6 +7,8 @@ import { GrUpdate } from 'react-icons/gr'
 import { RxDashboard } from 'react-icons/rx'
 // import { IoSettingsSharp } from 'react-icons/io5'
 import { BsLayoutSidebar } from 'react-icons/bs'
+import { useSchemaStore } from '@renderer/stores/schemaStore'
+import { useProjectStore } from '@renderer/stores/projectStore'
 
 interface SidebarProps {
   locked?: boolean
@@ -17,6 +19,10 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ locked = false, projectName, dbType, projectId }) => {
   const [collapsed, setCollapsed] = useState(locked)
   const navigate = useNavigate()
+  const [lastUpdated, setLastUpdated] = useState(new Date())
+
+  const refreshSchema = useSchemaStore((state) => state.refreshSchema)
+  const selectedProject = useProjectStore((state) => state.selectedProject)
 
   const toggleSidebar = (): void => {
     if (locked) return
@@ -33,9 +39,16 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false, projectName, dbType, 
     setCollapsed(locked)
   }, [locked])
 
+  const handleRefresh = async (): Promise<void> => {
+    if (selectedProject?.database?.id) {
+      await refreshSchema(selectedProject.database.id)
+      setLastUpdated(new Date())
+    }
+  }
+
   const location = useLocation()
 
-  const currentTime = new Date().toLocaleString('ko-KR', {
+  const formattedTime = lastUpdated.toLocaleString('ko-KR', {
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -92,8 +105,12 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false, projectName, dbType, 
               <div className="project-name preSemiBold20">{projectName || '선택 안됨'}</div>
               <div className="project-db preLight12">{dbType || '-'}</div>
             </div>
-            <div className="preLight12 project-time">
-              <GrUpdate /> {currentTime}
+            <div
+              className="preLight12 project-time"
+              onClick={handleRefresh}
+              style={{ cursor: 'pointer' }}
+            >
+              <GrUpdate /> {formattedTime}
             </div>
           </div>
         </div>
