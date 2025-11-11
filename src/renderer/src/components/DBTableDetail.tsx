@@ -14,6 +14,7 @@ type DBTableDetailProps = {
   isAllReady: boolean
   hasMissing?: boolean
   warningMessage?: string
+  missingColumns?: string[]
 }
 
 const TableDetail: React.FC<DBTableDetailProps> = ({
@@ -22,7 +23,8 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
   onGenerateData,
   isAllReady,
   hasMissing,
-  warningMessage
+  warningMessage,
+  missingColumns
 }) => {
   const tableConfig = useGenerationStore((state) => state.tables[table.name])
 
@@ -228,13 +230,17 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
                   const needsSelection = !col.generation || col.generation === '-'
                   const hasSetting = col.setting && col.setting !== '-'
                   const isEditableSetting = col.generation !== 'Auto Increment'
+                  const isMissing = missingColumns?.includes(col.name)
+
+                  const rowClassName = [
+                    col.generation && col.generation !== '-' ? 'has-generation-method' : '',
+                    isMissing ? 'missing-rule' : ''
+                  ]
+                    .filter(Boolean)
+                    .join(' ')
+
                   return (
-                    <tr
-                      key={col.name}
-                      className={
-                        col.generation && col.generation !== '-' ? 'has-generation-method' : ''
-                      }
-                    >
+                    <tr key={col.name} className={rowClassName}>
                       <td className="preMedium14">{col.name}</td>
                       <td>{col.type}</td>
                       <td>
@@ -434,6 +440,9 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
         }
         .column-table tr.has-generation-method td {
           background-color: var(--color-light-blue); 
+        }
+        .column-table tr.missing-rule td {
+          background-color: #FFFBEB;
         }
 
         .generation-method-cell {

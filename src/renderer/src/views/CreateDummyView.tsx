@@ -238,6 +238,10 @@ const CreateDummyView: React.FC = () => {
     return <div>오류: {error}</div>
   }
 
+  const focusedTableValidation = focusedTable
+    ? validationResults.find((v) => v.table.name === focusedTable.name)
+    : null
+
   return (
     <>
       <div className="dummy-view-container">
@@ -259,6 +263,7 @@ const CreateDummyView: React.FC = () => {
               isAllReady={allReady}
               hasMissing={hasMissing}
               warningMessage={warningMessage}
+              missingColumns={focusedTableValidation?.missingColumns}
             />
           )}
         </div>
