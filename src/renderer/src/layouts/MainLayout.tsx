@@ -81,14 +81,6 @@ const MainLayout: React.FC = () => {
         margin: auto;
         min-height: 100%;
       }
-
-      /* 사이드바 상태별 */
-      .layout.sidebar-collapsed > .main-content {
-        margin-left: 80px;
-      }
-      .layout.sidebar-expanded > .main-content {
-        margin-left: 240px;
-      }
     `}</style>
     </div>
   )
