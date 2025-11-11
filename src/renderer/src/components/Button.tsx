@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 
-type ButtonVariant = 'orange' | 'yellow' | 'blue' | 'gray'
-type ButtonSize = 'sm' | 'md' | 'lg'
+export type ButtonVariant = 'orange' | 'yellow' | 'blue' | 'gray'
+export type ButtonSize = 'sm' | 'md' | 'lg'
 
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: ButtonVariant
