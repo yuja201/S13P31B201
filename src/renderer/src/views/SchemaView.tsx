@@ -11,7 +11,7 @@ const SchemaView: React.FC = () => {
   const navigate = useNavigate()
   const { projectId } = useParams<{ projectId: string }>()
   const selectedProject = useProjectStore((state) => state.selectedProject)
-  const { fetchSchema, isLoading } = useSchemaStore()
+  const { refreshSchema, isLoading } = useSchemaStore()
 
   const [tables, setTables] = useState<Table[]>([])
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
@@ -25,7 +25,7 @@ const SchemaView: React.FC = () => {
 
       try {
         setErrorMessage(null)
-        const schema = await fetchSchema(selectedProject.database.id)
+        const schema = await refreshSchema(selectedProject.database.id)
         setTables(schema.tables)
       } catch (err) {
         console.error('스키마 로딩 실패:', err)
@@ -35,7 +35,7 @@ const SchemaView: React.FC = () => {
     }
 
     loadSchema()
-  }, [projectId, selectedProject, fetchSchema])
+  }, [projectId, selectedProject, refreshSchema])
 
   const handlePrevious = (): void => {
     if (selectedProject?.id) {
