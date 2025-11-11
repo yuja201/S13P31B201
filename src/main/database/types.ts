@@ -112,6 +112,11 @@ export interface Column {
   default?: string
   enum?: string[]
   domain?: string
+  maxLength?: number
+  numericPrecision?: number
+  numericScale?: number
+  minValue?: number
+  maxValue?: number
 }
 
 export interface ForeignKey {
