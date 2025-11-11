@@ -28,7 +28,7 @@ const badgeColors: Record<BadgeColorType, { background: string; text: string }> 
 const InfoCard: React.FC<InfoCardProps> = ({
   title,
   content,
-  titleIcon: titleIcon,
+  titleIcon,
   badge,
   width = 'auto',
   height = 'auto'
@@ -102,16 +102,18 @@ const InfoCard: React.FC<InfoCardProps> = ({
         `}
       </style>
 
-      <div className={`info-card`} style={{ width, height }}>
+      <div className="info-card" style={{ width, height }}>
         <div className="info-card-header">
           <div className="info-card-title-wrapper">
             {titleIcon && <div className="info-card-left-icon">{titleIcon}</div>}
             <h3 className="info-card-title">{title}</h3>
           </div>
-          {badge && badgeStyle && (
+          {badge && (
             <span
               className="info-card-badge"
-              style={{ backgroundColor: badgeStyle.background, color: badgeStyle.text }}
+              style={
+                badgeStyle ? { backgroundColor: badgeStyle.background, color: badgeStyle.text } : {}
+              }
             >
               {badge.text}
             </span>
