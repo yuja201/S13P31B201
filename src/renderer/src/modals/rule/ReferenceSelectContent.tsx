@@ -9,7 +9,7 @@ import { formatCheckConstraint } from '@renderer/utils/formatConstraint'
 import { ColumnConfig } from '@renderer/stores/generationStore'
 
 type ReferenceStrategy = 'RANDOM_SAMPLE' | 'FIXED_VALUE'
-type SampleState = { status: 'idle' | 'loading' | 'success' | 'error'; value: string }
+type SampleState = { status: 'idle' | 'loading' | 'success' | 'error' | 'empty'; value: string }
 type ValidationState = 'idle' | 'loading' | 'valid' | 'invalid'
 
 interface ReferenceSelectContentProps {
@@ -89,7 +89,13 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
           column: referencedColumnName
         })
         .then((result) => {
-          setSamplePreview({ status: 'success', value: String(result.sample) })
+          if (result && result.sample !== null && result.sample !== undefined) {
+            setSamplePreview({ status: 'success', value: String(result.sample) })
+          } else {
+            setSamplePreview({
+              status: 'empty', value: '먼저 해당 테이블의 데이터를 생성해주세요.'
+            })
+          }
         })
         .catch((err) => {
           console.error(err)
@@ -279,6 +285,9 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
               {samplePreview.status === 'success' && (
                 <span className="sample-value">{samplePreview.value}</span>
               )}
+              {samplePreview.status === 'empty' && (
+                <span className="invalid">⚠️ {samplePreview.value}</span>
+              )}
               {samplePreview.status === 'error' && (
                 <span className="invalid">⚠️ {samplePreview.value}</span>
               )}
@@ -332,7 +341,9 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
             // 고정값 모드일 땐 'valid' 상태여야만 저장 활성화
             (strategy === 'FIXED_VALUE' && validationState !== 'valid') ||
             // 무작위 모드일 땐 '로딩 중'일 때 저장 비활성화
-            (strategy === 'RANDOM_SAMPLE' && samplePreview.status === 'loading')
+            (strategy === 'RANDOM_SAMPLE' && samplePreview.status === 'loading') ||
+            // 'empty' 상태일 때 저장 비활성화
+            (strategy === 'RANDOM_SAMPLE' && samplePreview.status === 'empty')
           }
         >
           저장
@@ -496,7 +507,7 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
           margin-top: 10px;
         }
       `}</style>
-    </div>
+    </div >
   )
 }
 
