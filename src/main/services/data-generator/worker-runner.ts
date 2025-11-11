@@ -482,6 +482,17 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
       const chunkDuration = ((Date.now() - chunkStartTime) / 1000).toFixed(2)
       console.log(`\n[${tableName}] 청크 ${chunkIdx + 1} 완료 (${chunkDuration}초)`)
 
+      const progressPercent =
+        chunkIdx + 1 === numChunks ? 100 : Math.floor((chunkEnd / recordCnt) * 100)
+
+      process.stdout.write(
+        JSON.stringify({
+          type: 'row-progress',
+          tableName,
+          progress: progressPercent
+        }) + '\n'
+      )
+
       await new Promise((res) => setTimeout(res, 100))
 
       if (chunkEnd === recordCnt) {

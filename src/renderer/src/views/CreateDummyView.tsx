@@ -43,19 +43,22 @@ const convertColumn = (col: Column, table: Table): ColumnDetail => {
   if (col.autoIncrement) constraints.push('AUTO INCREMENT')
   if (col.default) constraints.push('DEFAULT')
   if (col.check) constraints.push('CHECK')
-  if (col.enum) constraints.push('ENUM')
-  if (col.domain) constraints.push('DOMAIN')
+
+  const enumValues = Array.isArray(col.enum) ? col.enum : []
+  const hasEnumValues = enumValues.length > 0
+  const isEnum = hasEnumValues || col.type.toLowerCase().startsWith('enum')
+
+  if (isEnum) constraints.push('ENUM')
+
+  const displayType = hasEnumValues ? `enum(${enumValues.join(', ')})` : col.type
 
   const columnForeignKeys = table.foreignKeys?.filter((fk) => fk.column_name === col.name) || null
   const isForeignKey = (columnForeignKeys && columnForeignKeys.length > 0) || false
 
-  if (isForeignKey) {
-    constraints.push('FK')
-  }
-  // ---  생성 방식 & 설정 자동 채우기 로직 ---
+  if (isForeignKey) constraints.push('FK')
+
   let generation = ''
   let setting = ''
-
   if (col.autoIncrement) {
     generation = 'Auto Increment'
     setting = '자동 증가'
@@ -66,14 +69,14 @@ const convertColumn = (col: Column, table: Table): ColumnDetail => {
 
   return {
     name: col.name,
-    type: col.type,
+    type: displayType,
     constraints,
     generation,
     setting,
     defaultValue: col.default || null,
     checkConstraint: col.check || null,
-    enumList: col.enum || null,
-    isForeignKey: isForeignKey,
+    enumList: hasEnumValues ? enumValues : null,
+    isForeignKey,
     foreignKeys: columnForeignKeys
   }
 }
@@ -119,7 +122,17 @@ const CreateDummyView: React.FC = () => {
     if (!isInitialized && tables.length > 0) {
       tables.forEach((table) => {
         table.columnDetails.forEach((col) => {
-          if (col.generation === '고정값') {
+          if (col.constraints.includes('AUTO INCREMENT')) {
+            return
+          } else if (col.defaultValue) {
+            // DB 기본값이 존재 → DEFAULT로 초기 설정
+            setColumnRule(table.name, col.name, {
+              columnName: col.name,
+              dataSource: 'DEFAULT',
+              metaData: { fixedValue: col.setting }
+            })
+          } else if (col.generation === '고정값') {
+            // 사용자가 직접 고정값 지정한 경우만 FIXED로 처리
             setColumnRule(table.name, col.name, {
               columnName: col.name,
               dataSource: 'FIXED',

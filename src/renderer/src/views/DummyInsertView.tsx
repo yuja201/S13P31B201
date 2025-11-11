@@ -6,6 +6,7 @@ import failureIcon from '@renderer/assets/imgs/failure.svg'
 import Button from '@renderer/components/Button'
 import { useProjectStore } from '@renderer/stores/projectStore'
 import { useGenerationStore } from '@renderer/stores/generationStore'
+import { useSchemaStore } from '@renderer/stores/schemaStore'
 import { useLocation, useNavigate } from 'react-router-dom'
 import type { ColumnMetaData, DataSourceType, GenerationMode, GenerateRequest } from '@shared/types'
 
@@ -55,6 +56,7 @@ const DummyInsertView: React.FC = () => {
   const { selectedProject } = useProjectStore()
   const { exportAllTables } = useGenerationStore()
   const { clearAll, clearSelectedTables } = useGenerationStore()
+  const { refreshSchema } = useSchemaStore()
 
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -84,13 +86,20 @@ const DummyInsertView: React.FC = () => {
         const total = (message.successCount ?? 0) + (message.failCount ?? 0)
         setTotalCount(total)
         setInsertedCount(message.successCount ?? 0)
+
+        // DB 직접 삽입 모드는 스키마 새로고침
+        if (mode === 'db' && selectedProject?.id) {
+          refreshSchema(selectedProject.id).catch((error) => {
+            window.api.logger.error('Failed to refresh schema after data insertion:', error)
+          })
+        }
       }
     })
 
     return () => {
       window.api.dataGenerator.removeProgressListeners()
     }
-  }, [])
+  }, [mode, selectedProject?.id, refreshSchema])
 
   useEffect(() => {
     const startGeneration = async (): Promise<void> => {
@@ -258,8 +267,7 @@ const DummyInsertView: React.FC = () => {
                   style={{
                     width: `${progress}%`,
                     height: '100%',
-                    backgroundColor: 'var(--color-main-blue)',
-                    transition: 'width 0.4s ease'
+                    backgroundColor: 'var(--color-main-blue)'
                   }}
                 />
               </div>
@@ -270,7 +278,10 @@ const DummyInsertView: React.FC = () => {
                   border: '1px solid var(--color-gray-blue)',
                   borderRadius: 12,
                   padding: '20px 30px',
-                  overflowY: 'auto'
+                  overflowY: 'auto',
+                  maxHeight: '400px',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word'
                 }}
               >
                 {logs.map((log, i) => (

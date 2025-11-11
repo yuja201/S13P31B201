@@ -24,7 +24,14 @@ interface RuleModalProps {
   initialConfig?: ColumnConfig
 }
 
-const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, tableName, onConfirm, initialConfig }) => {
+const RuleModal: React.FC<RuleModalProps> = ({
+  isOpen,
+  onClose,
+  column,
+  tableName,
+  onConfirm,
+  initialConfig
+}) => {
   const [mode, setMode] = useState<'select' | 'create'>('select')
   const setRule = useGenerationStore((s) => s.setColumnRule)
 
@@ -42,7 +49,8 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, tableNam
     FILE: '파일 업로드',
     FIXED: '고정값',
     ENUM: 'ENUM',
-    REFERENCE: '참조'
+    REFERENCE: '참조',
+    DEFAULT: '고정값'
   }
 
   const handleConfirmSelect = (value: RuleSelection): void => {
@@ -52,7 +60,7 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, tableNam
 
     onConfirm({
       generation: generationLabelMap[value.dataSource],
-      setting: value.metaData.domainName ?? value.metaData.fixedValue ?? ''
+      setting: String(value.metaData.domainName ?? value.metaData.fixedValue ?? '')
     })
 
     onClose()

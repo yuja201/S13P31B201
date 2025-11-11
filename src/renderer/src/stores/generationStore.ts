@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { RuleSelection } from '@renderer/modals/rule/RuleSelectContent'
 
-export type DataSourceType = 'FAKER' | 'AI' | 'FILE' | 'FIXED' | 'REFERENCE'
+export type DataSourceType = 'FAKER' | 'AI' | 'FILE' | 'FIXED' | 'REFERENCE' | 'DEFAULT'
 
 export type FileMetaData = {
   kind: 'file'
@@ -38,6 +38,12 @@ export type ReferenceMetaData = {
   refColumn: string
   ensureUnique?: boolean
   previewValue?: string | number
+  fixedValue?: string
+}
+
+export type DefaultMetaData = {
+  kind: 'default'
+  fixedValue: string
 }
 
 export type ColumnMetaData =
@@ -46,6 +52,7 @@ export type ColumnMetaData =
   | FileMetaData
   | FixedMetaData
   | ReferenceMetaData
+  | DefaultMetaData
 
 export interface ColumnConfig {
   columnName: string
@@ -249,8 +256,16 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
           refTable,
           refColumn,
           ensureUnique: rule.metaData.ensureUnique,
-          previewValue: rule.metaData.previewValue
+          previewValue: rule.metaData.previewValue,
+          fixedValue:
+            rule.metaData.fixedValue != null ? String(rule.metaData.fixedValue) : undefined
         }
+        break
+      }
+
+      case 'DEFAULT': {
+        dataSource = 'DEFAULT'
+        metaData = { kind: 'default', fixedValue: String(rule.metaData.fixedValue ?? '') }
         break
       }
 
@@ -336,11 +351,14 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
     const tables = get().tables
     return Object.keys(tables).map((tableName) => {
       const table = tables[tableName]
-      const columns = Object.values(table.columns).map((col) => ({
-        columnName: col.columnName,
-        dataSource: col.dataSource,
-        metaData: col.metaData
-      }))
+      const columns = Object.values(table.columns)
+        .filter((col) => col.dataSource !== 'DEFAULT')
+        .map((col) => ({
+          columnName: col.columnName,
+          dataSource: col.dataSource,
+          metaData: col.metaData
+        }))
+
       return { tableName, recordCnt: table.recordCnt, columns }
     })
   }
