@@ -6,6 +6,7 @@ import * as ruleOps from '../database/rules'
 import { testDatabaseConnection, ConnectionConfig } from '../utils/db-connection-test'
 import { fetchDatabaseSchema } from '../utils/schema-fetch'
 import { fetchRandomSample, checkFkValueExists } from '../utils/db-query'
+import Database from 'better-sqlite3'
 
 /**
  * SQLite Database
@@ -176,22 +177,80 @@ ipcMain.handle(
       table,
       column,
       value
-    }: { databaseId: number; table: string; column: string; value: any }
+    }: { databaseId: number; table: string; column: string; value: string }
   ) => {
     try {
       const config = getConnectionConfig(databaseId)
       return await checkFkValueExists(config, table, column, value)
     } catch (error) {
-      // [수정] 타입 확인
       const errorMessage = error instanceof Error ? error.message : '검증 중 오류 발생'
       console.error('[IPC Error] db:validate-fk-value:', errorMessage)
 
-      // DB 드라이버 에러(예: 'ECONNREFUSED')는 프론트로 전파
       if (error && typeof error === 'object' && 'code' in error) {
         throw new Error(errorMessage)
       }
-      // 그 외 (예: 쿼리 결과 없음)는 'invalid'로 간주
       return { isValid: false }
+    }
+  }
+)
+
+// CHECK 제약조건 유효성 검사 핸들러
+ipcMain.handle(
+  'schema:validate-check-constraint',
+  async (
+    _event,
+    args: { value: string; checkConstraint: string; columnName: string }
+  ): Promise<boolean> => {
+    const { value, checkConstraint, columnName } = args
+    if (!checkConstraint) return true
+
+    const cleanedConstraint = checkConstraint
+      .trim()
+      .replace(/^\(|\)$/g, '')
+      .replace(/_utf8mb4/g, '')
+      .replace(/\\'/g, "'")
+      .replace(/`/g, '')
+
+    // 컬럼명을 SQLite 파라미터 '?'로 변경
+    const escapedColumnName = columnName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+    const expression = cleanedConstraint.replace(new RegExp(`\\b${escapedColumnName}\\b`, 'g'), '?')
+
+    // 이 연산이 문자열 비교(IN, LIKE)인지 추론
+    const isStringOperation = /IN\s*\(|LIKE/i.test(cleanedConstraint)
+
+    const trimmedValue = value.trim()
+    const expectsNumeric = /(>=|<=|>|<|BETWEEN)/i.test(cleanedConstraint)
+    let bindingValue: string | number | null = value
+
+    if (trimmedValue.toUpperCase() === 'NULL') {
+      bindingValue = null
+    } else if (!isStringOperation) {
+      const numericValue = Number(trimmedValue)
+      if (!Number.isNaN(numericValue)) {
+        bindingValue = numericValue
+      } else if (expectsNumeric && trimmedValue !== '') {
+        return false
+      }
+    }
+
+    //  DB 실행
+    const db = new Database(':memory:')
+    try {
+      const stmt = db.prepare(`SELECT (${expression}) as isValid`)
+      const placeholderCount = (expression.match(/\?/g) ?? []).length
+      if (placeholderCount === 0) {
+        const result = stmt.get()
+        return (result as { isValid: number }).isValid === 1
+      }
+      const bindings =
+        placeholderCount === 1 ? bindingValue : Array(placeholderCount).fill(bindingValue)
+      const result = stmt.get(bindings)
+      return (result as { isValid: number }).isValid === 1
+    } catch (error) {
+      console.error('Check constraint validation error:', error)
+      return false
+    } finally {
+      db.close()
     }
   }
 )

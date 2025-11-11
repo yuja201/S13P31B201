@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback } from 'react'
+import React, { useState, useMemo, useCallback } from 'react'
 import { TableInfo, ColumnDetail } from '@renderer/views/CreateDummyView'
 import Button from '@renderer/components/Button'
 import FileModal from '@renderer/modals/file/FileModal'
@@ -23,27 +23,22 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
   hasMissing,
   warningMessage
 }) => {
-  const tableGenerationConfig = useGenerationStore((state) => state.tables[table.name])
+  const tableConfig = useGenerationStore((state) => state.tables[table.name])
+
+  const { columns: columnConfigs } = tableConfig || { columns: {}, recordCnt: 1000 }
   const applyFileMapping = useGenerationStore((state) => state.applyFileMapping)
+  const resetColumnRule = useGenerationStore((state) => state.resetColumnRule)
+  const setColumnRule = useGenerationStore((state) => state.setColumnRule)
 
   const getTableRecordCount = useGenerationStore((s) => s.getTableRecordCount)
   const setTableRecordCount = useGenerationStore((s) => s.setTableRecordCount)
-  const [rows, setRows] = useState<number>(() => getTableRecordCount(table.name))
-
+  const rows = getTableRecordCount(table.name)
   const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false)
   const [isRuleModalOpen, setIsRuleModalOpen] = useState(false)
   const [selectedColumn, setSelectedColumn] = useState<ColumnDetail | null>(null)
 
-  useEffect(() => {
-    setRows(getTableRecordCount(table.name))
-  }, [table.name])
+  const selectedColumnConfig = selectedColumn ? columnConfigs[selectedColumn.name] : undefined
 
-  useEffect(() => {
-    if (!tableGenerationConfig) return
-    setTableRecordCount(table.name, rows)
-  }, [rows])
-
-  // ----------------------------
   // File Upload Modal
   const openFileUploadModal = (): void => {
     setIsFileUploadModalOpen(true)
@@ -57,11 +52,11 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
     (payload: FileModalApplyPayload): void => {
       applyFileMapping(table.name, payload)
       if (payload.recordCount !== undefined) {
-        setRows(payload.recordCount)
+        setTableRecordCount(table.name, payload.recordCount)
       }
       closeFileUploadModal()
     },
-    [applyFileMapping, table.name]
+    [applyFileMapping, table.name, setTableRecordCount]
   )
 
   // ----------------------------
@@ -89,15 +84,31 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
     const MAX_ROWS = 50_000_000
     const normalized = Number.isFinite(value) ? Math.trunc(value) : 1
     const safeValue = Math.min(Math.max(1, normalized), MAX_ROWS)
-    setRows(safeValue)
     setTableRecordCount(table.name, safeValue)
   }
 
+  const handleResetRule = (column: ColumnDetail): void => {
+    resetColumnRule(table.name, column.name)
+    if (column.defaultValue) {
+      // 기본값이 있다면, '고정값' 규칙을 다시 적용
+      const newRule = {
+        columnName: column.name,
+        dataSource: 'FIXED' as const,
+        metaData: { fixedValue: column.defaultValue }
+      }
+      setColumnRule(table.name, column.name, newRule)
+      onColumnUpdate(column.name, '고정값', column.defaultValue)
+    } else {
+      // 기본값이 없다면, 완전히 초기화
+      onColumnUpdate(column.name, '', '')
+    }
+  }
+
   const displayColumnDetails = useMemo(() => {
-    const columnConfigs = tableGenerationConfig?.columns ?? {}
+    const configs = columnConfigs ?? {}
 
     return table.columnDetails.map((col) => {
-      const config = columnConfigs[col.name]
+      const config = configs[col.name]
 
       if (config) {
         let generation = '',
@@ -132,13 +143,15 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
               setting = `Rule #${config.metaData.ruleId}`
             }
             break
+          case 'DEFAULT':
+            generation = '고정값'
+            if (config.metaData.kind === 'default') {
+              setting = config.metaData.fixedValue
+            }
+            break
           case 'REFERENCE':
             generation = '참조'
-            if (config.metaData.kind === 'reference') {
-              setting = `${config.metaData.refTable}.${config.metaData.refColumn}`
-            } else {
-              setting = '참조 설정됨'
-            }
+            setting = col.setting
             break
         }
 
@@ -146,7 +159,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
       }
       return col
     })
-  }, [table.columnDetails, tableGenerationConfig?.columns])
+  }, [table.columnDetails, columnConfigs])
 
   return (
     <>
@@ -245,28 +258,34 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
                       <td>
                         {hasSetting ? (
                           isEditableSetting ? (
-                            <Button
-                              variant="gray"
-                              size="sm"
-                              onClick={() => handleSelectGenerationClick(col)}
+                            <div
                               style={{
-                                backgroundColor: 'var(--color-sky-blue)',
-                                color: 'var(--color-main-blue)',
-                                borderRadius: '10px',
-                                padding: '4px 12px'
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                gap: '4px'
                               }}
                             >
-                              {col.setting} 🖊️
-                            </Button>
+                              <button
+                                onClick={() => handleSelectGenerationClick(col)}
+                                className="setting-edit-button"
+                              >
+                                {col.setting}
+                              </button>
+                              <button
+                                onClick={() => handleResetRule(col)}
+                                className="setting-reset-button"
+                              >
+                                ×
+                              </button>
+                            </div>
                           ) : (
                             <span
                               style={{
                                 display: 'inline-block',
                                 whiteSpace: 'nowrap',
-                                backgroundColor: 'var(--color-gray-200)',
                                 color: 'var(--color-dark-gray)',
                                 borderRadius: '10px',
-                                padding: '4px 12px',
                                 font: 'var(--preRegular14)'
                               }}
                             >
@@ -317,6 +336,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
           onClose={closeRuleModal}
           column={selectedColumn}
           onConfirm={handleRuleConfirm}
+          initialConfig={selectedColumnConfig}
         />
       )}
 
@@ -420,6 +440,42 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
         }
         .select-generation-link:hover {
            color: var(--color-main-blue);
+        }
+        .setting-edit-button {
+          background-color: var(--color-sky-blue);
+          color: var(--color-main-blue);
+          border-radius: 10px;
+          padding: 4px 12px;
+          border: none;
+          cursor: pointer;
+          font: var(--preSemiBold14);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 120px;
+          transition: background-color 0.2s;
+        }
+        .setting-edit-button:hover {
+          background-color: #cceeff;
+        }
+
+        .setting-reset-button {
+          background-color: transparent;
+          color: var(--color-dark-gray);
+          border: none;
+          border-radius: 50%;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 16px;
+          line-height: 1;
+          cursor: pointer;
+          transition: background-color 0.2s, color 0.2s;
+          flex-shrink: 0;
+        }
+        .setting-reset-button:hover {
+          background-color: var(--color-red-500);
+          color: var(--dark-gray);
         }
     
         .constraint-badges {

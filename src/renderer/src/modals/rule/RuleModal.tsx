@@ -6,6 +6,7 @@ import RuleCreationContent, { RuleCreationData } from '@renderer/modals/rule/Rul
 import { ColumnDetail } from '@renderer/views/CreateDummyView'
 import EnumSelectContent from '@renderer/modals/rule/EnumSelectContent'
 import ReferenceSelectContent from '@renderer/modals/rule/ReferenceSelectContent'
+import { ColumnConfig } from '@renderer/stores/generationStore'
 
 export type GenerationType = 'Faker.js' | 'AI' | '참조' | '파일 업로드' | '고정값' | 'ENUM'
 
@@ -20,9 +21,17 @@ interface RuleModalProps {
   column: ColumnDetail
   tableName: string
   onConfirm: (result: RuleResult) => void
+  initialConfig?: ColumnConfig
 }
 
-const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, tableName, onConfirm }) => {
+const RuleModal: React.FC<RuleModalProps> = ({
+  isOpen,
+  onClose,
+  column,
+  tableName,
+  onConfirm,
+  initialConfig
+}) => {
   const [mode, setMode] = useState<'select' | 'create'>('select')
   const setRule = useGenerationStore((s) => s.setColumnRule)
 
@@ -51,7 +60,7 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, tableNam
 
     onConfirm({
       generation: generationLabelMap[value.dataSource],
-      setting: value.metaData.domainName ?? value.metaData.fixedValue ?? ''
+      setting: String(value.metaData.domainName ?? value.metaData.fixedValue ?? '')
     })
 
     onClose()
@@ -94,6 +103,7 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, tableNam
               column={column}
               onCancel={onClose}
               onConfirm={handleConfirmSelect}
+              initialConfig={initialConfig}
             />
           ) : hasEnumList ? (
             <EnumSelectContent
