@@ -458,8 +458,14 @@ async function fetchPostgreSQLColumns(
       column.maxValue = 9007199254740991
     }
 
-    if (/character varying|varchar|text/.test(typeLower) && !column.maxLength) {
+    // VARCHAR 계열인데 명시적 길이 제한이 없는 경우: 기본값 255
+    if (/character varying|varchar/.test(typeLower) && !column.maxLength) {
       column.maxLength = 255
+    }
+
+    // TEXT 타입은 PostgreSQL에서 사실상 무제한이므로 length 제한 안 둠
+    if (/text/.test(typeLower)) {
+      column.maxLength = undefined
     }
 
     return column
