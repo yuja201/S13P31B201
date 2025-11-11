@@ -93,7 +93,7 @@ const CreateDummyView: React.FC = () => {
     if (selectedProject?.database?.id) {
       refreshSchema(selectedProject.database.id)
     }
-  }, [selectedProject?.database?.id])
+  }, [selectedProject?.database?.id, refreshSchema])
 
   const tables: TableInfo[] = useMemo(() => {
     const currentDatabaseId = selectedProject?.database?.id
