@@ -51,6 +51,13 @@ interface MySQLDatabaseRow {
   db: string
 }
 
+interface MySQLColumnRowExtended extends MySQLColumnRow {
+  maxLength: number | null
+  numericPrecision: number | null
+  numericScale: number | null
+  checkConstraint?: string | null
+}
+
 // PostgreSQL
 interface PostgreSQLTableRow {
   name: string
@@ -145,16 +152,19 @@ async function fetchMySQLColumns(
 ): Promise<Column[]> {
   const [columnRows] = await connection.execute(
     `SELECT
-      COLUMN_NAME as name,
-      COLUMN_TYPE as type,
-      COLUMN_COMMENT as comment,
-      IS_NULLABLE as isNullable,
-      COLUMN_KEY as columnKey,
-      COLUMN_DEFAULT as defaultValue,
-      EXTRA as extra,
+      c.COLUMN_NAME as name,
+      c.COLUMN_TYPE as type,
+      c.COLUMN_COMMENT as comment,
+      c.IS_NULLABLE as isNullable,
+      c.COLUMN_KEY as columnKey,
+      c.COLUMN_DEFAULT as defaultValue,
+      c.EXTRA as extra,
+      c.CHARACTER_MAXIMUM_LENGTH as maxLength,
+      c.NUMERIC_PRECISION as numericPrecision,
+      c.NUMERIC_SCALE as numericScale,
 
-      /* ---  CHECK 제약조건 조회 쿼리 --- */
-     (SELECT cc.CHECK_CLAUSE
+      /* --- CHECK 제약조건 조회 --- */
+      (SELECT cc.CHECK_CLAUSE
        FROM information_schema.TABLE_CONSTRAINTS tc
        JOIN information_schema.CHECK_CONSTRAINTS cc 
          ON tc.CONSTRAINT_SCHEMA = cc.CONSTRAINT_SCHEMA
@@ -171,9 +181,7 @@ async function fetchMySQLColumns(
     [databaseName, tableName]
   )
 
-  type MySQLColumnRowWithCheck = MySQLColumnRow & { checkConstraint?: string }
-
-  return (columnRows as MySQLColumnRowWithCheck[]).map((row) => {
+  return (columnRows as MySQLColumnRowExtended[]).map((row) => {
     const column: Column = {
       name: row.name,
       type: row.type,
@@ -184,14 +192,17 @@ async function fetchMySQLColumns(
       unique: row.columnKey === 'UNI',
       autoIncrement: row.extra.includes('auto_increment'),
       default: row.defaultValue !== null ? String(row.defaultValue) : undefined,
-      check: row.checkConstraint || undefined
+      check: row.checkConstraint || undefined,
+      maxLength: row.maxLength ?? undefined,
+      numericPrecision: row.numericPrecision ?? undefined,
+      numericScale: row.numericScale ?? undefined
     }
 
-    // ENUM 타입 파싱
+    // ENUM 타입 파싱 (UI에서 enum 사용 중이면 유지)
     if (row.type.startsWith('enum(')) {
       const enumMatch = row.type.match(/enum\((.*)\)/)
       if (enumMatch) {
-        column.enum = enumMatch[1].split(',').map((v: string) => v.trim().replace(/^'|'$/g, ''))
+        column.enum = enumMatch[1].split(',').map((v) => v.trim().replace(/^'|'$/g, ''))
       }
     }
 

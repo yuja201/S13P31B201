@@ -47,8 +47,19 @@ function extractSimpleConstraints(
     const checkStr = columnData.check
     const minMatch = checkStr.match(/>=?\s*(-?\d+(\.\d+)?)/)
     const maxMatch = checkStr.match(/<=?\s*(-?\d+(\.\d+)?)/)
-    if (minMatch) constraints.min = Number(minMatch[1])
-    if (maxMatch) constraints.max = Number(maxMatch[1])
+
+    // CHECK 제약을 스키마 제약과 병합
+    if (minMatch) {
+      const checkMin = Number(minMatch[1])
+      constraints.min =
+        constraints.min !== undefined ? Math.max(constraints.min, checkMin) : checkMin
+    }
+
+    if (maxMatch) {
+      const checkMax = Number(maxMatch[1])
+      constraints.max =
+        constraints.max !== undefined ? Math.min(constraints.max, checkMax) : checkMax
+    }
   }
 
   return constraints
