@@ -157,15 +157,15 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
       return
     }
 
-    let finalValue: string | number | null = fixedValue
+    let finalValue: string | number | null = trimmedValue
 
     const isStringOperation = /IN\s*\(|LIKE/i.test(column.checkConstraint || '')
 
     if (column.checkConstraint && !isStringOperation) {
-      if (fixedValue.trim().toUpperCase() === 'NULL') {
+      if (trimmedValue.toUpperCase() === 'NULL') {
         finalValue = null
       } else {
-        const numValue = Number(fixedValue)
+        const numValue = Number(trimmedValue)
         if (Number.isNaN(numValue)) {
           showToast(`'${fixedValue}'는 유효한 숫자가 아닙니다.`, 'warning', '입력 오류')
           return
@@ -173,7 +173,7 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
         finalValue = numValue
       }
     } else if (!column.checkConstraint) {
-      if (fixedValue.trim().toUpperCase() === 'NULL') {
+      if (trimmedValue.toUpperCase() === 'NULL') {
         finalValue = null
       }
     }

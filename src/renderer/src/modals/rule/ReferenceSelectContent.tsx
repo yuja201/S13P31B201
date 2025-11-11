@@ -45,7 +45,10 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
   })
 
   const [searchValue, setSearchValue] = useState(() => {
-    if (initialConfig?.dataSource === 'FIXED' && initialConfig.metaData.kind === 'fixed') {
+    if (
+      (initialConfig?.dataSource === 'FIXED' || initialConfig?.dataSource === 'DEFAULT') &&
+      initialConfig.metaData.kind === 'fixed'
+    ) {
       return initialConfig.metaData.fixedValue || ''
     }
     return ''
