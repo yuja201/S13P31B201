@@ -6,7 +6,6 @@ interface TestHeaderProps {
   subtitle?: string
   onRerunTest: () => void
   onDownload: () => void
-  isRunning?: boolean
   bottomSlot?: React.ReactNode
   className?: string
 }
