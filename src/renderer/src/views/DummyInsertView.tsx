@@ -275,11 +275,14 @@ const DummyInsertView: React.FC = () => {
               <div
                 style={{
                   flex: 1,
+                  flexShrink: 1,
+                  flexBasis: '0',
                   border: '1px solid var(--color-gray-blue)',
                   borderRadius: 12,
                   padding: '20px 30px',
                   overflowY: 'auto',
-                  maxHeight: '400px',
+                  minHeight: '200px',
+                  maxHeight: '450px',
                   whiteSpace: 'pre-wrap',
                   wordBreak: 'break-word'
                 }}
@@ -300,11 +303,17 @@ const DummyInsertView: React.FC = () => {
               <div
                 style={{
                   flex: 1,
+                  flexShrink: 1,
+                  flexBasis: '0',
                   border: '1px solid var(--color-gray-blue)',
                   borderRadius: 12,
                   padding: '20px 30px',
                   overflowY: 'auto',
-                  marginBottom: 20
+                  marginBottom: 20,
+                  minHeight: '200px',
+                  maxHeight: '450px',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word'
                 }}
               >
                 {errors.length > 0
