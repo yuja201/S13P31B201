@@ -2,20 +2,26 @@ import fs from 'node:fs'
 import path from 'node:path'
 import mysql from 'mysql2/promise'
 import { Client as PgClient } from 'pg'
-import type { WorkerTask, WorkerResult } from './types.js'
+import type { WorkerTask, WorkerResult } from '@shared/types.js'
 import { DBMS_MAP } from '../../utils/dbms-map.js'
 import { generateFakeStream } from './faker-generator.js'
 import { generateAIStream } from './ai-generator.js'
+import { createFileValueStream } from './file-generator.js'
+import { generateFixedStream } from './fixed-generator.js'
+import { generateReferenceStream } from './reference-generator.js'
+import { ConnectionConfig } from '../../utils/db-connection-test.js'
 import {
   DataSourceType,
   type ColumnMetaData,
   FakerMetaData,
   AIMetaData,
   FileMetaData,
-  FixedMetaData
-} from './types.js'
-import { createFileValueStream } from './file-generator.js'
-import { generateFixedStream } from './fixed-generator.js'
+  FixedMetaData,
+  ReferenceMetaData
+} from '@shared/types'
+
+const INVALID = { __invalid: true } as const
+type CellValue = string | typeof INVALID
 
 // 컬럼별 스트림 생성 함수
 function createColumnStream(
@@ -26,7 +32,7 @@ function createColumnStream(
   },
   task: WorkerTask,
   recordCnt: number
-): AsyncGenerator<string> {
+): AsyncGenerator<string | null | undefined> {
   const { projectId, table, schema, database, rules } = task
   const { tableName } = table
   const dataSource = col.dataSource as DataSourceType
@@ -50,7 +56,7 @@ function createColumnStream(
         tableName,
         columnName: col.columnName,
         recordCnt,
-        metaData: { ruleId: meta.ruleId },
+        metaData: meta,
         domainName: rule.domain_name,
         schema
       })
@@ -74,7 +80,7 @@ function createColumnStream(
         tableName,
         columnName: col.columnName,
         recordCnt,
-        metaData: { ruleId: meta.ruleId },
+        metaData: meta,
         schema,
         database,
         rule
@@ -104,7 +110,32 @@ function createColumnStream(
         recordCnt
       })
     }
+    case 'REFERENCE': {
+      if (!col.metaData) {
+        throw new Error(
+          `[참조 메타데이터 오류] ${tableName}.${col.columnName} 컬럼의 참조 설정이 올바르지 않습니다.`
+        )
+      }
+      const meta = col.metaData as ReferenceMetaData
+      if (!task.connection) {
+        throw new Error('참조 생성은 DB 직접 연결 모드에서만 지원됩니다.')
+      }
 
+      const connectionConfig: ConnectionConfig = {
+        dbType: task.dbType === 'mysql' ? 'MySQL' : 'PostgreSQL',
+        host: task.connection.host,
+        port: task.connection.port,
+        username: task.connection.username,
+        password: task.connection.password,
+        database: task.connection.database
+      }
+
+      return generateReferenceStream({
+        recordCnt,
+        metaData: meta,
+        connectionConfig
+      })
+    }
     default:
       throw new Error(`알 수 없는 데이터 소스: ${col.dataSource}`)
   }
@@ -127,6 +158,110 @@ function separateColumnsByType(columns: { dataSource: DataSourceType }[]): {
   })
 
   return { aiColumns, nonAiColumns }
+}
+
+/**
+ * 값 변환 (DB/스키마 문맥 기반)
+ * - A안 반영: CSV 따옴표 제거는 FILE 소스일 때에만 수행
+ * - undefined/null 안전, DB별 UUID, BOOL, JSON, 숫자, 날짜 처리 보강
+ */
+function convertValue(
+  raw: string | null,
+  columnName: string,
+  tableName: string,
+  schema: WorkerTask['schema'],
+  dbType: keyof typeof DBMS_MAP,
+  dataSource?: DataSourceType
+): string | typeof INVALID {
+  const table = schema.find((t) => t.name === tableName)
+  if (!table) return INVALID
+
+  const colSchema = table.columns.find((c) => c.name === columnName)
+  if (!colSchema) return INVALID
+
+  const type = (colSchema.type ?? '').toLowerCase()
+  const notNull = Boolean(colSchema.notNull)
+
+  // null/undefined → NULL 허용 여부 판단
+  if (raw == null) return notNull ? INVALID : 'NULL'
+
+  // 문자열화 (숫자/불리언 등 들어올 수 있음)
+  let s = typeof raw === 'string' ? raw : String(raw)
+
+  // === A안: FILE 소스일 때만 CSV 따옴표 제거 ===
+  if (dataSource === 'FILE' && s.length >= 2 && s[0] === '"' && s[s.length - 1] === '"') {
+    // CSV에서 "" → " 로 복원
+    s = s.slice(1, -1).replace(/""/g, '"')
+  }
+
+  // 명시적 NULL 문자열 처리
+  if (s.trim().toUpperCase() === 'NULL') {
+    return notNull ? INVALID : 'NULL'
+  }
+
+  // DB 함수 패스스루: now()
+  if (/^\s*now\s*\(\s*\)\s*$/i.test(s)) return 'now()'
+
+  // DB별 UUID 함수 매핑
+  if (/^\s*uuid_generate_v4\s*\(\s*\)\s*$/i.test(s)) {
+    return dbType === 'postgres' ? 'uuid_generate_v4()' : 'UUID()'
+  }
+
+  // 불리언
+  const lower = s.trim().toLowerCase()
+  const truthy = ['true', '1', 't', 'y', 'yes'].includes(lower)
+  const falsy = ['false', '0', 'f', 'n', 'no'].includes(lower)
+  if (type.includes('bool')) {
+    if (truthy) return 'TRUE'
+    if (falsy) return 'FALSE'
+    return notNull ? INVALID : 'NULL'
+  }
+
+  // ENUM: 정확일치 (트림)
+  if (Array.isArray(colSchema.enum) && colSchema.enum.length > 0) {
+    const candidate = s.trim()
+    if (!colSchema.enum.includes(candidate)) return INVALID
+    return `'${candidate.replace(/'/g, "''")}'`
+  }
+
+  // 숫자: 천단위 콤마/지수 허용
+  if (
+    type.includes('int') ||
+    type.includes('numeric') ||
+    type.includes('decimal') ||
+    type.includes('float') ||
+    type.includes('double')
+  ) {
+    const cleaned = s.replace(/,/g, '').trim()
+    if (!/^-?\d+(\.\d+)?([eE][+-]?\d+)?$/.test(cleaned)) {
+      return notNull ? INVALID : 'NULL'
+    }
+    return String(Number(cleaned))
+  }
+
+  // 날짜/타임스탬프: 가벼운 형태 검증
+  if (type.includes('date') || type.includes('timestamp')) {
+    const trimmed = s.trim()
+    const looksDateish = /^\d{4}-\d{2}-\d{2}(?:[ T]\d{2}:\d{2}:\d{2}(?:\.\d+)?)?/.test(trimmed)
+    if (!looksDateish && trimmed.toLowerCase() !== 'now()') {
+      return notNull ? INVALID : 'NULL'
+    }
+    return trimmed.toLowerCase() === 'now()' ? 'now()' : `'${trimmed.replace(/'/g, "''")}'`
+  }
+
+  // JSON: 칼럼 타입이 json 계열일 때만 파싱 검증
+  if (type.includes('json')) {
+    const candidate = s.trim()
+    try {
+      JSON.parse(candidate)
+      return `'${candidate.replace(/'/g, "''")}'`
+    } catch {
+      return INVALID
+    }
+  }
+
+  // 일반 문자열
+  return `'${s.replace(/'/g, "''")}'`
 }
 
 type DirectContext = {
@@ -191,7 +326,6 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
   const { quote } = DBMS_MAP[dbType]
   const columnNames = columns.map((c) => `${quote}${c.columnName}${quote}`).join(', ')
   const CHUNK_SIZE = 1000
-  const LOG_INTERVAL = 100_000
   const MAX_AI_CONCURRENT = 2
 
   const directMode = mode === 'DIRECT_DB' && Boolean(connection)
@@ -220,8 +354,9 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
 
       const columnStreams = columns.map((col) => createColumnStream(col, task, chunkSize))
       const { aiColumns, nonAiColumns } = separateColumnsByType(columns)
-      const chunkColumnValues: string[][] = new Array(columns.length)
+      const chunkColumnValues: (string | typeof INVALID)[][] = new Array(columns.length)
 
+      // === Non-AI 컬럼 처리 (예외 처리 일관화) ===
       if (nonAiColumns.length > 0) {
         console.log(`[${tableName}] Non-AI 컬럼 동시 처리:`)
         const nonAiResults = await Promise.all(
@@ -231,17 +366,26 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
             const colStart = Date.now()
             console.log(`  ▶ [${col.columnName}] 처리 (${col.dataSource})`)
 
-            const values: string[] = []
+            const values: (string | typeof INVALID)[] = []
             for (let i = 0; i < chunkSize; i++) {
-              const { value } = await stream.next()
-              if (value !== undefined) {
-                const escaped = String(value).replace(/'/g, "''")
-                values.push(`'${escaped}'`)
+              try {
+                const { value } = await stream.next()
+                const converted = convertValue(
+                  value,
+                  col.columnName,
+                  tableName,
+                  task.schema,
+                  dbType,
+                  col.dataSource
+                )
+                values.push(converted)
+              } catch {
+                values.push(INVALID)
               }
             }
 
             const colDuration = ((Date.now() - colStart) / 1000).toFixed(2)
-            console.log(`  ? [${col.columnName}] 완료 (${colDuration}초)`)
+            console.log(`  ✓ [${col.columnName}] 완료 (${colDuration}초)`)
 
             return { colIdx, values }
           })
@@ -252,6 +396,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
         })
       }
 
+      // === AI 컬럼 처리 (동시 MAX_AI_CONCURRENT개, 예외 처리 통일) ===
       if (aiColumns.length > 0) {
         console.log(`[${tableName}] AI 컬럼 처리 (동시 ${MAX_AI_CONCURRENT}개):`)
 
@@ -265,17 +410,26 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
               const colStart = Date.now()
               console.log(`  ▶ [${col.columnName}] 처리 (${col.dataSource})`)
 
-              const values: string[] = []
+              const values: (string | typeof INVALID)[] = []
               for (let j = 0; j < chunkSize; j++) {
-                const { value } = await stream.next()
-                if (value !== undefined) {
-                  const escaped = String(value).replace(/'/g, "''")
-                  values.push(`'${escaped}'`)
+                try {
+                  const { value } = await stream.next()
+                  const converted = convertValue(
+                    value,
+                    col.columnName,
+                    tableName,
+                    task.schema,
+                    dbType,
+                    col.dataSource
+                  )
+                  values.push(converted)
+                } catch {
+                  values.push(INVALID)
                 }
               }
 
               const colDuration = ((Date.now() - colStart) / 1000).toFixed(2)
-              console.log(`  ? [${col.columnName}] 완료 (${colDuration}초)`)
+              console.log(`  ✓ [${col.columnName}] 완료 (${colDuration}초)`)
 
               return { colIdx, values }
             })
@@ -286,32 +440,35 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
           })
 
           if (i + MAX_AI_CONCURRENT < aiColumns.length) {
-            console.log(`  ? 다음 AI 컬럼 대기 (1초)...`)
+            console.log(`  … 다음 AI 컬럼 대기 (1초)...`)
             await new Promise((res) => setTimeout(res, 1000))
           }
         }
       }
 
+      // === 행 조립 ===
       const rows: string[] = []
+      const skipInvalid = task.skipInvalidRows !== false
+
       for (let rowIdx = 0; rowIdx < chunkSize; rowIdx++) {
-        const rowValues = columns.map((_, colIdx) => {
+        const rowValues: CellValue[] = columns.map((_, colIdx) => {
           const columnValues = chunkColumnValues[colIdx]
           return columnValues?.[rowIdx] ?? 'NULL'
         })
+
+        const hasInvalid = rowValues.some((v) => v === INVALID)
+        if (hasInvalid) {
+          if (skipInvalid) {
+            continue
+          } else {
+            throw new Error(
+              `[행 변환 오류] ${tableName} ${totalProcessed + rowIdx + 1}행 변환 실패`
+            )
+          }
+        }
+
         rows.push(`(${rowValues.join(', ')})`)
         totalProcessed++
-
-        if (totalProcessed % LOG_INTERVAL === 0 || totalProcessed === recordCnt) {
-          const progress = recordCnt === 0 ? 100 : Math.round((totalProcessed / recordCnt) * 100)
-          process.stdout.write(
-            JSON.stringify({
-              type: 'row-progress',
-              tableName,
-              progress,
-              currentRow: totalProcessed
-            }) + '\n'
-          )
-        }
       }
 
       if (rows.length > 0) {
@@ -324,6 +481,17 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
 
       const chunkDuration = ((Date.now() - chunkStartTime) / 1000).toFixed(2)
       console.log(`\n[${tableName}] 청크 ${chunkIdx + 1} 완료 (${chunkDuration}초)`)
+
+      const progressPercent =
+        chunkIdx + 1 === numChunks ? 100 : Math.floor((chunkEnd / recordCnt) * 100)
+
+      process.stdout.write(
+        JSON.stringify({
+          type: 'row-progress',
+          tableName,
+          progress: progressPercent
+        }) + '\n'
+      )
 
       await new Promise((res) => setTimeout(res, 100))
 
@@ -385,6 +553,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
     return result
   }
 }
+
 async function main(): Promise<void> {
   const taskEnv = process.env.TASK
   if (!taskEnv) {

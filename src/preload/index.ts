@@ -1,5 +1,6 @@
 import { contextBridge, ipcRenderer } from 'electron'
 import { electronAPI } from '@electron-toolkit/preload'
+import log from 'electron-log/renderer'
 import type {
   DBMS,
   DBMSInput,
@@ -13,15 +14,11 @@ import type {
   Rule,
   RuleInput,
   RuleUpdate,
-  DatabaseSchema
+  DatabaseSchema,
+  DomainCategory
 } from '../main/database/types'
 
-import {
-  FakerRuleInput,
-  AIRuleInput,
-  GenerateRequest,
-  GenerationResult
-} from '../main/services/data-generator/types'
+import { FakerRuleInput, AIRuleInput, GenerateRequest, GenerationResult } from '@shared/types'
 
 // Custom APIs for renderer
 const api = {
@@ -43,7 +40,9 @@ const api = {
     create: (data: ProjectInput): Promise<Project> => ipcRenderer.invoke('db:project:create', data),
     update: (data: ProjectUpdate): Promise<Project | undefined> =>
       ipcRenderer.invoke('db:project:update', data),
-    delete: (id: number): Promise<boolean> => ipcRenderer.invoke('db:project:delete', id)
+    delete: (id: number): Promise<boolean> => ipcRenderer.invoke('db:project:delete', id),
+    updateUpdatedAt: (id: number): Promise<Project | undefined> =>
+      ipcRenderer.invoke('db:project:updateUpdatedAt', id)
   },
 
   // Database operations
@@ -74,7 +73,9 @@ const api = {
     delete: (id: number): Promise<boolean> => ipcRenderer.invoke('db:rule:delete', id),
     createFaker: (data: FakerRuleInput): Promise<Rule> =>
       ipcRenderer.invoke('db:rule:createFaker', data),
-    createAI: (data: AIRuleInput): Promise<Rule> => ipcRenderer.invoke('db:rule:createAI', data)
+    createAI: (data: AIRuleInput): Promise<Rule> => ipcRenderer.invoke('db:rule:createAI', data),
+    getByLogicalType: (logicalType: string) =>
+      ipcRenderer.invoke('db:rule:getByLogicalType', logicalType)
   },
 
   // Database connection test
@@ -97,7 +98,28 @@ const api = {
   // Schema operations
   schema: {
     fetch: (databaseId: number): Promise<DatabaseSchema> =>
-      ipcRenderer.invoke('db:schema:fetch', databaseId)
+      ipcRenderer.invoke('db:schema:fetch', databaseId),
+
+    getRandomSample: (params: {
+      databaseId: number
+      table: string
+      column: string
+    }): Promise<{ sample: unknown }> => ipcRenderer.invoke('db:get-random-sample', params),
+
+    // FK
+    validateFkValue: (params: {
+      databaseId: number
+      table: string
+      column: string
+      value: unknown
+    }): Promise<{ isValid: boolean }> => ipcRenderer.invoke('db:validate-fk-value', params),
+
+    // CHECK
+    validateCheckConstraint: (args: {
+      value: string
+      checkConstraint: string
+      columnName: string
+    }): Promise<boolean> => ipcRenderer.invoke('schema:validate-check-constraint', args)
   },
 
   file: {
@@ -138,6 +160,18 @@ const api = {
     load: () => ipcRenderer.invoke('env:load'),
     getPath: () => ipcRenderer.invoke('env:get-path'),
     openFolder: () => ipcRenderer.invoke('env:open-folder')
+  },
+  logger: {
+    debug: (...args: unknown[]) => log.debug(...args),
+    info: (...args: unknown[]) => log.info(...args),
+    warn: (...args: unknown[]) => log.warn(...args),
+    error: (...args: unknown[]) => log.error(...args),
+    verbose: (...args: unknown[]) => log.verbose(...args)
+  },
+  domain: {
+    getAll: (): Promise<DomainCategory[]> => ipcRenderer.invoke('domain:getAll'),
+    getByLogicalType: (logicalType: string): Promise<DomainCategory[]> =>
+      ipcRenderer.invoke('domain:getByLogicalType', logicalType)
   }
 }
 
@@ -154,7 +188,7 @@ if (process.contextIsolated) {
       GOOGLE_API_KEY: process.env.GOOGLE_API_KEY || null
     })
   } catch (error) {
-    console.error(error)
+    log.error('Failed to set up contextBridge:', error)
   }
 } else {
   // @ts-ignore (define in dts)

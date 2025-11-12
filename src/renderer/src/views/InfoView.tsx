@@ -4,8 +4,9 @@ import Button from '@renderer/components/Button'
 import InputField from '@renderer/components/InputField'
 import PageTitle from '@renderer/components/PageTitle'
 import RadioButton from '@renderer/components/RadioButton'
-import Toast from '@renderer/components/Toast'
+import { useToastStore } from '@renderer/stores/toastStore'
 import { useProjectStore } from '@renderer/stores/projectStore'
+import { useSchemaStore } from '@renderer/stores/schemaStore'
 
 interface ProjectInfo {
   projectName: string
@@ -23,6 +24,8 @@ const InfoView: React.FC = () => {
   const selectedProject = useProjectStore((state) => state.selectedProject)
   const setSelectedProject = useProjectStore((state) => state.setSelectedProject)
   const updateProjectInList = useProjectStore((state) => state.updateProjectInList)
+  const showToast = useToastStore((s) => s.showToast)
+  const clearSchema = useSchemaStore((state) => state.clearSchema)
 
   const [formData, setFormData] = useState<ProjectInfo>({
     projectName: '',
@@ -36,9 +39,6 @@ const InfoView: React.FC = () => {
   })
 
   const [selected, setSelected] = useState('MySQL')
-  const [showToast, setShowToast] = useState(false)
-  const [toastType, setToastType] = useState<'success' | 'warning' | 'error'>('success')
-  const [toastMessage, setToastMessage] = useState('')
   const [isConnectionTested, setIsConnectionTested] = useState(false)
   const [isTestingConnection, setIsTestingConnection] = useState(false)
 
@@ -63,49 +63,26 @@ const InfoView: React.FC = () => {
   }, [selectedProject])
 
   const validateRequiredFields = (): boolean => {
-    if (!formData.projectName.trim()) {
-      setToastType('warning')
-      setToastMessage('프로젝트명을 입력해주세요.')
-      setShowToast(true)
-      return false
-    }
-    if (!formData.host.trim()) {
-      setToastType('warning')
-      setToastMessage('호스트를 입력해주세요.')
-      setShowToast(true)
-      return false
-    }
-    if (!formData.port.trim()) {
-      setToastType('warning')
-      setToastMessage('포트를 입력해주세요.')
-      setShowToast(true)
-      return false
-    }
-    if (!formData.username.trim()) {
-      setToastType('warning')
-      setToastMessage('사용자명을 입력해주세요.')
-      setShowToast(true)
-      return false
-    }
-    if (!formData.password.trim()) {
-      setToastType('warning')
-      setToastMessage('비밀번호를 입력해주세요.')
-      setShowToast(true)
-      return false
-    }
-    if (!formData.databaseName.trim()) {
-      setToastType('warning')
-      setToastMessage('데이터베이스명을 입력해주세요.')
-      setShowToast(true)
-      return false
+    const required: [keyof ProjectInfo, string][] = [
+      ['projectName', '프로젝트명을 입력해주세요.'],
+      ['host', '호스트를 입력해주세요.'],
+      ['port', '포트를 입력해주세요.'],
+      ['username', '사용자명을 입력해주세요.'],
+      ['password', '비밀번호를 입력해주세요.'],
+      ['databaseName', '데이터베이스명을 입력해주세요.']
+    ]
+
+    for (const [field, message] of required) {
+      if (!formData[field].trim()) {
+        showToast(message, 'warning', '입력 오류')
+        return false
+      }
     }
     return true
   }
 
   const handleConnectionTest = async (): Promise<void> => {
-    if (!validateRequiredFields()) {
-      return
-    }
+    if (!validateRequiredFields()) return
 
     setIsTestingConnection(true)
 
@@ -121,21 +98,16 @@ const InfoView: React.FC = () => {
       })
 
       if (result.success) {
-        setToastType('success')
-        setToastMessage('데이터베이스 연결에 성공했습니다.')
+        showToast('데이터베이스 연결에 성공했습니다.', 'success', '연결 성공')
         setIsConnectionTested(true)
       } else {
-        setToastType('error')
-        setToastMessage(result.message)
+        showToast(result.message, 'error', '연결 실패')
         setIsConnectionTested(false)
       }
-      setShowToast(true)
     } catch (error) {
       console.error('연결 테스트 중 오류:', error)
-      setToastType('warning')
-      setToastMessage('연결 테스트 중 오류가 발생했습니다.')
+      showToast('연결 테스트 중 오류가 발생했습니다.', 'warning', '오류')
       setIsConnectionTested(false)
-      setShowToast(true)
     } finally {
       setIsTestingConnection(false)
     }
@@ -154,21 +126,15 @@ const InfoView: React.FC = () => {
   }
 
   const handleSubmit = async (): Promise<void> => {
-    if (!validateRequiredFields()) {
-      return
-    }
+    if (!validateRequiredFields()) return
 
     if (!isConnectionTested) {
-      setToastType('error')
-      setToastMessage('연결 테스트를 먼저 진행해주세요.')
-      setShowToast(true)
+      showToast('연결 테스트를 먼저 진행해주세요.', 'error', '연결 필요')
       return
     }
 
     if (!selectedProject) {
-      setToastType('error')
-      setToastMessage('프로젝트 정보를 찾을 수 없습니다.')
-      setShowToast(true)
+      showToast('프로젝트 정보를 찾을 수 없습니다.', 'error', '오류')
       return
     }
 
@@ -211,15 +177,17 @@ const InfoView: React.FC = () => {
 
         setSelectedProject(updatedProjectWithDetails)
         updateProjectInList(selectedProject.id, updatedProjectWithDetails)
+
+        if (updatedDatabase) {
+          clearSchema(updatedDatabase.id)
+        }
       }
 
       // SchemaView로 이동
       navigate(`/main/schema/${selectedProject.id}`)
     } catch (error) {
-      console.error('프로젝트 정보 저장 중 오류 발생:', error)
-      setToastType('error')
-      setToastMessage('프로젝트 정보 저장에 실패했습니다.')
-      setShowToast(true)
+      console.error(error)
+      showToast('프로젝트 정보 저장에 실패했습니다.', 'error', '저장 실패')
     }
   }
 
@@ -260,6 +228,7 @@ const InfoView: React.FC = () => {
           }
         `}
       </style>
+
       <div>
         <div className="info-view-header">
           <PageTitle
@@ -267,6 +236,7 @@ const InfoView: React.FC = () => {
             description="데이터베이스 프로젝트의 정보를 확인하고 수정하세요."
           />
         </div>
+
         <div className="info-view-form-container">
           <div className="info-view-input-group">
             <InputField
@@ -285,6 +255,7 @@ const InfoView: React.FC = () => {
               onChange={(value) => handleInputChange('description', value)}
             />
           </div>
+
           <div>
             <p className="info-view-dbms-section">DBMS</p>
             <div className="info-view-radio-group">
@@ -322,6 +293,7 @@ const InfoView: React.FC = () => {
               />
             </div>
           </div>
+
           <div className="info-view-row-group">
             <InputField
               title="호스트"
@@ -340,6 +312,7 @@ const InfoView: React.FC = () => {
               onChange={(value) => handleInputChange('port', value)}
             />
           </div>
+
           <div className="info-view-row-group">
             <InputField
               title="사용자명"
@@ -359,6 +332,7 @@ const InfoView: React.FC = () => {
               password={true}
             />
           </div>
+
           <InputField
             title="데이터베이스명"
             placeholder="sakila"
@@ -368,6 +342,7 @@ const InfoView: React.FC = () => {
             onChange={(value) => handleInputChange('databaseName', value)}
           />
         </div>
+
         <div className="info-view-button-container">
           <Button variant="gray" onClick={handleConnectionTest} isLoading={isTestingConnection}>
             연결테스트
@@ -376,32 +351,6 @@ const InfoView: React.FC = () => {
             다음
           </Button>
         </div>
-
-        {showToast && (
-          <div
-            style={{
-              position: 'fixed',
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              zIndex: 9999
-            }}
-          >
-            <Toast
-              type={toastType}
-              title={
-                toastType === 'success'
-                  ? '연결 성공'
-                  : toastType === 'warning'
-                    ? '입력 오류'
-                    : '연결 실패'
-              }
-              onClose={() => setShowToast(false)}
-            >
-              <div className="toast-text">{toastMessage}</div>
-            </Toast>
-          </div>
-        )}
       </div>
     </>
   )

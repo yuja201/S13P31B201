@@ -6,13 +6,9 @@ import failureIcon from '@renderer/assets/imgs/failure.svg'
 import Button from '@renderer/components/Button'
 import { useProjectStore } from '@renderer/stores/projectStore'
 import { useGenerationStore } from '@renderer/stores/generationStore'
+import { useSchemaStore } from '@renderer/stores/schemaStore'
 import { useLocation, useNavigate } from 'react-router-dom'
-import type {
-  ColumnMetaData,
-  DataSourceType,
-  GenerationMode,
-  GenerateRequest
-} from '@main/services/data-generator/types'
+import type { ColumnMetaData, DataSourceType, GenerationMode, GenerateRequest } from '@shared/types'
 
 type InsertMode = 'sql' | 'db'
 
@@ -33,14 +29,14 @@ const DummyInsertView: React.FC = () => {
   const state = location.state as {
     tables?: Array<{ id: string; name: string }>
     mode?: InsertMode
+    skipInvalidRows?: boolean
   } | null
 
+  const skipInvalidRows = state?.skipInvalidRows ?? true
   const selectedTables = React.useMemo(() => state?.tables ?? [], [state?.tables])
-
   const mode: InsertMode = state?.mode ?? 'sql'
 
   const selectedTablesRef = useRef(selectedTables)
-
   useEffect(() => {
     selectedTablesRef.current = selectedTables
   }, [selectedTables])
@@ -59,6 +55,8 @@ const DummyInsertView: React.FC = () => {
 
   const { selectedProject } = useProjectStore()
   const { exportAllTables } = useGenerationStore()
+  const { clearAll, clearSelectedTables } = useGenerationStore()
+  const { refreshSchema } = useSchemaStore()
 
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -67,7 +65,7 @@ const DummyInsertView: React.FC = () => {
   useEffect(() => {
     window.api.dataGenerator.onProgress((msg: unknown) => {
       const message = msg as ProgressMessage
-      setLogs((prev) => [...prev, `[DEBUG] ${JSON.stringify(message)}`])
+      setLogs((prev) => [...prev, `[DEBUG] ${JSON.stringify(message) ?? ''}`])
 
       if (message.type === 'row-progress' && message.progress !== undefined) {
         setProgress(message.progress)
@@ -88,13 +86,20 @@ const DummyInsertView: React.FC = () => {
         const total = (message.successCount ?? 0) + (message.failCount ?? 0)
         setTotalCount(total)
         setInsertedCount(message.successCount ?? 0)
+
+        // DB 직접 삽입 모드는 스키마 새로고침
+        if (mode === 'db' && selectedProject?.id) {
+          refreshSchema(selectedProject.id).catch((error) => {
+            window.api.logger.error('Failed to refresh schema after data insertion:', error)
+          })
+        }
       }
     })
 
     return () => {
       window.api.dataGenerator.removeProgressListeners()
     }
-  }, [])
+  }, [mode, selectedProject?.id, refreshSchema])
 
   useEffect(() => {
     const startGeneration = async (): Promise<void> => {
@@ -112,18 +117,50 @@ const DummyInsertView: React.FC = () => {
 
       const generationMode: GenerationMode = mode === 'db' ? 'DIRECT_DB' : 'SQL_FILE'
 
+      // 스키마 조회 (안전 처리)
+      let schema: Array<{ name: string; columns: Array<{ name: string; notNull?: boolean }> }> = []
+      try {
+        const schemaResult = await window.api.schema.fetch(selectedProject.id)
+        schema = schemaResult?.tables ?? []
+
+        if (!schema.length) {
+          setErrors(['스키마를 조회할 수 없습니다.'])
+          return
+        }
+      } catch (error) {
+        setErrors(['스키마 조회 중 오류 발생: ' + (error as Error).message])
+        return
+      }
+
       const payload: GenerateRequest = {
         projectId: selectedProject.id,
         mode: generationMode,
-        tables: filteredTables.map((tableData) => ({
-          tableName: tableData.tableName,
-          recordCnt: tableData.recordCnt,
-          columns: tableData.columns.map((col) => ({
-            columnName: col.columnName,
-            dataSource: col.dataSource as DataSourceType,
-            metaData: col.metaData as ColumnMetaData
-          }))
-        }))
+        skipInvalidRows,
+        tables: filteredTables.map((tableData) => {
+          const tableSchema = schema.find((s) => s.name === tableData.tableName)
+
+          return {
+            tableName: tableData.tableName,
+            recordCnt: tableData.recordCnt,
+            columns: tableData.columns.map((col) => {
+              const columnSchema = tableSchema?.columns.find((c) => c.name === col.columnName)
+
+              if (!columnSchema) {
+                console.warn(
+                  `[SCHEMA WARNING] 스키마 정보 없음 → ${tableData.tableName}.${col.columnName} → 기본값 isNullable=false 적용`
+                )
+              }
+
+              return {
+                columnName: col.columnName,
+                dataSource:
+                  col.dataSource === 'REFERENCE' ? 'FIXED' : (col.dataSource as DataSourceType),
+                metaData: col.metaData as ColumnMetaData,
+                isNullable: columnSchema ? !columnSchema.notNull : false
+              }
+            })
+          }
+        })
       }
 
       const result = await window.api.dataGenerator.generate(payload)
@@ -133,7 +170,7 @@ const DummyInsertView: React.FC = () => {
     }
 
     startGeneration()
-  }, [selectedProject, exportAllTables, mode])
+  }, [selectedProject, exportAllTables, mode, skipInvalidRows])
 
   const getStatusIcon = (status: string): string => {
     switch (status) {
@@ -183,7 +220,6 @@ const DummyInsertView: React.FC = () => {
       </div>
 
       <div style={{ display: 'flex', gap: 16, flex: 1 }}>
-        {/* 왼쪽 테이블 목록 */}
         <div
           style={{
             width: 260,
@@ -210,7 +246,6 @@ const DummyInsertView: React.FC = () => {
           </ul>
         </div>
 
-        {/* 오른쪽 진행 상태 / 로그 */}
         <div
           style={{
             flex: 1,
@@ -232,8 +267,7 @@ const DummyInsertView: React.FC = () => {
                   style={{
                     width: `${progress}%`,
                     height: '100%',
-                    backgroundColor: 'var(--color-main-blue)',
-                    transition: 'width 0.4s ease'
+                    backgroundColor: 'var(--color-main-blue)'
                   }}
                 />
               </div>
@@ -241,10 +275,16 @@ const DummyInsertView: React.FC = () => {
               <div
                 style={{
                   flex: 1,
+                  flexShrink: 1,
+                  flexBasis: '0',
                   border: '1px solid var(--color-gray-blue)',
                   borderRadius: 12,
                   padding: '20px 30px',
-                  overflowY: 'auto'
+                  overflowY: 'auto',
+                  minHeight: '200px',
+                  maxHeight: '450px',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word'
                 }}
               >
                 {logs.map((log, i) => (
@@ -263,11 +303,17 @@ const DummyInsertView: React.FC = () => {
               <div
                 style={{
                   flex: 1,
+                  flexShrink: 1,
+                  flexBasis: '0',
                   border: '1px solid var(--color-gray-blue)',
                   borderRadius: 12,
                   padding: '20px 30px',
                   overflowY: 'auto',
-                  marginBottom: 20
+                  marginBottom: 20,
+                  minHeight: '200px',
+                  maxHeight: '450px',
+                  whiteSpace: 'pre-wrap',
+                  wordBreak: 'break-word'
                 }}
               >
                 {errors.length > 0
@@ -290,7 +336,14 @@ const DummyInsertView: React.FC = () => {
                     SQL문 다운로드
                   </Button>
                 )}
-                <Button variant="gray" onClick={() => navigate('/')}>
+                <Button
+                  variant="gray"
+                  onClick={() => {
+                    clearAll()
+                    clearSelectedTables()
+                    navigate(`/main/dashboard/${selectedProject?.id}`)
+                  }}
+                >
                   완료
                 </Button>
               </div>

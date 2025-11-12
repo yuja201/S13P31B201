@@ -51,26 +51,19 @@ interface MySQLDatabaseRow {
   db: string
 }
 
+interface MySQLColumnRowExtended extends MySQLColumnRow {
+  maxLength: number | null
+  numericPrecision: number | null
+  numericScale: number | null
+  checkConstraint?: string | null
+}
+
 // PostgreSQL
 interface PostgreSQLTableRow {
   name: string
+  schema: string
   comment: string | null
   column_count: number
-}
-
-interface PostgreSQLColumnRow {
-  name: string
-  data_type: string
-  udt_name: string
-  max_length: number | null
-  numeric_precision: number | null
-  numeric_scale: number | null
-  is_nullable: string
-  default_value: string | null
-  comment: string | null
-  is_primary: boolean
-  is_foreign: boolean
-  is_unique: boolean
 }
 
 interface PostgreSQLForeignKeyRow {
@@ -106,7 +99,6 @@ async function fetchMySQLSchema(config: DatabaseConfig): Promise<DatabaseSchema>
     const databaseName = config.database || (await getCurrentDatabase(connection))
     const tables: Table[] = []
 
-    // 테이블 목록 조회
     const [tableRows] = await connection.execute(
       `SELECT
         TABLE_NAME as name,
@@ -114,7 +106,7 @@ async function fetchMySQLSchema(config: DatabaseConfig): Promise<DatabaseSchema>
         TABLE_ROWS as rowCount
       FROM INFORMATION_SCHEMA.TABLES
       WHERE TABLE_SCHEMA = ?
-      AND TABLE_TYPE = 'BASE TABLE'
+        AND TABLE_TYPE = 'BASE TABLE'
       ORDER BY TABLE_NAME`,
       [databaseName]
     )
@@ -122,15 +114,16 @@ async function fetchMySQLSchema(config: DatabaseConfig): Promise<DatabaseSchema>
     for (const tableRow of tableRows as MySQLTableRow[]) {
       const tableName = tableRow.name
 
+      const [countRows] = await connection.execute(`SELECT COUNT(*) as count FROM \`${tableName}\``)
+      const rowCount = (countRows as { count: number }[])[0]?.count ?? tableRow.rowCount ?? 0
+
       const columns = await fetchMySQLColumns(connection, databaseName, tableName)
-
       const foreignKeys = await fetchMySQLForeignKeys(connection, databaseName, tableName)
-
       const indexes = await fetchMySQLIndexes(connection, databaseName, tableName)
 
       tables.push({
         name: tableName,
-        rowCount: tableRow.rowCount || 0,
+        rowCount,
         comment: tableRow.comment || undefined,
         columns,
         foreignKeys,
@@ -159,16 +152,19 @@ async function fetchMySQLColumns(
 ): Promise<Column[]> {
   const [columnRows] = await connection.execute(
     `SELECT
-      COLUMN_NAME as name,
-      COLUMN_TYPE as type,
-      COLUMN_COMMENT as comment,
-      IS_NULLABLE as isNullable,
-      COLUMN_KEY as columnKey,
-      COLUMN_DEFAULT as defaultValue,
-      EXTRA as extra,
+      c.COLUMN_NAME as name,
+      c.COLUMN_TYPE as type,
+      c.COLUMN_COMMENT as comment,
+      c.IS_NULLABLE as isNullable,
+      c.COLUMN_KEY as columnKey,
+      c.COLUMN_DEFAULT as defaultValue,
+      c.EXTRA as extra,
+      c.CHARACTER_MAXIMUM_LENGTH as maxLength,
+      c.NUMERIC_PRECISION as numericPrecision,
+      c.NUMERIC_SCALE as numericScale,
 
-      /* ---  CHECK 제약조건 조회 쿼리 --- */
-     (SELECT cc.CHECK_CLAUSE
+      /* --- CHECK 제약조건 조회 --- */
+      (SELECT cc.CHECK_CLAUSE
        FROM information_schema.TABLE_CONSTRAINTS tc
        JOIN information_schema.CHECK_CONSTRAINTS cc 
          ON tc.CONSTRAINT_SCHEMA = cc.CONSTRAINT_SCHEMA
@@ -185,9 +181,7 @@ async function fetchMySQLColumns(
     [databaseName, tableName]
   )
 
-  type MySQLColumnRowWithCheck = MySQLColumnRow & { checkConstraint?: string }
-
-  return (columnRows as MySQLColumnRowWithCheck[]).map((row) => {
+  return (columnRows as MySQLColumnRowExtended[]).map((row) => {
     const column: Column = {
       name: row.name,
       type: row.type,
@@ -198,14 +192,39 @@ async function fetchMySQLColumns(
       unique: row.columnKey === 'UNI',
       autoIncrement: row.extra.includes('auto_increment'),
       default: row.defaultValue !== null ? String(row.defaultValue) : undefined,
-      check: row.checkConstraint || undefined
+      check: row.checkConstraint || undefined,
+      maxLength: row.maxLength ?? undefined,
+      numericPrecision: row.numericPrecision ?? undefined,
+      numericScale: row.numericScale ?? undefined
     }
 
-    // ENUM 타입 파싱
+    // MySQL 숫자 타입별 min/max 값 설정
+    const typeLower = row.type.toLowerCase()
+    const isUnsigned = typeLower.includes('unsigned')
+
+    if (typeLower.startsWith('tinyint')) {
+      column.minValue = isUnsigned ? 0 : -128
+      column.maxValue = isUnsigned ? 255 : 127
+    } else if (typeLower.startsWith('smallint')) {
+      column.minValue = isUnsigned ? 0 : -32768
+      column.maxValue = isUnsigned ? 65535 : 32767
+    } else if (typeLower.startsWith('mediumint')) {
+      column.minValue = isUnsigned ? 0 : -8388608
+      column.maxValue = isUnsigned ? 16777215 : 8388607
+    } else if (typeLower.startsWith('int')) {
+      column.minValue = isUnsigned ? 0 : -2147483648
+      column.maxValue = isUnsigned ? 4294967295 : 2147483647
+    } else if (typeLower.startsWith('bigint')) {
+      // JS의 안전한 정수 범위를 초과할 수 있으므로, 우선 Number.MAX_SAFE_INTEGER를 사용
+      column.minValue = isUnsigned ? 0 : -9007199254740991
+      column.maxValue = 9007199254740991
+    }
+
+    // ENUM 타입 파싱 (UI에서 enum 사용 중이면 유지)
     if (row.type.startsWith('enum(')) {
       const enumMatch = row.type.match(/enum\((.*)\)/)
       if (enumMatch) {
-        column.enum = enumMatch[1].split(',').map((v: string) => v.trim().replace(/^'|'$/g, ''))
+        column.enum = enumMatch[1].split(',').map((v) => v.trim().replace(/^'|'$/g, ''))
       }
     }
 
@@ -305,30 +324,32 @@ async function fetchPostgreSQLSchema(config: DatabaseConfig): Promise<DatabaseSc
     // 테이블 목록 조회
     const tableResult = await client.query(
       `SELECT
-        t.table_name as name,
-        obj_description((quote_ident(t.table_schema)||'.'||quote_ident(t.table_name))::regclass) as comment,
-        (SELECT COUNT(*) FROM information_schema.columns c WHERE c.table_name = t.table_name AND c.table_schema = t.table_schema) as column_count
-      FROM information_schema.tables t
-      WHERE t.table_schema = 'public'
-        AND t.table_type = 'BASE TABLE'
-      ORDER BY t.table_name`
+     t.table_name AS name,
+     t.table_schema AS schema,
+     obj_description((quote_ident(t.table_schema)||'.'||quote_ident(t.table_name))::regclass) AS comment,
+     (SELECT COUNT(*) FROM information_schema.columns c
+       WHERE c.table_name = t.table_name AND c.table_schema = t.table_schema) AS column_count
+   FROM information_schema.tables t
+   WHERE t.table_schema = 'public' AND t.table_type = 'BASE TABLE'
+   ORDER BY t.table_name`
     )
 
     for (const tableRow of tableResult.rows as PostgreSQLTableRow[]) {
       const tableName = tableRow.name
+      const tableSchema = tableRow.schema
 
       let rowCount = 0
       try {
-        const countResult = await client.query(`SELECT COUNT(*) as count FROM "${tableName}"`)
+        const countResult = await client.query(
+          `SELECT COUNT(*) AS count FROM "${tableSchema}"."${tableName}"`
+        )
         rowCount = parseInt(countResult.rows[0].count)
       } catch (error) {
-        console.warn(`Failed to get row count for table ${tableName}:`, error)
+        console.warn(`Failed to get row count for table ${tableSchema}.${tableName}:`, error)
       }
 
-      const columns = await fetchPostgreSQLColumns(client, tableName)
-
+      const columns = await fetchPostgreSQLColumns(client, tableName, tableSchema)
       const foreignKeys = await fetchPostgreSQLForeignKeys(client, tableName)
-
       const indexes = await fetchPostgreSQLIndexes(client, tableName)
 
       tables.push({
@@ -349,93 +370,128 @@ async function fetchPostgreSQLSchema(config: DatabaseConfig): Promise<DatabaseSc
     await client.end()
   }
 }
-
-async function fetchPostgreSQLColumns(client: Client, tableName: string): Promise<Column[]> {
+async function fetchPostgreSQLColumns(
+  client: Client,
+  tableName: string,
+  tableSchema: string
+): Promise<Column[]> {
   const columnResult = await client.query(
-    `SELECT
-      c.column_name as name,
-      c.data_type as data_type,
-      c.udt_name as udt_name,
-      c.character_maximum_length as max_length,
-      c.numeric_precision as numeric_precision,
-      c.numeric_scale as numeric_scale,
-      c.is_nullable as is_nullable,
-      c.column_default as default_value,
-      col_description((quote_ident(c.table_schema)||'.'||quote_ident(c.table_name))::regclass, c.ordinal_position) as comment,
-      (SELECT COUNT(*) > 0 FROM information_schema.table_constraints tc
+    `
+    SELECT
+      c.column_name AS name,
+      c.data_type,
+      c.character_maximum_length,
+      c.numeric_precision,
+      c.numeric_scale,
+      c.udt_name,
+      c.udt_schema,
+      c.is_nullable,
+      c.column_default,
+      col_description((quote_ident(c.table_schema)||'.'||quote_ident(c.table_name))::regclass, c.ordinal_position) AS comment,
+
+      -- PRIMARY KEY 감지
+      EXISTS (
+        SELECT 1
+        FROM information_schema.table_constraints tc
         JOIN information_schema.key_column_usage kcu
           ON tc.constraint_name = kcu.constraint_name
-        WHERE tc.table_name = c.table_name
-          AND kcu.column_name = c.column_name
-          AND tc.constraint_type = 'PRIMARY KEY') as is_primary,
+         AND tc.table_schema    = kcu.table_schema
+       WHERE tc.table_schema = c.table_schema
+         AND tc.table_name   = c.table_name
+         AND kcu.column_name = c.column_name
+         AND tc.constraint_type = 'PRIMARY KEY'
+      ) AS is_primary_key,
 
-      (SELECT COUNT(*) > 0 FROM information_schema.table_constraints tc
+      -- UNIQUE 감지
+      EXISTS (
+        SELECT 1
+        FROM information_schema.table_constraints tc
         JOIN information_schema.key_column_usage kcu
           ON tc.constraint_name = kcu.constraint_name
-        WHERE tc.table_name = c.table_name
-          AND kcu.column_name = c.column_name
-          AND tc.constraint_type = 'FOREIGN KEY') as is_foreign,
+         AND tc.table_schema    = kcu.table_schema
+       WHERE tc.table_schema = c.table_schema
+         AND tc.table_name   = c.table_name
+         AND kcu.column_name = c.column_name
+         AND tc.constraint_type = 'UNIQUE'
+      ) AS is_unique,
 
-      (SELECT COUNT(*) > 0 FROM information_schema.table_constraints tc
-        JOIN information_schema.key_column_usage kcu
-          ON tc.constraint_name = kcu.constraint_name
-        WHERE tc.table_name = c.table_name
-          AND kcu.column_name = c.column_name
-          AND tc.constraint_type = 'UNIQUE') as is_unique,
+      -- CHECK 제약조건 조회 (NOT NULL 제약조건은 제외)
+      (
+        SELECT
+          CASE
+            WHEN cc.check_clause ~* '^[[:space:]]*\\(?[[:space:]]*["'']?\\w+["'']?[[:space:]]+IS[[:space:]]+NOT[[:space:]]+NULL[[:space:]]*\\)?$'  THEN NULL 
+            ELSE cc.check_clause
+          END
+        FROM information_schema.check_constraints cc
+        JOIN information_schema.constraint_column_usage ccu
+          ON cc.constraint_name = ccu.constraint_name
+        WHERE ccu.table_schema = c.table_schema
+          AND ccu.table_name = c.table_name
+          AND ccu.column_name = c.column_name
+        LIMIT 1
+      ) AS check_constraint,
 
-      /* --- CHECK 제약조건 조회 쿼리  --- */
-      (SELECT substring(pg_get_constraintdef(con.oid) from 'CHECK \\((.*)\\)')
-       FROM pg_constraint con
-       JOIN pg_class rel ON rel.oid = con.conrelid
-       JOIN pg_attribute attr ON attr.attrelid = rel.oid AND attr.attnum = ANY(con.conkey)
-       WHERE rel.relname = c.table_name
-         AND rel.relnamespace = (SELECT oid FROM pg_namespace WHERE nspname = c.table_schema)
-         AND con.contype = 'c' -- 'c' for CHECK
-         AND attr.attname = c.column_name 
-       LIMIT 1) AS checkConstraint,
-
-      /* ---  ENUM 목록 조회 쿼리  --- */
-      (SELECT array_agg(enumlabel ORDER BY enumsortorder)
-       FROM pg_catalog.pg_enum
-       WHERE enumtypid = (
-         SELECT oid FROM pg_type t
-         WHERE t.typname = c.udt_name AND t.typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = c.table_schema)
-       )
+      -- ENUM 여부 및 값 목록
+      (t.typtype = 'e') AS is_enum,
+      (
+        SELECT json_agg(e.enumlabel ORDER BY e.enumsortorder)
+        FROM pg_enum e
+       WHERE e.enumtypid = t.oid
       ) AS enumList
-        
-    FROM information_schema.columns c
-    WHERE c.table_schema = 'public'
-      AND c.table_name = $1
-    ORDER BY c.ordinal_position`,
-    [tableName]
-  )
-  type PgColumnRowWithDetails = PostgreSQLColumnRow & {
-    checkConstraint?: string
-    enumList?: string[]
-  }
 
-  return (columnResult.rows as PgColumnRowWithDetails[]).map((row) => {
-    let typeStr = row.data_type
-    if (row.max_length) {
-      typeStr += `(${row.max_length})`
-    } else if (row.numeric_precision) {
-      typeStr += `(${row.numeric_precision}${row.numeric_scale ? ',' + row.numeric_scale : ''})`
-    }
+    FROM information_schema.columns c
+    LEFT JOIN pg_type t
+      ON t.typname = c.udt_name
+     AND t.typnamespace = (SELECT oid FROM pg_namespace WHERE nspname = c.udt_schema)
+    WHERE c.table_schema = $1
+      AND c.table_name   = $2
+    ORDER BY c.ordinal_position
+    `,
+    [tableSchema, tableName]
+  )
+
+  return columnResult.rows.map((row) => {
+    const enumValues = row.is_enum && Array.isArray(row.enumlist) ? row.enumlist : null
+    const typeLower = row.data_type.toLowerCase()
 
     const column: Column = {
       name: row.name,
-      type: typeStr,
-      comment: row.comment || undefined,
-      isPrimaryKey: row.is_primary,
-      isForeignKey: row.is_foreign,
+      type: enumValues ? `enum(${enumValues.join(', ')})` : row.data_type,
+      enum: enumValues,
+
+      maxLength: row.character_maximum_length ?? undefined,
+      numericPrecision: row.numeric_precision ?? undefined,
+      numericScale: row.numeric_scale ?? undefined,
+
+      isPrimaryKey: row.is_primary_key,
+      isForeignKey: false,
       notNull: row.is_nullable === 'NO',
       unique: row.is_unique,
-      autoIncrement: row.default_value?.includes('nextval') || false,
-      default:
-        row.default_value && !row.default_value.includes('nextval') ? row.default_value : undefined,
+      autoIncrement: row.column_default?.includes('nextval(') || false,
+      default: row.column_default || null,
+      check: row.check_constraint || null,
+      comment: row.comment || null
+    }
 
-      check: row.checkConstraint || undefined,
-      enum: row.enumList || undefined
+    if (/smallint/.test(typeLower)) {
+      column.minValue = -32768
+      column.maxValue = 32767
+    } else if (/integer/.test(typeLower)) {
+      column.minValue = -2147483648
+      column.maxValue = 2147483647
+    } else if (/bigint/.test(typeLower)) {
+      column.minValue = -9007199254740991
+      column.maxValue = 9007199254740991
+    }
+
+    // VARCHAR 계열인데 명시적 길이 제한이 없는 경우: 기본값 255
+    if (/character varying|varchar/.test(typeLower) && !column.maxLength) {
+      column.maxLength = 255
+    }
+
+    // TEXT 타입은 PostgreSQL에서 사실상 무제한이므로 length 제한 안 둠
+    if (/text/.test(typeLower)) {
+      column.maxLength = undefined
     }
 
     return column

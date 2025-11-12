@@ -1,8 +1,7 @@
-// @renderer/stores/generationStore.ts
 import { create } from 'zustand'
 import { RuleSelection } from '@renderer/modals/rule/RuleSelectContent'
 
-export type DataSourceType = 'FAKER' | 'AI' | 'FILE' | 'FIXED'
+export type DataSourceType = 'FAKER' | 'AI' | 'FILE' | 'FIXED' | 'REFERENCE' | 'DEFAULT'
 
 export type FileMetaData = {
   kind: 'file'
@@ -19,11 +18,13 @@ export type FileMetaData = {
 export type FakerMetaData = {
   kind: 'faker'
   ruleId: number
+  ensureUnique?: boolean
 }
 
 export type AIMetaData = {
   kind: 'ai'
   ruleId: number
+  ensureUnique?: boolean
 }
 
 export type FixedMetaData = {
@@ -31,7 +32,27 @@ export type FixedMetaData = {
   fixedValue: string
 }
 
-export type ColumnMetaData = FakerMetaData | AIMetaData | FileMetaData | FixedMetaData
+export type ReferenceMetaData = {
+  kind: 'reference'
+  refTable: string
+  refColumn: string
+  ensureUnique?: boolean
+  previewValue?: string | number
+  fixedValue?: string
+}
+
+export type DefaultMetaData = {
+  kind: 'default'
+  fixedValue: string
+}
+
+export type ColumnMetaData =
+  | FakerMetaData
+  | AIMetaData
+  | FileMetaData
+  | FixedMetaData
+  | ReferenceMetaData
+  | DefaultMetaData
 
 export interface ColumnConfig {
   columnName: string
@@ -71,7 +92,12 @@ interface GenerationState {
   applyFileMapping: (tableName: string, payload: FileMappingApplyPayload) => void
   setColumnRule: (tableName: string, columnName: string, rule: RuleSelection) => void
 
+  selectedTables: Set<string>
+  setSelectedTables: (tables: Set<string>) => void
+  clearSelectedTables: () => void
+
   resetTable: (tableName: string) => void
+  resetColumnRule: (tableName: string, columnName: string) => void
   clearAll: () => void
 
   exportRulesForTable: (tableName: string) => {
@@ -85,12 +111,12 @@ interface GenerationState {
     recordCnt: number
     columns: { columnName: string; dataSource: string; metaData: object }[]
   }>
+  reset: () => void
 }
 
 export const useGenerationStore = create<GenerationState>((set, get) => ({
   tables: {},
 
-  // ------------------------
   // recordCnt 관리
   setTableRecordCount: (tableName, recordCnt) => {
     set((state) => {
@@ -116,7 +142,10 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
     return table?.recordCnt ?? 1000
   },
 
-  // ------------------------
+  selectedTables: new Set(),
+  setSelectedTables: (tables) => set({ selectedTables: tables }),
+  clearSelectedTables: () => set({ selectedTables: new Set() }),
+
   // 파일 매핑
   applyFileMapping: (tableName, payload) => {
     set((state) => {
@@ -169,35 +198,83 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
     let metaData: ColumnMetaData
 
     switch (rule.dataSource) {
-      case 'FAKER':
+      case 'FAKER': {
+        const ruleId = rule.metaData.ruleId ?? Number(rule.metaData.ruleId)
+        if (!Number.isInteger(ruleId)) {
+          console.warn(`유효하지 않은 Faker rule id: ${rule.metaData.ruleId}`)
+          return
+        }
         dataSource = 'FAKER'
-        metaData = { kind: 'faker', ruleId: rule.metaData.ruleId! }
+        metaData = { kind: 'faker', ruleId, ensureUnique: rule.metaData.ensureUnique }
         break
-      case 'AI':
+      }
+
+      case 'AI': {
+        const ruleId = rule.metaData.ruleId ?? Number(rule.metaData.ruleId)
+        if (!Number.isInteger(ruleId)) {
+          console.warn(`유효하지 않은 AI rule id: ${rule.metaData.ruleId}`)
+          return
+        }
         dataSource = 'AI'
-        metaData = { kind: 'ai', ruleId: rule.metaData.ruleId! }
+        metaData = { kind: 'ai', ruleId, ensureUnique: rule.metaData.ensureUnique }
         break
+      }
+
       case 'FIXED':
-      case 'ENUM':
+      case 'ENUM': {
+        const fixedValue = rule.metaData.fixedValue
+        if (typeof fixedValue !== 'string') {
+          console.warn(`유효하지 않은 고정값: ${fixedValue}`)
+          return
+        }
         dataSource = 'FIXED'
-        metaData = { kind: 'fixed', fixedValue: rule.metaData.fixedValue! }
+        metaData = { kind: 'fixed', fixedValue }
         break
-      case 'FILE':
+      }
+
+      case 'FILE': {
         dataSource = 'FILE'
         metaData = {
           kind: 'file',
           filePath: rule.metaData.filePath ?? '',
-          fileType: 'csv',
+          fileType: rule.metaData.fileType ?? 'csv',
           fileColumn: rule.metaData.domainName ?? '',
-          useHeaderRow: true
+          useHeaderRow: rule.metaData.useHeaderRow ?? true
         }
         break
+      }
+
+      case 'REFERENCE': {
+        const refTable = rule.metaData.refTable ?? ''
+        const refColumn = rule.metaData.refColumn ?? ''
+        if (!refTable || !refColumn) {
+          console.warn(`유효하지 않은 참조(FK) 설정: ${rule.metaData}`)
+          return
+        }
+        dataSource = 'REFERENCE'
+        metaData = {
+          kind: 'reference',
+          refTable,
+          refColumn,
+          ensureUnique: rule.metaData.ensureUnique,
+          previewValue: rule.metaData.previewValue,
+          fixedValue:
+            rule.metaData.fixedValue != null ? String(rule.metaData.fixedValue) : undefined
+        }
+        break
+      }
+
+      case 'DEFAULT': {
+        dataSource = 'DEFAULT'
+        metaData = { kind: 'default', fixedValue: String(rule.metaData.fixedValue ?? '') }
+        break
+      }
+
       default:
         console.warn(`Unknown dataSource: ${rule.dataSource}`)
         return
     }
 
-    // DB/백엔드와 바로 연동 가능한 형태로 저장
     set((state) => {
       const existingTable = state.tables[tableName] || {
         tableName,
@@ -235,6 +312,25 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
       return { tables: next }
     }),
 
+  resetColumnRule: (tableName, columnName) =>
+    set((state) => {
+      const tableConfig = state.tables[tableName]
+      if (!tableConfig) return state
+
+      const newColumns = { ...tableConfig.columns }
+      delete newColumns[columnName]
+
+      return {
+        tables: {
+          ...state.tables,
+          [tableName]: {
+            ...tableConfig,
+            columns: newColumns
+          }
+        }
+      }
+    }),
+
   clearAll: () => set({ tables: {} }),
 
   // ------------------------
@@ -256,12 +352,16 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
     const tables = get().tables
     return Object.keys(tables).map((tableName) => {
       const table = tables[tableName]
-      const columns = Object.values(table.columns).map((col) => ({
-        columnName: col.columnName,
-        dataSource: col.dataSource,
-        metaData: col.metaData
-      }))
+      const columns = Object.values(table.columns)
+        .filter((col) => col.dataSource !== 'DEFAULT')
+        .map((col) => ({
+          columnName: col.columnName,
+          dataSource: col.dataSource,
+          metaData: col.metaData
+        }))
+
       return { tableName, recordCnt: table.recordCnt, columns }
     })
-  }
+  },
+  reset: () => set({ tables: {}, selectedTables: new Set() })
 }))

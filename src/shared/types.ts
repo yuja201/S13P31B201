@@ -1,10 +1,10 @@
-import { DBMS_MAP } from '../../utils/dbms-map'
-import { Table } from '../../database/types'
+import { DBMS_MAP } from '../main/utils/dbms-map'
+import { Table } from '../main/database/types'
 
 /**
  * 데이터 소스 타입
  */
-export type DataSourceType = 'FAKER' | 'AI' | 'FILE' | 'FIXED'
+export type DataSourceType = 'FAKER' | 'AI' | 'FILE' | 'FIXED' | 'REFERENCE'
 export type SqlDbType = 'MySQL' | 'PostgreSQL'
 
 /**
@@ -24,22 +24,36 @@ export type FileMetaData = {
 
 export type FakerMetaData = {
   ruleId: number
+  ensureUnique?: boolean
 }
 
 export type AIMetaData = {
   ruleId: number
+  ensureUnique?: boolean
 }
 
 export type FixedMetaData = {
   fixedValue: string
 }
+export type ReferenceMetaData = {
+  kind: 'reference'
+  refTable: string
+  refColumn: string
+  ensureUnique?: boolean
+}
 
-export type ColumnMetaData = FakerMetaData | AIMetaData | FileMetaData | FixedMetaData
+export type ColumnMetaData =
+  | FakerMetaData
+  | AIMetaData
+  | FileMetaData
+  | FixedMetaData
+  | ReferenceMetaData
 
 export interface ColumnConfig {
   columnName: string
   dataSource: DataSourceType
   metaData: ColumnMetaData
+  isNullable: boolean
 }
 
 /**
@@ -61,6 +75,7 @@ export interface GenerateRequest {
   projectId: number
   tables: TableConfig[]
   mode?: GenerationMode
+  skipInvalidRows?: boolean
 }
 
 /**
@@ -108,6 +123,7 @@ export interface WorkerTask {
     password: string
     database: string
   }
+  skipInvalidRows?: boolean
 }
 
 export interface WorkerResult {

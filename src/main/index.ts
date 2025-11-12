@@ -5,11 +5,15 @@ import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import icon from '../../resources/icon.png?asset'
 import { initDatabase } from './database'
+import { configureLogger, createLogger } from './utils/logger'
 import './ipc/database-handlers'
 import './ipc/data-generator-handlers'
 import './ipc/rule-handlers'
 import './ipc/file-handlers'
 import './ipc/env-handlers'
+import './ipc/domain-handler'
+
+const logger = createLogger('Main')
 
 /**
  * userData에 .env 파일이 없으면 템플릿에서 복사
@@ -20,7 +24,7 @@ function ensureEnvFile(): void {
 
   // 이미 존재하면 복사 안 함
   if (fs.existsSync(userEnvPath)) {
-    console.log(`[ENV] .env file already exists at: ${userEnvPath}`)
+    logger.info(`[ENV] .env file already exists at: ${userEnvPath}`)
     return
   }
 
@@ -38,13 +42,13 @@ function ensureEnvFile(): void {
   if (sourceEnvPath) {
     try {
       fs.copyFileSync(sourceEnvPath, userEnvPath)
-      console.log(`[ENV] Copied .env template from ${sourceEnvPath} to ${userEnvPath}`)
+      logger.info(`[ENV] Copied .env template from ${sourceEnvPath} to ${userEnvPath}`)
     } catch (error) {
-      console.error('[ENV] Failed to copy .env file:', error)
+      logger.error('[ENV] Failed to copy .env file:', error)
     }
   } else {
     // 템플릿이 없으면 기본 내용으로 생성
-    console.log('[ENV] No template found, creating default .env file')
+    logger.info('[ENV] No template found, creating default .env file')
     const defaultContent = `# AI 서비스 API 키
 OPENAI_API_KEY=
 ANTHROPIC_API_KEY=
@@ -74,7 +78,7 @@ function loadUserDataEnv(): void {
   const userDataPath = app.getPath('userData')
   const envPath = path.join(userDataPath, '.env')
 
-  console.log(`[ENV] Loading from: ${envPath}`)
+  logger.info(`[ENV] Loading from: ${envPath}`)
 
   if (fs.existsSync(envPath)) {
     const envContent = fs.readFileSync(envPath, 'utf-8')
@@ -96,9 +100,9 @@ function loadUserDataEnv(): void {
       }
     })
 
-    console.log(`[ENV] Loaded ${loadedCount} environment variables`)
+    logger.info(`[ENV] Loaded ${loadedCount} environment variables`)
   } else {
-    console.log(`[ENV] No .env file found at ${envPath}`)
+    logger.info(`[ENV] No .env file found at ${envPath}`)
   }
 }
 
@@ -146,6 +150,9 @@ app.whenReady().then(() => {
   // Set app user model id for windows
   electronApp.setAppUserModelId('com.electron')
 
+  // Configure logger first
+  configureLogger()
+
   // Ensure .env file exists in userData (copy from template if needed)
   ensureEnvFile()
 
@@ -163,7 +170,7 @@ app.whenReady().then(() => {
   })
 
   // IPC test
-  ipcMain.on('ping', () => console.log('pong'))
+  ipcMain.on('ping', () => logger.debug('pong'))
 
   createWindow()
 

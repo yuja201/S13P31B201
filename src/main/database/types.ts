@@ -112,6 +112,11 @@ export interface Column {
   default?: string
   enum?: string[]
   domain?: string
+  maxLength?: number
+  numericPrecision?: number
+  numericScale?: number
+  minValue?: number
+  maxValue?: number
 }
 
 export interface ForeignKey {
@@ -143,4 +148,19 @@ export interface Table {
 export interface DatabaseSchema {
   tables: Table[]
   fetchedAt: number
+}
+
+// 도메인 관련
+export interface DomainCategory {
+  category: string
+  items: Domain[]
+}
+
+export interface Domain {
+  id: number
+  name: string
+  description: string
+  logical_type: string
+  category_id: number
+  category_name: string
 }

@@ -1,8 +1,4 @@
-import {
-  FakerRuleInput,
-  AIRuleInput,
-  GenerationResult
-} from './../main/services/data-generator/types'
+import { FakerRuleInput, AIRuleInput, GenerationResult } from '@shared/types'
 import { ElectronAPI } from '@electron-toolkit/preload'
 import type {
   DBMS,
@@ -17,9 +13,10 @@ import type {
   Rule,
   RuleInput,
   RuleUpdate,
-  DatabaseSchema
+  DatabaseSchema,
+  DomainCategory
 } from '../main/database/types'
-import type { GenerateRequest, GenerationResult } from '../main/services/data-generator/types'
+import type { GenerateRequest, GenerationResult } from '@shared/types'
 
 interface API {
   dbms: {
@@ -35,6 +32,7 @@ interface API {
     create: (data: ProjectInput) => Promise<Project>
     update: (data: ProjectUpdate) => Promise<Project | undefined>
     delete: (id: number) => Promise<boolean>
+    updateUpdatedAt: (id: number) => Promise<Project | undefined>
   }
   database: {
     getAll: () => Promise<Database[]>
@@ -54,6 +52,7 @@ interface API {
     delete: (id: number) => Promise<boolean>
     createFaker: (data: FakerRuleInput) => Promise<Rule>
     createAI: (data: AIRuleInput) => Promise<Rule>
+    getByLogicalType: (logicalType: string) => Promise<Rule[]>
   }
   testConnection: (config: {
     dbType: 'MySQL' | 'PostgreSQL'
@@ -72,7 +71,27 @@ interface API {
   }>
   schema: {
     fetch: (databaseId: number) => Promise<DatabaseSchema>
+
+    getRandomSample: (params: {
+      databaseId: number
+      table: string
+      column: string
+    }) => Promise<{ sample: unknown }>
+
+    validateFkValue: (params: {
+      databaseId: number
+      table: string
+      column: string
+      value: unknown
+    }) => Promise<{ isValid: boolean }>
+
+    validateCheckConstraint: (args: {
+      value: string
+      checkConstraint: string
+      columnName: string
+    }) => Promise<boolean>
   }
+
   file: {
     cache: {
       write: (payload: { content: string; encoding?: string; extension?: string }) => Promise<{
@@ -100,6 +119,17 @@ interface API {
     load: () => Promise<Record<string, string>>
     getPath: () => Promise<string>
     openFolder: () => Promise<void>
+  }
+  logger: {
+    debug: (...args: unknown[]) => void
+    info: (...args: unknown[]) => void
+    warn: (...args: unknown[]) => void
+    error: (...args: unknown[]) => void
+    verbose: (...args: unknown[]) => void
+  }
+  domain: {
+    getAll: () => Promise<DomainCategory[]>
+    getByLogicalType: (logicalType: string) => Promise<DomainCategory[]>
   }
 }
 

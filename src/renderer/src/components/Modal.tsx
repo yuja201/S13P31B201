@@ -20,7 +20,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, children, width = '790px
 
   return (
     <>
-      <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-overlay">
         <div className="modal-container" style={{ width }} onClick={(e) => e.stopPropagation()}>
           <button className="modal-close" onClick={onClose}>
             ✕

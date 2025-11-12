@@ -1,10 +1,14 @@
-import React, { useState, useEffect } from 'react'
+import { formatCheckConstraint } from '@renderer/utils/formatConstraint'
+import React, { useState, useEffect, useMemo, useCallback } from 'react'
 import SimpleCard from '@renderer/components/SimpleCard'
 import InputField from '@renderer/components/InputField'
 import PageTitle from '@renderer/components/PageTitle'
 import SelectDomain from '@renderer/components/SelectDomain'
-import Toast from '@renderer/components/Toast'
 import Button from '@renderer/components/Button'
+import { useToastStore } from '@renderer/stores/toastStore'
+import Checkbox from '@renderer/components/Checkbox'
+import { ColumnDetail } from '@renderer/views/CreateDummyView'
+import { useRuleStore } from '@renderer/stores/ruleStore'
 
 export interface RuleCreationData {
   source: 'FAKER' | 'AI'
@@ -12,21 +16,24 @@ export interface RuleCreationData {
   apiToken?: string
   prompt?: string
   model?: string
-  columnType?: string
+  columnType: string
   columnName?: string
   result?: number
   domainId?: number
   domainName?: string
+  ensureUnique?: boolean
 }
 
 interface RuleCreationContentProps {
-  columnType?: string
+  column: ColumnDetail
+  columnType: string
   columnName?: string
   onCancel: () => void
   onSubmit?: (data: RuleCreationData) => void
 }
 
 const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
+  column,
   columnType,
   columnName,
   onCancel,
@@ -34,36 +41,38 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
 }) => {
   const [selectedSource, setSelectedSource] = useState<'FAKER' | 'AI'>('FAKER')
   const [settingName, setSettingName] = useState('')
-  const [showToast, setShowToast] = useState(false)
-  const [toastType, setToastType] = useState<'success' | 'warning' | 'error'>('success')
-  const [toastMessage, setToastMessage] = useState('')
+  const showToast = useToastStore((s) => s.showToast)
   const [apiToken, setApiToken] = useState('')
   const [prompt, setPrompt] = useState('')
   const [selectedModel, setSelectedModel] = useState('1')
   const [selectedDomain, setSelectedDomain] = useState<{ id: number; name: string } | null>(null)
+  const [ensureUnique, setEnsureUnique] = useState(false)
+  const isUniqueColumn = useMemo(() => column.constraints.includes('UNIQUE'), [column])
+  const addRule = useRuleStore((state) => state.addRule)
 
-  const showToastMsg = (type: 'success' | 'warning' | 'error', message: string): void => {
-    setToastType(type)
-    setToastMessage(message)
-    setShowToast(true)
-  }
+  const handleDomainChange = useCallback(
+    (domain: { id: number; name: string }) => {
+      setSelectedDomain(domain)
+    },
+    [setSelectedDomain]
+  )
 
   const validateRequiredFields = (): boolean => {
     if (!settingName.trim()) {
-      showToastMsg('warning', '설정 이름을 입력하세요.')
+      showToast('설정 이름을 입력하세요.', 'warning', '입력 오류')
       return false
     }
     if (!selectedDomain) {
-      showToastMsg('warning', '도메인을 선택하세요.')
+      showToast('도메인을 선택하세요.', 'warning', '입력 오류')
       return false
     }
     if (selectedSource === 'AI') {
       if (!apiToken.trim()) {
-        showToastMsg('warning', 'API 토큰을 입력하세요.')
+        showToast('API 토큰을 입력하세요.', 'warning', '입력 오류')
         return false
       }
       if (prompt.length > 500) {
-        showToastMsg('warning', '프롬프트는 500자 이내로 입력하세요.')
+        showToast('프롬프트는 500자 이내로 입력하세요.', 'warning', '입력 오류')
         return false
       }
     }
@@ -93,6 +102,7 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
           name: settingName,
           domain: selectedDomain!.id
         })
+        addRule(result)
 
         onSubmit?.({
           source: selectedSource,
@@ -101,10 +111,11 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
           columnName,
           result: result.id,
           domainId: selectedDomain!.id,
-          domainName: selectedDomain!.name
+          domainName: selectedDomain!.name,
+          ensureUnique: ensureUnique
         })
 
-        showToastMsg('success', 'Faker 규칙이 저장되었습니다.')
+        showToast('Faker 규칙이 저장되었습니다.', 'success', '성공')
       } else if (selectedSource === 'AI') {
         const result = await window.api.rule.createAI({
           name: settingName,
@@ -113,6 +124,7 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
           token: apiToken,
           prompt
         })
+        addRule(result)
 
         onSubmit?.({
           source: selectedSource,
@@ -124,16 +136,17 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
           columnName,
           result: result.id,
           domainId: selectedDomain!.id,
-          domainName: selectedDomain!.name
+          domainName: selectedDomain!.name,
+          ensureUnique: ensureUnique
         })
 
-        showToastMsg('success', 'AI 규칙이 저장되었습니다.')
+        showToast('AI 규칙이 저장되었습니다.', 'success', '성공')
       }
 
       onCancel()
     } catch (err) {
       console.error(err)
-      showToastMsg('error', '규칙 저장 중 오류가 발생했습니다.')
+      showToast('규칙 저장 중 오류가 발생했습니다.', 'warning', '저장 실패')
     }
   }
 
@@ -166,6 +179,11 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
           title={`새 규칙 만들기 - ${columnName}`}
           description="데이터 생성 방식을 선택하고, 관련 정보를 입력하세요."
         />
+        {column.checkConstraint && (
+          <div className="check-constraint-notice">
+            ※ 참고: 이 컬럼에는 <span>{formatCheckConstraint(column.checkConstraint)}</span> 제약 조건이 있습니다.
+          </div>
+        )}
         <br />
         <hr className="rule-create__divider" />
       </div>
@@ -215,8 +233,25 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
 
       {/* 도메인 선택 */}
       <div style={{ width: '100%', overflow: 'hidden' }}>
-        <SelectDomain source={selectedSource} onChange={(value) => setSelectedDomain(value)} />
+        <SelectDomain
+          source={selectedSource}
+          columnType={columnType}
+          onChange={handleDomainChange}
+        />
       </div>
+      {(selectedSource === 'FAKER' || selectedSource === 'AI') && isUniqueColumn && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
+          <Checkbox
+            id="ensure-unique"
+            label="고유값 보장 (Ensure Uniqueness)"
+            checked={ensureUnique}
+            onChange={(e) => setEnsureUnique(e.target.checked)}
+          />
+          <p style={{ margin: '0 0 0 28px', fontSize: '13px', color: 'var(--color-gray-600)' }}>
+            데이터 생성 시 중복되지 않는 값을 보장합니다. 생성 속도가 느려질 수 있습니다.
+          </p>
+        </div>
+      )}
 
       {/* AI 생성 선택 시에만 표시되는 섹션 */}
       {selectedSource === 'AI' && (
@@ -287,29 +322,6 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
         </Button>
       </div>
 
-      {/* Toast 표시 */}
-      {showToast && (
-        <div
-          style={{
-            position: 'fixed',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            zIndex: 9999
-          }}
-        >
-          <Toast
-            type={toastType}
-            title={
-              toastType === 'success' ? '성공' : toastType === 'warning' ? '입력 오류' : '실패'
-            }
-            onClose={() => setShowToast(false)}
-          >
-            <div className="toast-text">{toastMessage}</div>
-          </Toast>
-        </div>
-      )}
-
       <style>{`
         .rule-create {
           display: flex;
@@ -331,6 +343,21 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
 
         .rule-create__header {
           margin-bottom: 4px;
+        }
+
+        .check-constraint-notice {
+          background-color: var(--color-light-yellow);
+          border: 1px solid var(--color-orange);
+          border-radius: 8px;
+          padding: 10px 12px;
+          font: var(--preRegular14);
+          color: var(--color-dark-gray);
+          margin-top: 16px;
+         }
+
+        .check-constraint-notice span {
+          font-weight: var(--fw-semiBold);
+          color: var(--color-black);
         }
 
         .rule-create__divider {

@@ -1,10 +1,11 @@
 {
   "name": "heresdummy",
-  "version": "1.0.1",
+  "version": "1.1.0",
+  "productName": "Here's Dummy",
   "description": "An Electron application with React and TypeScript",
   "main": "out/main/index.js",
-  "author": "example.com",
-  "homepage": "https://electron-vite.org",
+  "author": "yuja",
+  "homepage": "https://github.com/yuja201/here-is-dummy",
   "license": "MIT",
   "scripts": {
     "format": "prettier --write .",
@@ -32,6 +33,7 @@
     "archiver": "^7.0.1",
     "archiver-utils": "^5.0.2",
     "better-sqlite3": "^12.4.1",
+    "electron-log": "^5.4.3",
     "electron-updater": "^6.3.9",
     "mysql2": "^3.15.3",
     "openai": "^6.7.0",
@@ -39,6 +41,8 @@
     "react-feather": "^2.0.10",
     "react-icons": "^5.5.0",
     "react-router-dom": "^7.9.4",
+    "recharts": "^3.4.1",
+    "use-debounce": "^10.0.6",
     "zustand": "^5.0.8"
   },
   "devDependencies": {
@@ -47,7 +51,7 @@
     "@electron-toolkit/tsconfig": "^2.0.0",
     "@electron/rebuild": "^4.0.1",
     "@types/better-sqlite3": "^7.6.13",
-    "@types/node": "^22.18.6",
+    "@types/node": "^22.19.0",
     "@types/react": "^19.1.13",
     "@types/react-dom": "^19.1.9",
     "@vitejs/plugin-react": "^5.0.3",
@@ -79,9 +83,12 @@
       "artifactName": "heresdummy-${version}-setup.${ext}"
     },
     "nsis": {
-      "oneClick": false,
+      "oneClick": true,
       "perMachine": false,
-      "allowToChangeInstallationDirectory": true
+      "allowElevation": false,
+      "allowToChangeInstallationDirectory": false,
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": false
     }
   }
 }

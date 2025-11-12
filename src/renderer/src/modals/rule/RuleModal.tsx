@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react'
 import Modal from '@renderer/components/Modal'
 import RuleSelectContent, { RuleSelection } from '@renderer/modals/rule/RuleSelectContent'
 import { useGenerationStore } from '@renderer/stores/generationStore'
-import RuleCreationContent from '@renderer/modals/rule/RuleCreationContent'
+import RuleCreationContent, { RuleCreationData } from '@renderer/modals/rule/RuleCreationContent'
 import { ColumnDetail } from '@renderer/views/CreateDummyView'
 import EnumSelectContent from '@renderer/modals/rule/EnumSelectContent'
+import ReferenceSelectContent from '@renderer/modals/rule/ReferenceSelectContent'
+import { ColumnConfig } from '@renderer/stores/generationStore'
 
 export type GenerationType = 'Faker.js' | 'AI' | '참조' | '파일 업로드' | '고정값' | 'ENUM'
 
@@ -19,9 +21,17 @@ interface RuleModalProps {
   column: ColumnDetail
   tableName: string
   onConfirm: (result: RuleResult) => void
+  initialConfig?: ColumnConfig
 }
 
-const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, tableName, onConfirm }) => {
+const RuleModal: React.FC<RuleModalProps> = ({
+  isOpen,
+  onClose,
+  column,
+  tableName,
+  onConfirm,
+  initialConfig
+}) => {
   const [mode, setMode] = useState<'select' | 'create'>('select')
   const setRule = useGenerationStore((s) => s.setColumnRule)
 
@@ -38,7 +48,9 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, tableNam
     AI: 'AI',
     FILE: '파일 업로드',
     FIXED: '고정값',
-    ENUM: 'ENUM'
+    ENUM: 'ENUM',
+    REFERENCE: '참조',
+    DEFAULT: '고정값'
   }
 
   const handleConfirmSelect = (value: RuleSelection): void => {
@@ -48,10 +60,29 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, tableNam
 
     onConfirm({
       generation: generationLabelMap[value.dataSource],
-      setting: value.metaData.domainName ?? value.metaData.fixedValue ?? ''
+      setting: String(
+        value.metaData.ruleName ?? value.metaData.domainName ?? value.metaData.fixedValue ?? ''
+      )
     })
 
     onClose()
+  }
+
+  const handleRuleCreated = (data: RuleCreationData): void => {
+    if (!column) return
+
+    const ruleSelection: RuleSelection = {
+      columnName: column.name,
+      dataSource: data.source,
+      metaData: {
+        ruleId: data.result,
+        ruleName: data.settingName,
+        domainId: data.domainId,
+        domainName: data.domainName,
+        ensureUnique: data.ensureUnique
+      }
+    }
+    handleConfirmSelect(ruleSelection)
   }
 
   useEffect(() => {
@@ -61,6 +92,7 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, tableNam
   }, [isOpen])
 
   const hasEnumList = column.enumList && column.enumList.length > 0
+  const isForeignKey = column.isForeignKey && column.foreignKeys && column.foreignKeys.length > 0
   const columnType = column.type
   const columnName = column.name
 
@@ -68,16 +100,24 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, tableNam
     <Modal isOpen={isOpen} onClose={onClose} width="720px">
       <div className="rule-modal">
         {mode === 'select' ? (
-          hasEnumList ? (
+          isForeignKey ? (
+            <ReferenceSelectContent
+              column={column}
+              onCancel={onClose}
+              onConfirm={handleConfirmSelect}
+              initialConfig={initialConfig}
+            />
+          ) : hasEnumList ? (
             <EnumSelectContent
+              column={column}
               columnName={columnName}
               enumList={column.enumList!}
               onCancel={onClose}
               onConfirm={handleConfirmSelect}
             />
           ) : (
-            // ENUM 목록이 없으면 기존 RuleSelectContent 렌더링
             <RuleSelectContent
+              column={column}
               columnType={columnType}
               columnName={columnName}
               onCancel={onClose}
@@ -86,11 +126,12 @@ const RuleModal: React.FC<RuleModalProps> = ({ isOpen, onClose, column, tableNam
             />
           )
         ) : (
-          // "새로 만들기" 모드
           <RuleCreationContent
             columnType={columnType}
             columnName={columnName}
             onCancel={handleBack}
+            column={column}
+            onSubmit={handleRuleCreated}
           />
         )}
       </div>

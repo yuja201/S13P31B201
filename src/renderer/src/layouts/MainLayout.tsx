@@ -9,21 +9,27 @@ const MainLayout: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>()
   const selectedProject = useProjectStore((state) => state.selectedProject)
   const selectProjectById = useProjectStore((state) => state.selectProjectById)
-  const fetchSchema = useSchemaStore((state) => state.fetchSchema)
+  const refreshSchema = useSchemaStore((state) => state.refreshSchema)
   const isLocked = location.pathname === '/' || location.pathname === '/error'
 
   useEffect(() => {
     if (projectId) {
-      selectProjectById(projectId)
+      ;(async () => {
+        try {
+          await selectProjectById(projectId)
+        } catch (error) {
+          console.error('Failed to select project:', error)
+        }
+      })()
     }
   }, [projectId, selectProjectById])
 
   useEffect(() => {
     if (!isLocked && selectedProject?.database?.id) {
       const databaseId = selectedProject.database.id
-      fetchSchema(databaseId)
+      refreshSchema(databaseId)
     }
-  }, [isLocked, selectedProject, fetchSchema])
+  }, [isLocked, selectedProject, refreshSchema])
 
   return (
     <div className="layout">
@@ -40,35 +46,42 @@ const MainLayout: React.FC = () => {
       </main>
 
       <style>{`
-        .layout {
-          display: flex;
-          height: 100vh;
-          background-color: var(--color-background);
-        }
-        .main-content {
-          display: flex; 
-          flex-direction: column;
-          flex: 1;
-          padding: 80px;
-          background-color: var(--color-background);
-          overflow-y: auto;
-        }
-        .content-wrapper {
-          display: flex; 
-          flex-direction: column;
-          flex-grow: 1; 
-          width: 100%; 
-          max-width: 1040px; 
-          height: 865px;
-          margin: auto;
-        }
+      .layout {
+        display: flex;
+        min-height: 100vh;
+        background-color: var(--color-background);
+      }
 
-       @media (min-width: 1441px) {
-          .main-content  {
-            margin: auto;
-          }
-        }
-      `}</style>
+      /* 사이드바 */
+      .layout > :first-child {
+        position: sticky;
+        top: 0;
+        left: 0;
+        height: 100vh;
+        flex-shrink: 0;
+        transition: width 0.3s ease;
+        z-index: 10;
+      }
+
+      .main-content {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        padding: 80px;
+        background-color: var(--color-background);
+      }
+
+      .content-wrapper {
+        display: flex;
+        flex-direction: column;
+        flex-grow: 1;
+        width: 100%;
+        max-width: 1040px;
+        margin: auto;
+        min-height: 100%;
+      }
+    `}</style>
     </div>
   )
 }

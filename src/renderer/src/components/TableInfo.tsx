@@ -38,15 +38,16 @@ const TableInfo: React.FC<TableInfoProps> = ({ table }) => {
     const constraints: React.ReactElement[] = []
 
     // PK, FK, NOT NULL, UNIQUE, CHECK, AUTO INCREMENT, DEFAULT, ENUM, DOMAIN
-    if (column.isPrimaryKey) constraints.push(<Label text="PK" />)
-    if (column.isForeignKey) constraints.push(<Label text="FK" />)
-    if (column.notNull) constraints.push(<Label text="NOT NULL" />)
-    if (column.unique) constraints.push(<Label text="UNIQUE" />)
-    if (column.check) constraints.push(<Label text={`CHECK: ${column.check}`} />)
-    if (column.autoIncrement) constraints.push(<Label text="AUTO INCREMENT" />)
-    if (column.default) constraints.push(<Label text={`DEFAULT: ${column.default}`} />)
-    if (column.enum) constraints.push(<Label text={`ENUM: ${column.enum.join(', ')}`} />)
-    if (column.domain) constraints.push(<Label text={`DOMAIN: ${column.domain}`} />)
+    if (column.isPrimaryKey) constraints.push(<Label key="pk" text="PK" />)
+    if (column.isForeignKey) constraints.push(<Label key="fk" text="FK" />)
+    if (column.notNull) constraints.push(<Label key="notnull" text="NOT NULL" />)
+    if (column.unique) constraints.push(<Label key="unique" text="UNIQUE" />)
+    if (column.check) constraints.push(<Label key="check" text={`CHECK: ${column.check}`} />)
+    if (column.autoIncrement) constraints.push(<Label key="autoinc" text="AUTO INCREMENT" />)
+    if (column.default)
+      constraints.push(<Label key="default" text={`DEFAULT: ${column.default}`} />)
+    if (column.enum) constraints.push(<Label key="enum" text={`ENUM: ${column.enum.join(', ')}`} />)
+    if (column.domain) constraints.push(<Label key="domain" text={`DOMAIN: ${column.domain}`} />)
 
     return constraints.length > 0 ? (
       <div className="table-info-constraints">{constraints}</div>

@@ -1,9 +1,12 @@
+import { formatCheckConstraint } from '@renderer/utils/formatConstraint'
 import React, { useState } from 'react'
 import PageTitle from '@renderer/components/PageTitle'
 import Button from '@renderer/components/Button'
 import { RuleSelection } from './RuleSelectContent'
+import { ColumnDetail } from '@renderer/views/CreateDummyView'
 
 interface EnumSelectContentProps {
+  column: ColumnDetail
   columnName: string
   enumList: string[]
   onCancel: () => void
@@ -11,6 +14,7 @@ interface EnumSelectContentProps {
 }
 
 const EnumSelectContent: React.FC<EnumSelectContentProps> = ({
+  column,
   columnName,
   enumList,
   onCancel,
@@ -35,6 +39,11 @@ const EnumSelectContent: React.FC<EnumSelectContentProps> = ({
         description={`이 컬럼은 ENUM 타입입니다. 목록에서 고정값을 선택하세요.`}
         size="small"
       />
+      {column.checkConstraint && (
+        <div className="check-constraint-notice">
+          ※ 참고: 이 컬럼에는 <span>{formatCheckConstraint(column.checkConstraint)}</span> 제약 조건이 있습니다.
+        </div>
+      )}
       <div className="divider" />
 
       <div className="enum-list">
@@ -65,7 +74,20 @@ const EnumSelectContent: React.FC<EnumSelectContentProps> = ({
           gap: 20px;
           padding: 0 14px 14px 0;
         }
-        
+        .check-constraint-notice {
+           background-color: var(--color-light-yellow);
+           border: 1px solid var(--color-orange);
+           border-radius: 8px;
+           padding: 10px 12px;
+           font: var(--preRegular14);
+           color: var(--color-dark-gray);
+        }
+
+         .check-constraint-notice span {
+             font-weight: var(--fw-semiBold);
+             color: var(--color-black);
+        }
+
         .divider {
           border: none;
           border-top: 1px solid var(--color-gray-200); 

@@ -1,5 +1,12 @@
 import { createAIGateway } from './ai/ai-factory'
-import { AIGenRequest, AIGenResult, ColumnSchemaInfo, SqlDbType } from './types'
+import {
+  AIGenRequest,
+  AIGenResult,
+  ColumnSchemaInfo,
+  SqlDbType,
+  AIMetaData,
+  ColumnConstraint
+} from '@shared/types'
 import { getDomainGuideline } from './ai/domain-config'
 import { buildAjvValidator, enforceUniqueness, parseValuesArray } from '../../utils/validators'
 import { resolveModel } from './ai/model-map'
@@ -13,9 +20,7 @@ export interface AIStreamGenerateRequest {
   tableName: string
   columnName: string
   recordCnt: number
-  metaData: {
-    ruleId: number
-  }
+  metaData: AIMetaData
   schema: Table[]
   database: {
     id: number
@@ -178,7 +183,7 @@ function fallbackValues(domainName: string | undefined, count: number): string[]
 function extractConstraintsFromSqlType(
   sqlType: string,
   columnData: SchemaColumn
-): Record<string, unknown> {
+): ColumnConstraint {
   const constraints: {
     notNull?: boolean
     unique?: boolean
@@ -234,7 +239,8 @@ export async function* generateAIStream({
   recordCnt,
   schema,
   database,
-  rule
+  rule,
+  metaData
 }: AIStreamGenerateRequest): AsyncGenerator<string, void, unknown> {
   // 1. 전달받은 데이터 사용 (DB 조회 없음)
   const dbType: SqlDbType = database.dbms_name as SqlDbType
@@ -271,7 +277,10 @@ export async function* generateAIStream({
     tableName,
     columnName,
     sqlType,
-    constraints,
+    constraints: {
+      ...constraints,
+      unique: metaData.ensureUnique || constraints.unique
+    },
     domainName: rule.domain_name
   }
 

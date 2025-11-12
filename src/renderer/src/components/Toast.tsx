@@ -38,12 +38,12 @@ const Toast: React.FC<ToastProps> = ({
 
   const closeToast = useCallback((): void => {
     setVisible(false)
-    if (onClose) onClose()
+    onClose?.()
   }, [onClose])
 
   useEffect(() => {
     if (duration > 0) {
-      const timer = setTimeout(() => closeToast(), duration)
+      const timer = setTimeout(closeToast, duration)
       return () => clearTimeout(timer)
     }
     return undefined
@@ -52,25 +52,36 @@ const Toast: React.FC<ToastProps> = ({
   if (!visible) return null
 
   return (
-    <div className={`toast-card ${type}`}>
-      <button className="toast-close" onClick={closeToast}>
-        ✕
-      </button>
+    <div className="toast-backdrop" onClick={closeToast}>
+      <div className={`toast-card ${type}`} onClick={(e) => e.stopPropagation()}>
+        <button className="toast-close" onClick={closeToast}>
+          ✕
+        </button>
 
-      <div className="toast-header">
-        <img src={getIcon()} alt={type} className="toast-icon" />
-        {title && <div className="toast-title">{title}</div>}
-      </div>
+        <div className="toast-header">
+          <img src={getIcon()} alt={type} className="toast-icon" />
+          {title && <div className="toast-title">{title}</div>}
+        </div>
 
-      <div className="toast-body">{children}</div>
+        <div className="toast-body">{children}</div>
 
-      <div className="toast-footer">
-        <Button variant="gray" size="sm" onClick={closeToast}>
-          확인
-        </Button>
-      </div>
+        <div className="toast-footer">
+          <Button variant="gray" size="sm" onClick={closeToast}>
+            확인
+          </Button>
+        </div>
 
-      <style>{`
+        <style>{`
+      .toast-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.35);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+      }
+
       .toast-card {
         position: relative;
         width: 300px;
@@ -120,19 +131,10 @@ const Toast: React.FC<ToastProps> = ({
         margin-left: 38px;
       }
 
-      .toast-body .toast-text {
-        font: var(--preRegular16);
-        color: var(--color-dark-gray);
-      }
-
       .toast-footer {
         display: flex;
         justify-content: flex-end;
         margin-top: 6px;
-      }
-
-      .toast-footer button {
-        border: 1.5px solid var(--color-dark-gray);
       }
 
       .toast-card.success {
@@ -153,6 +155,7 @@ const Toast: React.FC<ToastProps> = ({
         to { opacity: 1; transform: translateY(0); }
       }
     `}</style>
+      </div>
     </div>
   )
 }
