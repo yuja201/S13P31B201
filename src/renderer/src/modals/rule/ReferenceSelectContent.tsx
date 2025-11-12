@@ -234,13 +234,16 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
           <label className="preSemiBold14">생성 방식</label>
           <div className="radio-group">
             {/* 옵션 1: 무작위 */}
-            <label className={`radio-option ${strategy === 'RANDOM_SAMPLE' ? 'selected' : ''}`}>
+            <label
+              className={`radio-option ${strategy === 'RANDOM_SAMPLE' ? 'selected' : ''} ${samplePreview.status === 'empty' ? 'disabled' : ''}`}
+            >
               <input
                 type="radio"
                 name="ref-strategy"
                 value="RANDOM_SAMPLE"
                 checked={strategy === 'RANDOM_SAMPLE'}
                 onChange={() => setStrategy('RANDOM_SAMPLE')}
+                disabled={samplePreview.status === 'empty'}
               />
               <div className="radio-label">
                 <span className="preSemiBold16">
@@ -253,13 +256,14 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
               </div>
             </label>
             {/* 옵션 2: 고정값 */}
-            <label className={`radio-option ${strategy === 'FIXED_VALUE' ? 'selected' : ''}`}>
+            <label className={`radio-option ${strategy === 'FIXED_VALUE' ? 'selected' : ''} ${samplePreview.status === 'empty' ? 'disabled' : ''}`}>
               <input
                 type="radio"
                 name="ref-strategy"
                 value="FIXED_VALUE"
                 checked={strategy === 'FIXED_VALUE'}
                 onChange={() => setStrategy('FIXED_VALUE')}
+                disabled={samplePreview.status === 'empty'}
               />
               <div className="radio-label">
                 <span className="preSemiBold16">고정값 검색/지정</span>
@@ -434,12 +438,9 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
         }
         .radio-option.selected {
           border-color: var(--color-main-blue);
-          background-color: var(--color-light-blue);
           box-shadow: 0 0 0 2px rgba(19, 70, 134, 0.2);
         }
         .radio-option input[type='radio'] {
-          appearance: none;
-          -webkit-appearance: none;
           width: 20px;
           height: 20px;
           border: 1.5px solid var(--color-gray-400);
@@ -447,9 +448,8 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
           transition: all 0.2s ease;
         }
         .radio-option input[type='radio']:checked {
-          background-color: var(--color-main-blue);
+          background-color: var(--color-white);
           border-color: var(--color-main-blue);
-          background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="white"%3e%3ccircle cx="8" cy="8" r="4" /%3e%3c/svg%3e');
           background-position: center;
           background-repeat: no-repeat;
         }
@@ -502,6 +502,14 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
           justify-content: flex-end;
           gap: 8px;
           margin-top: 10px;
+        }
+        .radio-option.disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+          background-color: var(--color-background);
+        }
+        .radio-option.disabled:hover {
+          border-color: var(--color-gray-200); /* Reset hover border */
         }
       `}</style>
     </div>
