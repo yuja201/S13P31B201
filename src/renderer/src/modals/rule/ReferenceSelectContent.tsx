@@ -256,7 +256,9 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
               </div>
             </label>
             {/* 옵션 2: 고정값 */}
-            <label className={`radio-option ${strategy === 'FIXED_VALUE' ? 'selected' : ''} ${samplePreview.status === 'empty' ? 'disabled' : ''}`}>
+            <label
+              className={`radio-option ${strategy === 'FIXED_VALUE' ? 'selected' : ''} ${samplePreview.status === 'empty' ? 'disabled' : ''}`}
+            >
               <input
                 type="radio"
                 name="ref-strategy"
