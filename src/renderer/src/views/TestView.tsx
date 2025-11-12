@@ -73,7 +73,7 @@ const TestView: React.FC = () => {
           />
           <TestCard
             title="인덱스 테스트"
-            description="사용자 쿼리 성능 분석 및 최적화 방안을 제안"
+            description="데이터베이스 인덱스 분석 및 최적화 방안을 제안"
             metrics={[
               { label: '테스트 수', value: 107 },
               { label: '평균 응답', value: '12.3m' },
