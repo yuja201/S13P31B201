@@ -93,7 +93,7 @@ const CreateDummyView: React.FC = () => {
     if (selectedProject?.database?.id) {
       refreshSchema(selectedProject.database.id)
     }
-  }, [selectedProject, refreshSchema])
+  }, [selectedProject?.database?.id, refreshSchema])
 
   const tables: TableInfo[] = useMemo(() => {
     const currentDatabaseId = selectedProject?.database?.id
@@ -167,6 +167,10 @@ const CreateDummyView: React.FC = () => {
       }))
   }, [tables, selectedTables, generationTables])
 
+  const validationStatus = useMemo(() => {
+    return new Map(validationResults.map((v) => [v.table.name, v.isReady]))
+  }, [validationResults])
+
   // 선택된 테이블이 없으면 false
   const hasSelectedTables = selectedTables.size > 0
 
@@ -234,6 +238,10 @@ const CreateDummyView: React.FC = () => {
     return <div>오류: {error}</div>
   }
 
+  const focusedTableValidation = focusedTable
+    ? validationResults.find((v) => v.table.name === focusedTable.name)
+    : null
+
   return (
     <>
       <div className="dummy-view-container">
@@ -245,6 +253,7 @@ const CreateDummyView: React.FC = () => {
             selectedTables={selectedTables}
             handleCheckboxChange={handleToggleTable}
             onTableSelect={(table) => setFocusedTable({ ...table })}
+            validationStatus={validationStatus}
           />
           {focusedTable && (
             <DBTableDetail
@@ -254,6 +263,7 @@ const CreateDummyView: React.FC = () => {
               isAllReady={allReady}
               hasMissing={hasMissing}
               warningMessage={warningMessage}
+              missingColumns={focusedTableValidation?.missingColumns}
             />
           )}
         </div>

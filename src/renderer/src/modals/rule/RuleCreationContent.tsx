@@ -8,6 +8,7 @@ import Button from '@renderer/components/Button'
 import { useToastStore } from '@renderer/stores/toastStore'
 import Checkbox from '@renderer/components/Checkbox'
 import { ColumnDetail } from '@renderer/views/CreateDummyView'
+import { useRuleStore } from '@renderer/stores/ruleStore'
 
 export interface RuleCreationData {
   source: 'FAKER' | 'AI'
@@ -47,6 +48,7 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
   const [selectedDomain, setSelectedDomain] = useState<{ id: number; name: string } | null>(null)
   const [ensureUnique, setEnsureUnique] = useState(false)
   const isUniqueColumn = useMemo(() => column.constraints.includes('UNIQUE'), [column])
+  const addRule = useRuleStore((state) => state.addRule)
 
   const handleDomainChange = useCallback(
     (domain: { id: number; name: string }) => {
@@ -100,6 +102,7 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
           name: settingName,
           domain: selectedDomain!.id
         })
+        addRule(result)
 
         onSubmit?.({
           source: selectedSource,
@@ -121,6 +124,7 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
           token: apiToken,
           prompt
         })
+        addRule(result)
 
         onSubmit?.({
           source: selectedSource,
