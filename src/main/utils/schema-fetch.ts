@@ -419,7 +419,7 @@ async function fetchPostgreSQLColumns(
       (
         SELECT
           CASE
-            WHEN cc.check_clause ILIKE '%IS NOT NULL' THEN NULL
+            WHEN cc.check_clause ~* '^[[:space:]]*\\(?[[:space:]]*["'']?\\w+["'']?[[:space:]]+IS[[:space:]]+NOT[[:space:]]+NULL[[:space:]]*\\)?$'  THEN NULL 
             ELSE cc.check_clause
           END
         FROM information_schema.check_constraints cc
