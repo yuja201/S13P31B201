@@ -27,7 +27,7 @@ const TestView: React.FC = () => {
       {/* 테스트 히스토리 */}
       <section className="test-history-section">
         <h2 className="preSemiBold24 section-title">테스트 히스토리</h2>
-        <div className="stats-card-grid">
+        <div className="aligned-grid stats-card-grid">
           <TestSummaryCard
             title="총 테스트 횟수"
             subtitle="사용자 쿼리. 인덱스 테스트"
@@ -60,7 +60,7 @@ const TestView: React.FC = () => {
 
       {/* 사용자 테스트 카드 */}
       <section className="test-card-section">
-        <div className="test-card-grid">
+        <div className="aligned-grid test-card-grid">
           <TestCard
             title="사용자 쿼리 테스트"
             description="사용자 쿼리 성능 분석 및 최적화 방안을 제안"
@@ -85,7 +85,7 @@ const TestView: React.FC = () => {
       </section>
 
       <style>{`
-        /* 전체 컨테이너 */
+        /* 공통 컨테이너 */
         .test-main-container {
           display: flex;
           flex-direction: column;
@@ -93,6 +93,7 @@ const TestView: React.FC = () => {
           width: 100%;
           height: 100%;
           padding-bottom: 48px;
+          padding-right: 5px;
           overflow-y: auto;
           box-sizing: border-box;
         }
@@ -102,36 +103,38 @@ const TestView: React.FC = () => {
           color: var(--color-black);
         }
 
-        /* 테스트 히스토리 */
+        /* ✅ 핵심: 공통 정렬 래퍼 */
+        .aligned-grid {
+          display: grid;
+          justify-content: space-between;   /* 좌우 여백 균등 분배 */
+          width: 100%;
+          max-width: 1040px;                /* 두 grid 동일 기준선 */
+          margin: 0 auto;
+          box-sizing: border-box;
+        }
+
+        /* 상단 Summary 카드 */
         .stats-card-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-          justify-content: center;
+          grid-template-columns: repeat(3, 325px); /* 정확히 3개 고정 */
           gap: 24px;
-          width: 100%;
-          max-width: 100%;
-          box-sizing: border-box;
-          overflow-x: hidden;
         }
 
-        /* 테스트 카드 */
-        .test-card-section {
-          margin-top: 24px;
-        }
-
+        /* 하단 TestCard */
         .test-card-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(460px, 1fr));
-          justify-content: center;
-          align-items: start;
+          grid-template-columns: repeat(2, 480px); /* 정확히 2개 고정 */
           gap: 32px;
-          width: 100%;
-          box-sizing: border-box;
-          overflow-x: hidden;
         }
 
-        .test-card-grid > * {
-          min-width: 0;
+        /* 반응형 대응 */
+        @media (max-width: 1080px) {
+          .stats-card-grid {
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            justify-content: center;
+          }
+          .test-card-grid {
+            grid-template-columns: repeat(auto-fit, minmax(440px, 1fr));
+            justify-content: center;
+          }
         }
       `}</style>
     </div>
