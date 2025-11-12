@@ -103,25 +103,25 @@ const TestView: React.FC = () => {
           color: var(--color-black);
         }
 
-        /* ✅ 핵심: 공통 정렬 래퍼 */
+        /* 공통 정렬 래퍼 */
         .aligned-grid {
           display: grid;
-          justify-content: space-between;   /* 좌우 여백 균등 분배 */
+          justify-content: space-between;
           width: 100%;
-          max-width: 1040px;                /* 두 grid 동일 기준선 */
+          max-width: 1040px;
           margin: 0 auto;
           box-sizing: border-box;
         }
 
         /* 상단 Summary 카드 */
         .stats-card-grid {
-          grid-template-columns: repeat(3, 325px); /* 정확히 3개 고정 */
+          grid-template-columns: repeat(3, 325px);
           gap: 24px;
         }
 
         /* 하단 TestCard */
         .test-card-grid {
-          grid-template-columns: repeat(2, 480px); /* 정확히 2개 고정 */
+          grid-template-columns: repeat(2, 480px);
           gap: 32px;
         }
 
