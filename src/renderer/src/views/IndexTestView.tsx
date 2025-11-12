@@ -3,7 +3,7 @@ import InfoCard from '@renderer/components/InfoCard'
 import PageTitle from '@renderer/components/PageTitle'
 import AIRecommendation from '@renderer/components/AIRecommendation'
 
-const IndexView: React.FC = () => {
+const IndexTestView: React.FC = () => {
   // TODO: 실제 데이터 파싱
   const indexData = [
     {
@@ -107,4 +107,4 @@ const IndexView: React.FC = () => {
   )
 }
 
-export default IndexView
+export default IndexTestView
