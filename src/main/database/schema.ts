@@ -66,10 +66,25 @@ CREATE TABLE IF NOT EXISTS rules (
   FOREIGN KEY (domain_id) REFERENCES domains(id) ON DELETE CASCADE
 );
 
+-- 테스트 결과 테이블
+CREATE TABLE IF NOT EXISTS tests (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  project_id INTEGER NOT NULL,
+  type TEXT CHECK(type IN ('QUERY', 'INDEX')) NOT NULL,
+  summary TEXT,
+  created_at NUMERIC NOT NULL DEFAULT (strftime('%s', 'now')),
+  result TEXT NOT NULL,
+  response_time REAL,
+  index_ratio REAL,
+  FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+);
+
 -- 인덱스 생성
 CREATE INDEX IF NOT EXISTS idx_databases_project_id ON databases(project_id);
 CREATE INDEX IF NOT EXISTS idx_databases_dbms_id ON databases(dbms_id);
 CREATE INDEX IF NOT EXISTS idx_rules_domain ON rules(domain_id);
+CREATE INDEX IF NOT EXISTS idx_tests_project_id ON tests(project_id);
+CREATE INDEX IF NOT EXISTS idx_tests_type ON tests(type);
 `
 
 // DBMS 종류 저장
@@ -156,5 +171,4 @@ INSERT OR IGNORE INTO domains (id, category_id, name, description, logical_type)
   (53, 14, '음악 장르', '랜덤 음악 장르', 'string'),
   (54, 14, '노래 이름', '랜덤 노래 제목', 'string'),
   (55, 14, '동물 이름', '동물 이름', 'string');
-
 `
