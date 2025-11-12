@@ -65,7 +65,7 @@ const TestCard: React.FC<TestCardProps> = ({ title, description, metrics, onStar
         /* 헤더 */
         .test-card__header {
           display: flex;
-          align-items: top;
+          align-items: flex-start;
           gap: 20px;
           text-align: left;
           width: 100%;

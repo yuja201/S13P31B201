@@ -155,8 +155,6 @@ const TestSummaryCard: React.FC<TestSummaryCardProps> = ({
         .stats-card__chart {
           flex: 1;
           height: 100%;
-          flex: 1;
-          height: 60px;
           align-self: flex-end;
         }
       `}</style>
