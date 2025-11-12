@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import Button from '@renderer/components/Button'
 import InputField from '@renderer/components/InputField'
 import PageTitle from '@renderer/components/PageTitle'
@@ -65,6 +65,8 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
   const { selectedProject } = useProjectStore()
   const dbms = selectedProject?.dbms?.name ?? 'mysql'
   const showToast = useToastStore((s) => s.showToast)
+
+  const isPk = useMemo(() => column.constraints.includes('PK'), [column.constraints])
 
   const handleSelectRule = (rule: Rule): void => {
     // 선택한 rule을 부모로 전달
@@ -194,7 +196,11 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
       <div className="rule-select__header">
         <PageTitle
           title={`생성 규칙 선택 - ${columnName}`}
-          description="고정값을 입력하거나 생성한 규칙을 적용해보세요."
+          description={
+            isPk
+              ? 'PK 컬럼은 고유한 값을 생성하는 규칙만 사용할 수 있습니다.'
+              : '고정값을 입력하거나 생성한 규칙을 적용해보세요.'
+          }
           size="small"
         />
 
@@ -202,38 +208,44 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
       </div>
 
       {/* 고정값 입력 */}
-      <div className="rule-select__section">
-        <div className="relative">
-          <InputField
-            title="고정값 입력"
-            placeholder="예: 홍길동, 20, 0.0, TRUE"
-            width="100%"
-            titleBold
-            size="md"
-            value={fixedValue}
-            onChange={handleFixedValueChange}
-            className={
-              isCheckValid === false ? 'input-error' : isCheckValid === true ? 'input-success' : ''
-            }
-          />
-          {column.checkConstraint && (
-            <div
-              className={` constraint-helper
+      {!isPk && (
+        <div className="rule-select__section">
+          <div className="relative">
+            <InputField
+              title="고정값 입력"
+              placeholder="예: 홍길동, 20, 0.0, TRUE"
+              width="100%"
+              titleBold
+              size="md"
+              value={fixedValue}
+              onChange={handleFixedValueChange}
+              className={
+                isCheckValid === false
+                  ? 'input-error'
+                  : isCheckValid === true
+                    ? 'input-success'
+                    : ''
+              }
+            />
+            {column.checkConstraint && (
+              <div
+                className={` constraint-helper
               ${isCheckValid === null && 'notice'}
               ${isCheckValid === true && 'success'}
               ${isCheckValid === false && 'error'}`}
-            >
-              {isCheckValid === null && (
-                <>※ 참고: {formatCheckConstraint(column.checkConstraint)}</>
-              )}
-              {isCheckValid === true && <> 제약 조건을 만족합니다.</>}
-              {isCheckValid === false && (
-                <> {formatCheckConstraint(column.checkConstraint)}을(를) 위반합니다.</>
-              )}
-            </div>
-          )}
+              >
+                {isCheckValid === null && (
+                  <>※ 참고: {formatCheckConstraint(column.checkConstraint)}</>
+                )}
+                {isCheckValid === true && <> 제약 조건을 만족합니다.</>}
+                {isCheckValid === false && (
+                  <> {formatCheckConstraint(column.checkConstraint)}을(를) 위반합니다.</>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 이전 설정 */}
       <div className="rule-select__section">
@@ -270,9 +282,11 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
         <Button variant="gray" onClick={onCancel}>
           취소
         </Button>
-        <Button variant="orange" onClick={handleConfirmFixed} disabled={isCheckValid === false}>
-          확인
-        </Button>
+        {!isPk && (
+          <Button variant="orange" onClick={handleConfirmFixed} disabled={isCheckValid === false}>
+            확인
+          </Button>
+        )}
       </div>
 
       <style>{`
