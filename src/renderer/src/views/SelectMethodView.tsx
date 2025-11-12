@@ -53,7 +53,7 @@ const SelectMethodView: React.FC = () => {
         {/* SQL 생성 */}
         <div
           onClick={() =>
-            navigate(`/main/insert/sql/${projectId}`, {
+            navigate(`/main/dummy/${projectId}/insert/sql`, {
               state: { tables: selectedTables, mode: 'sql', skipInvalidRows }
             })
           }
@@ -85,7 +85,7 @@ const SelectMethodView: React.FC = () => {
         {/* DB 직접 삽입 */}
         <div
           onClick={() =>
-            navigate(`/main/insert/sql/${projectId}`, {
+            navigate(`/main/dummy/${projectId}/insert/sql`, {
               state: { tables: selectedTables, mode: 'db', skipInvalidRows }
             })
           }

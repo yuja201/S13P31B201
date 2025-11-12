@@ -212,7 +212,7 @@ const CreateDummyView: React.FC = () => {
       return { id: t.id, name: t.name }
     })
 
-    navigate(`/main/select-method/${projectId}`, { state: { tables: payload } })
+    navigate(`/main/dummy/${projectId}/select-method`, { state: { tables: payload } })
   }
 
   const handleColumnUpdate = (columnName: string, generation: string, setting: string): void => {
