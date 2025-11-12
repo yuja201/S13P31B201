@@ -198,7 +198,11 @@ const ResponseTimeChart: React.FC<ResponseTimeChartProps> = ({ responseTimes }) 
       </div>
 
       {/* 막대 그래프 */}
-      <div style={barContainerStyle} role="img">
+      <div
+        style={barContainerStyle}
+        role="img"
+        aria-label={`응답 시간 분포 히스토그램. 총 ${bucketCount}개 구간으로 나뉘며, 중앙값(P50)은 ${p50}ms입니다.`}
+      >
         {scaledHeights.map((h, i) => (
           <div key={i} style={barStyle(h, i)} role="presentation" aria-hidden="true" />
         ))}
