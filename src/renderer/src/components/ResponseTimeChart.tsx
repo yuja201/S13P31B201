@@ -216,7 +216,7 @@ const ResponseTimeChart: React.FC<ResponseTimeChartProps> = ({ responseTimes }) 
         </div>
         <div style={legendItemStyle} role="listitem">
           <div style={colorBoxStyle('var(--color-main-blue)')} aria-hidden="true" />
-          <span>최빈 응답 구간</span>
+          <span>P50 구간 (중앙값)</span>
         </div>
       </div>
     </div>
