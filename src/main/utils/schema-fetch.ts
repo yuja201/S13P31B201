@@ -382,16 +382,20 @@ async function fetchPostgreSQLColumns(
          AND tc.constraint_type = 'UNIQUE'
       ) AS is_unique,
 
-      -- CHECK 제약조건 조회
+      -- CHECK 제약조건 조회 (NOT NULL 제약조건은 제외)
       (
-        SELECT cc.check_clause
+        SELECT
+          CASE
+            WHEN cc.check_clause ILIKE '%IS NOT NULL' THEN NULL
+            ELSE cc.check_clause
+          END
         FROM information_schema.check_constraints cc
         JOIN information_schema.constraint_column_usage ccu
           ON cc.constraint_name = ccu.constraint_name
-       WHERE ccu.table_schema = c.table_schema
-         AND ccu.table_name   = c.table_name
-         AND ccu.column_name  = c.column_name
-       LIMIT 1
+        WHERE ccu.table_schema = c.table_schema
+          AND ccu.table_name = c.table_name
+          AND ccu.column_name = c.column_name
+        LIMIT 1
       ) AS check_constraint,
 
       -- ENUM 여부 및 값 목록
