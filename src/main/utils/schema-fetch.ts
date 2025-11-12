@@ -198,6 +198,28 @@ async function fetchMySQLColumns(
       numericScale: row.numericScale ?? undefined
     }
 
+    // MySQL 숫자 타입별 min/max 값 설정
+    const typeLower = row.type.toLowerCase()
+    const isUnsigned = typeLower.includes('unsigned')
+
+    if (typeLower.startsWith('tinyint')) {
+      column.minValue = isUnsigned ? 0 : -128
+      column.maxValue = isUnsigned ? 255 : 127
+    } else if (typeLower.startsWith('smallint')) {
+      column.minValue = isUnsigned ? 0 : -32768
+      column.maxValue = isUnsigned ? 65535 : 32767
+    } else if (typeLower.startsWith('mediumint')) {
+      column.minValue = isUnsigned ? 0 : -8388608
+      column.maxValue = isUnsigned ? 16777215 : 8388607
+    } else if (typeLower.startsWith('int')) {
+      column.minValue = isUnsigned ? 0 : -2147483648
+      column.maxValue = isUnsigned ? 4294967295 : 2147483647
+    } else if (typeLower.startsWith('bigint')) {
+      // JS의 안전한 정수 범위를 초과할 수 있으므로, 우선 Number.MAX_SAFE_INTEGER를 사용
+      column.minValue = isUnsigned ? 0 : -9007199254740991
+      column.maxValue = 9007199254740991
+    }
+
     // ENUM 타입 파싱 (UI에서 enum 사용 중이면 유지)
     if (row.type.startsWith('enum(')) {
       const enumMatch = row.type.match(/enum\((.*)\)/)
