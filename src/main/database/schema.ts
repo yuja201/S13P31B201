@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS domains (
   logical_type TEXT NOT NULL DEFAULT 'string',
   created_at NUMERIC NOT NULL DEFAULT (strftime('%s', 'now')),
   updated_at NUMERIC NOT NULL DEFAULT (strftime('%s', 'now')),
-  FOREIGN KEY (category_id) REFERENCES domain_categories(id) ON DELETE SET NULL
+  FOREIGN KEY (category_id) REFERENCES domain_categories(id) ON DELETE CASCADE
 );
 
 -- 생성 규칙 테이블
