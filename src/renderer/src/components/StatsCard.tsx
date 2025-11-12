@@ -1,0 +1,167 @@
+import React from 'react'
+import { LineChart, Line, Area, ResponsiveContainer, Tooltip, YAxis, XAxis } from 'recharts'
+
+interface StatsCardProps {
+  title: string
+  subtitle: string
+  total: number
+  currentWeek: number
+  changePercent: number
+  data: { name: string; value: number }[]
+  positive?: boolean
+}
+
+const StatsCard: React.FC<StatsCardProps> = ({
+  title,
+  subtitle,
+  total,
+  currentWeek,
+  changePercent,
+  data,
+  positive = true
+}) => {
+  return (
+    <>
+      <div className="stats-card">
+        {/* 상단 제목 영역 */}
+        <div className="stats-card__header">
+          <div className="stats-card__title">{title}</div>
+          <div className="stats-card__subtitle">{subtitle}</div>
+        </div>
+
+        {/* 하단 본문 영역 */}
+        <div className="stats-card__bottom">
+          {/* 왼쪽: 수치 정보 */}
+          <div className="stats-card__content">
+            <div className="stats-card__total">{total}번</div>
+            <div className="stats-card__current">이번 주 {currentWeek}번</div>
+            <div
+              className={`stats-card__percent ${
+                positive ? 'stats-card__percent--up' : 'stats-card__percent--down'
+              }`}
+            >
+              {positive ? '+' : '-'}
+              {changePercent}% 지난 주 대비
+            </div>
+          </div>
+
+          {/* 오른쪽: 그래프 */}
+          <div className="stats-card__chart">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={data} margin={{ top: 20, right: 0, bottom: -10, left: 0 }}>
+                <defs>
+                  <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1.2">
+                    <stop offset="0%" stopColor="#10b981" stopOpacity={0.6} />
+                    <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="name" hide />
+                <YAxis hide />
+                <Tooltip cursor={false} contentStyle={{ display: 'none' }} />
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke="none"
+                  fill="url(#chartGradient)"
+                  fillOpacity={1}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#10b981"
+                  strokeWidth={2}
+                  dot={false}
+                  activeDot={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+
+      <style>{`
+        /* 전체 카드 */
+        .stats-card {
+          display: flex;
+          flex-direction: column;
+          justify-content: space-between;
+          background-color: var(--color-white);
+          border: 1px solid rgba(0, 0, 0, 0.1);
+          border-radius: 14px;
+          box-shadow: var(--shadow);
+          padding: 24px;
+          width: 325px;
+          height: 215px;
+          box-sizing: border-box;
+          gap: 24px;
+        }
+
+        /* 상단 텍스트 */
+        .stats-card__title {
+          font: var(--preSemiBold16);
+          color: var(--color-black);
+        }
+
+        .stats-card__subtitle {
+          font: var(--preRegular14);
+          color: var(--color-dark-gray);
+          margin-top: 2px;
+        }
+
+        /* 하단 (좌우 2열) */
+        .stats-card__bottom {
+          display: flex;
+          justify-content: space-between;
+          align-items: stretch;
+          flex: 1;
+          gap: 24px;
+        }
+
+        /* 왼쪽 내용 */
+        .stats-card__content {
+          display: flex;
+          flex-direction: column;
+          justify-content: flex-start;
+          flex: 1;
+        }
+
+        .stats-card__total {
+          font-weight: var(--fw-semiBold);
+          font-size: 32px;
+          line-height: 1.2;
+          color: var(--color-black);
+          margin-bottom: 2px;
+        }
+
+        .stats-card__current {
+          font: var(--preRegular14);
+          color: var(--color-dark-gray);
+          margin-bottom: 8px;
+        }
+
+        .stats-card__percent {
+          font: var(--preMedium14);
+        }
+
+        .stats-card__percent--up {
+          color: #10b981;
+        }
+
+        .stats-card__percent--down {
+          color: #ef4444;
+        }
+
+        /* 오른쪽 그래프 */
+        .stats-card__chart {
+          flex: 1;
+          height: 100%;
+          flex: 1;
+          height: 60px;
+          align-self: flex-end;
+        }
+      `}</style>
+    </>
+  )
+}
+
+export default StatsCard
