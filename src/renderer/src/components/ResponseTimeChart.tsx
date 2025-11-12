@@ -5,7 +5,7 @@ interface ResponseTimeChartProps {
 }
 
 const ResponseTimeChart: React.FC<ResponseTimeChartProps> = ({ responseTimes }) => {
-  // ===== 통계 계산 =====
+  // ===== 통계 및 분포 계산 =====
   const stats = useMemo(() => {
     if (!responseTimes.length) {
       return {
@@ -15,14 +15,17 @@ const ResponseTimeChart: React.FC<ResponseTimeChartProps> = ({ responseTimes }) 
         p99: 0,
         max: 0,
         min: 0,
-        distribution: []
+        distribution: [] as number[],
+        bucketCount: 0,
+        bucketSize: 0,
+        p50Index: 0
       }
     }
 
     const sorted = [...responseTimes].sort((a, b) => a - b)
     const n = sorted.length
-
     const avg = Math.round(sorted.reduce((a, b) => a + b, 0) / n)
+
     const percentile = (p: number): number => {
       const index = Math.ceil((p / 100) * n) - 1
       return sorted[Math.min(index, n - 1)]
@@ -34,6 +37,7 @@ const ResponseTimeChart: React.FC<ResponseTimeChartProps> = ({ responseTimes }) 
     const max = sorted[n - 1]
     const min = sorted[0]
 
+    // 분포 계산
     const bucketCount = 11
     const range = max - min || 1
     const bucketSize = range / (bucketCount - 1)
@@ -45,12 +49,28 @@ const ResponseTimeChart: React.FC<ResponseTimeChartProps> = ({ responseTimes }) 
     })
 
     const maxCount = Math.max(...buckets)
-    const normalized = buckets.map((c) => Math.round((c / maxCount) * 100))
+    const normalized =
+      maxCount > 0
+        ? buckets.map((c) => Math.round((c / maxCount) * 100))
+        : Array(bucketCount).fill(0)
 
-    return { average: avg, p50, p95, p99, max, min, distribution: normalized }
+    const p50Index = Math.min(Math.floor((p50 - min) / bucketSize), bucketCount - 1)
+
+    return {
+      average: avg,
+      p50,
+      p95,
+      p99,
+      max,
+      min,
+      distribution: normalized,
+      bucketCount,
+      bucketSize,
+      p50Index
+    }
   }, [responseTimes])
 
-  const { average, p50, p95, p99, max, min, distribution } = stats
+  const { average, p50, p95, p99, max, distribution, bucketCount, p50Index } = stats
 
   // ===== 스타일 =====
   const containerStyle: React.CSSProperties = {
@@ -105,17 +125,16 @@ const ResponseTimeChart: React.FC<ResponseTimeChartProps> = ({ responseTimes }) 
     position: 'relative'
   }
 
+  // 안전한 높이 계산
   const getScaledHeight = (value: number, maxValue: number): number => {
+    if (maxValue <= 0 || value <= 0) return 0
     const minHeight = 15
     return minHeight + (value / maxValue) * (160 - minHeight)
   }
 
-  const maxHeight = Math.max(...distribution)
-  const scaledHeights = distribution.map((v) => getScaledHeight(v, maxHeight))
-
-  const bucketCount = distribution.length
-  const bucketSize = (max - min) / (bucketCount - 1)
-  const p50Index = Math.min(Math.floor((p50 - min) / bucketSize), bucketCount - 1)
+  const maxHeight = Math.max(...distribution, 0)
+  const safeMaxHeight = maxHeight > 0 ? maxHeight : 1
+  const scaledHeights = distribution.map((v) => (v === 0 ? 0 : getScaledHeight(v, safeMaxHeight)))
 
   const getBarColor = (index: number): string =>
     index === p50Index ? 'var(--color-main-blue)' : 'rgba(0, 50, 120, 0.15)'
@@ -153,47 +172,47 @@ const ResponseTimeChart: React.FC<ResponseTimeChartProps> = ({ responseTimes }) 
 
   // ===== 렌더링 =====
   return (
-    <div style={containerStyle}>
+    <div style={containerStyle} role="region" aria-label="응답 시간 통계 차트">
       {/* 통계 값 */}
-      <div style={labelRowStyle}>
-        <div style={labelItemStyle}>
+      <div style={labelRowStyle} role="list" aria-label="응답 시간 통계">
+        <div style={labelItemStyle} role="listitem">
           <span style={labelValueStyle}>{average}ms</span>
           <span style={labelKeyStyle}>평균</span>
         </div>
-        <div style={labelItemStyle}>
+        <div style={labelItemStyle} role="listitem">
           <span style={highlightValueStyle}>{p50}ms</span>
           <span style={labelKeyStyle}>P50 (중앙값)</span>
         </div>
-        <div style={labelItemStyle}>
+        <div style={labelItemStyle} role="listitem">
           <span style={labelValueStyle}>{p95}ms</span>
-          <span style={labelKeyStyle}>P95 (느린 5%)</span>
+          <span style={labelKeyStyle}>P95</span>
         </div>
-        <div style={labelItemStyle}>
+        <div style={labelItemStyle} role="listitem">
           <span style={labelValueStyle}>{p99}ms</span>
-          <span style={labelKeyStyle}>P99 (느린 1%)</span>
+          <span style={labelKeyStyle}>P99</span>
         </div>
-        <div style={labelItemStyle}>
+        <div style={labelItemStyle} role="listitem">
           <span style={labelValueStyle}>{max}ms</span>
           <span style={labelKeyStyle}>최대</span>
         </div>
       </div>
 
       {/* 막대 그래프 */}
-      <div style={barContainerStyle}>
+      <div style={barContainerStyle} role="img">
         {scaledHeights.map((h, i) => (
-          <div key={i} style={barStyle(h, i)} />
+          <div key={i} style={barStyle(h, i)} role="presentation" aria-hidden="true" />
         ))}
       </div>
 
       {/* 색상 범례 */}
-      <div style={legendStyle}>
-        <div style={legendItemStyle}>
-          <div style={colorBoxStyle('rgba(0, 50, 120, 0.15)')} />
+      <div style={legendStyle} role="list" aria-label="그래프 범례">
+        <div style={legendItemStyle} role="listitem">
+          <div style={colorBoxStyle('rgba(0, 50, 120, 0.15)')} aria-hidden="true" />
           <span>응답 구간별 비율</span>
         </div>
-        <div style={legendItemStyle}>
-          <div style={colorBoxStyle('var(--color-main-blue)')} />
-          <span>중앙값 (P50)</span>
+        <div style={legendItemStyle} role="listitem">
+          <div style={colorBoxStyle('var(--color-main-blue)')} aria-hidden="true" />
+          <span>최빈 응답 구간</span>
         </div>
       </div>
     </div>
