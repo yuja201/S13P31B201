@@ -203,7 +203,6 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
             >
               <label className="preSemiBold16">생성할 데이터 개수</label>
 
-              {/* ✅ input과 안내문을 같은 줄로 배치 */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <input
                   type="number"
