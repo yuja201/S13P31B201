@@ -69,7 +69,7 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({ mainCard, subCard }) => {
       case 'blue':
         return 'var(--color-main-blue)'
       case 'green':
-        return '#2ecc71'
+        return '#27ae60'
       default:
         return 'var(--color-gray-500)'
     }
