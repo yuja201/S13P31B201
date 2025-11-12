@@ -1,6 +1,7 @@
 import React from 'react'
 
 export type BadgeColorType = 'yellow' | 'red'
+export type InfoCardVariant = 'outer' | 'inner'
 
 export interface InfoCardProps {
   title: string
@@ -12,6 +13,7 @@ export interface InfoCardProps {
   }
   width?: number | string
   height?: number | string
+  variant?: InfoCardVariant
 }
 
 const badgeColors: Record<BadgeColorType, { background: string; text: string }> = {
@@ -31,7 +33,8 @@ const InfoCard: React.FC<InfoCardProps> = ({
   titleIcon,
   badge,
   width = 'auto',
-  height = 'auto'
+  height = 'auto',
+  variant = 'outer'
 }) => {
   const badgeStyle = badge ? badgeColors[badge.color] : null
 
@@ -51,8 +54,8 @@ const InfoCard: React.FC<InfoCardProps> = ({
             transition: box-shadow 0.2s ease, transform 0.2s ease;
           }
 
-          .info-card:hover {
-            box-shadow: 2px 4px 6px rgba(0, 0, 0, 0.15);
+          .info-card.inner {
+            box-shadow: none;
           }
 
           .info-card-header {
@@ -98,11 +101,12 @@ const InfoCard: React.FC<InfoCardProps> = ({
             color: var(--color-dark-gray);
             width: 100%;
             line-height: 1.6;
+            white-space: pre-line;
           }
         `}
       </style>
 
-      <div className="info-card" style={{ width, height }}>
+      <div className={`info-card ${variant}`} style={{ width, height }}>
         <div className="info-card-header">
           <div className="info-card-title-wrapper">
             {titleIcon && <div className="info-card-left-icon">{titleIcon}</div>}
