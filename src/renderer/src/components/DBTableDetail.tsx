@@ -173,6 +173,12 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
     })
   }, [table.columnDetails, columnConfigs, getRuleById])
 
+  // 파일 기반 여부 감지
+  const isFileMode = useMemo(() => {
+    // 이 테이블의 컬럼 중 하나라도 FILE 데이터소스를 사용하면 파일모드로 판단
+    return Object.values(columnConfigs).some((c) => c.dataSource === 'FILE')
+  }, [columnConfigs])
+
   return (
     <>
       <div className="table-detail-container shadow">
@@ -187,19 +193,49 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
         <div className="detail-content ">
           {/* --- 생성 옵션 --- */}
           <div className="options-row">
-            <div className="input-group">
+            <div
+              className="input-group"
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '8px'
+              }}
+            >
               <label className="preSemiBold16">생성할 데이터 개수</label>
-              <input
-                type="number"
-                value={rows}
-                onChange={(e) => handleRowsChange(Number(e.target.value))}
-                placeholder="e.g., 1,000"
-                className="preMedium16 shadow"
-                step="100"
-                min={1}
-                max={50000000}
-              />
+
+              {/* ✅ input과 안내문을 같은 줄로 배치 */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <input
+                  type="number"
+                  value={rows}
+                  onChange={(e) => handleRowsChange(Number(e.target.value))}
+                  placeholder="e.g., 1,000"
+                  className="preMedium16 shadow"
+                  step="100"
+                  min={1}
+                  max={50000000}
+                  disabled={isFileMode}
+                  style={{
+                    width: '200px',
+                    opacity: isFileMode ? 0.6 : 1,
+                    cursor: isFileMode ? 'not-allowed' : 'auto'
+                  }}
+                />
+                {isFileMode && (
+                  <span
+                    className="preLight12"
+                    style={{
+                      color: 'var(--color-dark-gray)',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    파일 업로드 방식에서는 파일의 행 수만큼 자동 생성됩니다.
+                  </span>
+                )}
+              </div>
             </div>
+
+            {/* 오른쪽 버튼은 그대로 유지 */}
             <Button
               variant="blue"
               size="sm"
