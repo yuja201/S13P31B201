@@ -51,6 +51,13 @@ interface MySQLDatabaseRow {
   db: string
 }
 
+interface MySQLColumnRowExtended extends MySQLColumnRow {
+  maxLength: number | null
+  numericPrecision: number | null
+  numericScale: number | null
+  checkConstraint?: string | null
+}
+
 // PostgreSQL
 interface PostgreSQLTableRow {
   name: string
@@ -92,7 +99,6 @@ async function fetchMySQLSchema(config: DatabaseConfig): Promise<DatabaseSchema>
     const databaseName = config.database || (await getCurrentDatabase(connection))
     const tables: Table[] = []
 
-    // 테이블 목록 조회
     const [tableRows] = await connection.execute(
       `SELECT
         TABLE_NAME as name,
@@ -100,7 +106,7 @@ async function fetchMySQLSchema(config: DatabaseConfig): Promise<DatabaseSchema>
         TABLE_ROWS as rowCount
       FROM INFORMATION_SCHEMA.TABLES
       WHERE TABLE_SCHEMA = ?
-      AND TABLE_TYPE = 'BASE TABLE'
+        AND TABLE_TYPE = 'BASE TABLE'
       ORDER BY TABLE_NAME`,
       [databaseName]
     )
@@ -109,17 +115,15 @@ async function fetchMySQLSchema(config: DatabaseConfig): Promise<DatabaseSchema>
       const tableName = tableRow.name
 
       const [countRows] = await connection.execute(`SELECT COUNT(*) as count FROM \`${tableName}\``)
-      const rowCount = (countRows as { count: number }[])[0].count
+      const rowCount = (countRows as { count: number }[])[0]?.count ?? tableRow.rowCount ?? 0
 
       const columns = await fetchMySQLColumns(connection, databaseName, tableName)
-
       const foreignKeys = await fetchMySQLForeignKeys(connection, databaseName, tableName)
-
       const indexes = await fetchMySQLIndexes(connection, databaseName, tableName)
 
       tables.push({
         name: tableName,
-        rowCount: rowCount,
+        rowCount,
         comment: tableRow.comment || undefined,
         columns,
         foreignKeys,
@@ -148,16 +152,19 @@ async function fetchMySQLColumns(
 ): Promise<Column[]> {
   const [columnRows] = await connection.execute(
     `SELECT
-      COLUMN_NAME as name,
-      COLUMN_TYPE as type,
-      COLUMN_COMMENT as comment,
-      IS_NULLABLE as isNullable,
-      COLUMN_KEY as columnKey,
-      COLUMN_DEFAULT as defaultValue,
-      EXTRA as extra,
+      c.COLUMN_NAME as name,
+      c.COLUMN_TYPE as type,
+      c.COLUMN_COMMENT as comment,
+      c.IS_NULLABLE as isNullable,
+      c.COLUMN_KEY as columnKey,
+      c.COLUMN_DEFAULT as defaultValue,
+      c.EXTRA as extra,
+      c.CHARACTER_MAXIMUM_LENGTH as maxLength,
+      c.NUMERIC_PRECISION as numericPrecision,
+      c.NUMERIC_SCALE as numericScale,
 
-      /* ---  CHECK 제약조건 조회 쿼리 --- */
-     (SELECT cc.CHECK_CLAUSE
+      /* --- CHECK 제약조건 조회 --- */
+      (SELECT cc.CHECK_CLAUSE
        FROM information_schema.TABLE_CONSTRAINTS tc
        JOIN information_schema.CHECK_CONSTRAINTS cc 
          ON tc.CONSTRAINT_SCHEMA = cc.CONSTRAINT_SCHEMA
@@ -174,9 +181,7 @@ async function fetchMySQLColumns(
     [databaseName, tableName]
   )
 
-  type MySQLColumnRowWithCheck = MySQLColumnRow & { checkConstraint?: string }
-
-  return (columnRows as MySQLColumnRowWithCheck[]).map((row) => {
+  return (columnRows as MySQLColumnRowExtended[]).map((row) => {
     const column: Column = {
       name: row.name,
       type: row.type,
@@ -187,14 +192,17 @@ async function fetchMySQLColumns(
       unique: row.columnKey === 'UNI',
       autoIncrement: row.extra.includes('auto_increment'),
       default: row.defaultValue !== null ? String(row.defaultValue) : undefined,
-      check: row.checkConstraint || undefined
+      check: row.checkConstraint || undefined,
+      maxLength: row.maxLength ?? undefined,
+      numericPrecision: row.numericPrecision ?? undefined,
+      numericScale: row.numericScale ?? undefined
     }
 
-    // ENUM 타입 파싱
+    // ENUM 타입 파싱 (UI에서 enum 사용 중이면 유지)
     if (row.type.startsWith('enum(')) {
       const enumMatch = row.type.match(/enum\((.*)\)/)
       if (enumMatch) {
-        column.enum = enumMatch[1].split(',').map((v: string) => v.trim().replace(/^'|'$/g, ''))
+        column.enum = enumMatch[1].split(',').map((v) => v.trim().replace(/^'|'$/g, ''))
       }
     }
 
@@ -350,6 +358,9 @@ async function fetchPostgreSQLColumns(
     SELECT
       c.column_name AS name,
       c.data_type,
+      c.character_maximum_length,
+      c.numeric_precision,
+      c.numeric_scale,
       c.udt_name,
       c.udt_schema,
       c.is_nullable,
@@ -419,14 +430,19 @@ async function fetchPostgreSQLColumns(
 
   return columnResult.rows.map((row) => {
     const enumValues = row.is_enum && Array.isArray(row.enumlist) ? row.enumlist : null
+    const typeLower = row.data_type.toLowerCase()
 
-    return {
+    const column: Column = {
       name: row.name,
       type: enumValues ? `enum(${enumValues.join(', ')})` : row.data_type,
       enum: enumValues,
 
+      maxLength: row.character_maximum_length ?? undefined,
+      numericPrecision: row.numeric_precision ?? undefined,
+      numericScale: row.numeric_scale ?? undefined,
+
       isPrimaryKey: row.is_primary_key,
-      isForeignKey: false, // ✅ FK는 fetchPostgreSQLForeignKeys에서 처리됨
+      isForeignKey: false,
       notNull: row.is_nullable === 'NO',
       unique: row.is_unique,
       autoIncrement: row.column_default?.includes('nextval(') || false,
@@ -434,6 +450,29 @@ async function fetchPostgreSQLColumns(
       check: row.check_constraint || null,
       comment: row.comment || null
     }
+
+    if (/smallint/.test(typeLower)) {
+      column.minValue = -32768
+      column.maxValue = 32767
+    } else if (/integer/.test(typeLower)) {
+      column.minValue = -2147483648
+      column.maxValue = 2147483647
+    } else if (/bigint/.test(typeLower)) {
+      column.minValue = -9007199254740991
+      column.maxValue = 9007199254740991
+    }
+
+    // VARCHAR 계열인데 명시적 길이 제한이 없는 경우: 기본값 255
+    if (/character varying|varchar/.test(typeLower) && !column.maxLength) {
+      column.maxLength = 255
+    }
+
+    // TEXT 타입은 PostgreSQL에서 사실상 무제한이므로 length 제한 안 둠
+    if (/text/.test(typeLower)) {
+      column.maxLength = undefined
+    }
+
+    return column
   })
 }
 
