@@ -141,12 +141,22 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ tableName, onNext
 
   return (
     <div className="file-content">
-      <PageTitle
-        title={`파일 불러오기 - ${tableName}`}
-        description="파일을 이용해 더미 데이터를 생성할 수 있습니다."
-        size="small"
-      />
-      <hr className="divider" />
+      {isLoading ? (
+        <div className="loading-layout">
+          <div className="loading-spinner-wrapper">
+            <LoadingSpinner background="transparent" text="" width={700} />
+          </div>
+
+          <div className="loading-text-top">유자가 파일을 읽는 중 입니다...</div>
+        </div>
+      ) : (
+        <>
+          <PageTitle
+            title={`파일 불러오기 - ${tableName}`}
+            description="파일을 이용해 더미 데이터를 생성할 수 있습니다."
+            size="small"
+          />
+          <hr className="divider" />
 
           <div
             className={`upload-zone ${isDragging ? 'dragging' : ''}`}
