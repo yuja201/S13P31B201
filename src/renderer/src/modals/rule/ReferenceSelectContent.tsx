@@ -39,7 +39,6 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
   const [strategy, setStrategy] = useState<ReferenceStrategy>(() => {
     if (initialConfig?.dataSource === 'FIXED' || initialConfig?.dataSource === 'DEFAULT') {
       return 'FIXED_VALUE'
-
     }
     return 'RANDOM_SAMPLE'
   })
@@ -77,7 +76,7 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
   // 무작위 샘플링
   useEffect(() => {
     if (strategy === 'RANDOM_SAMPLE' && databaseId) {
-      const fetchSample = async () => {
+      const fetchSample = async (): Promise<void> => {
         setSamplePreview({ status: 'loading', value: '' })
         try {
           const result = await window.api.schema.getRandomSample({
@@ -505,7 +504,7 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
           margin-top: 10px;
         }
       `}</style>
-    </div >
+    </div>
   )
 }
 
