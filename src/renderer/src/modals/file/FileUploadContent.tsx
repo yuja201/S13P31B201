@@ -22,7 +22,7 @@ interface FileUploadContentProps {
 }
 
 const SUPPORTED_EXTENSIONS: FileType[] = ['csv', 'json', 'txt']
-const MAX_PREVIEW_CHARS = 200_000 // 약 200KB 미리보기
+const MAX_PREVIEW_CHARS = 200_000 // about 200 KB of preview text
 
 const FileUploadContent: React.FC<FileUploadContentProps> = ({ tableName, onNext }) => {
   const [isDragging, setIsDragging] = useState(false)
@@ -181,79 +181,50 @@ const FileUploadContent: React.FC<FileUploadContentProps> = ({ tableName, onNext
       )}
 
       <style>{`
-      .file-content {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        width: 640px;
-        padding: 28px 32px;
-      }
+        .file-content {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          width: 640px;
+          padding: 28px 32px;
+        }
 
-      .divider {
-        width: 100%;
-        border: none;
-        border-top: 1px solid var(--color-dark-gray);
-        margin: 8px 0 16px;
-      }
+        .divider {
+          width: 100%;
+          border: none;
+          border-top: 1px solid var(--color-dark-gray);
+          margin: 8px 0 16px;
+        }
 
-      .upload-zone {
-        position: relative;
-        border: 2px solid var(--color-gray-200);
-        border-radius: 12px;
-        width: 100%;
-        height: 280px;
-        background-color: var(--color-white);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.25s;
-        cursor: pointer;
-      }
+        .upload-zone {
+          position: relative;
+          border: 2px solid var(--color-gray-200);
+          border-radius: 12px;
+          width: 100%;
+          height: 280px;
+          background-color: var(--color-white);
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          transition: all 0.25s;
+          cursor: pointer;
+        }
 
-      .upload-zone.dragging {
-        border-color: var(--color-main-blue);
-        background-color: var(--color-light-blue);
-      }
+        .upload-zone.dragging {
+          border-color: var(--color-main-blue);
+          background-color: var(--color-light-blue);
+        }
 
-      .file-input {
-        position: absolute;
-        opacity: 0;
-        inset: 0;
-        width: 100%;
-        height: 100%;
-        cursor: pointer;
-      }
-
-      /* 로딩 UI */
-      .loading-layout {
-        width: 100%;
-        height: 280px;
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        gap: 22px;
-        background: var(--color-background);
-      }
-
-      .loading-spinner-wrapper {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        width: 650px;  
-        height: 160px;  
-      }
-
-      .loading-text-top,
-      .loading-text-bottom {
-        font-size: 22px;
-        font-weight: 600;
-        color: var(--color-black);
-        text-align: center;
-        user-select: none;
-      }
-    `}</style>
+        .file-input {
+          position: absolute;
+          opacity: 0;
+          inset: 0;
+          width: 100%;
+          height: 100%;
+          cursor: pointer;
+        }
+      `}</style>
     </div>
   )
 }
