@@ -1,7 +1,7 @@
 import React from 'react'
 import { LineChart, Line, Area, ResponsiveContainer, Tooltip, YAxis, XAxis } from 'recharts'
 
-interface StatsCardProps {
+interface TestCardProps {
   title: string
   subtitle: string
   total: number
@@ -11,7 +11,7 @@ interface StatsCardProps {
   positive?: boolean
 }
 
-const StatsCard: React.FC<StatsCardProps> = ({
+const TestCard: React.FC<TestCardProps> = ({
   title,
   subtitle,
   total,
@@ -164,4 +164,4 @@ const StatsCard: React.FC<StatsCardProps> = ({
   )
 }
 
-export default StatsCard
+export default TestCard
