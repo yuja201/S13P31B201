@@ -1,137 +1,163 @@
 import React from 'react'
-import { SiSpeedtest } from 'react-icons/si'
-import Button from './Button'
-
-interface Metric {
-  label: string
-  value: string | number
-}
+import { LineChart, Line, Area, ResponsiveContainer, Tooltip, YAxis, XAxis } from 'recharts'
 
 interface TestCardProps {
   title: string
-  description: string
-  metrics: Metric[]
-  onStart: () => void
+  subtitle: string
+  total: number
+  currentWeek: number
+  changePercent: number
+  data: { name: string; value: number }[]
+  positive?: boolean
 }
 
-const TestCard: React.FC<TestCardProps> = ({ title, description, metrics, onStart }) => {
+const TestCard: React.FC<TestCardProps> = ({
+  title,
+  subtitle,
+  total,
+  currentWeek,
+  changePercent,
+  data,
+  positive = true
+}) => {
   return (
     <>
-      <div className="test-card">
-        {/* 헤더 영역 */}
-        <div className="test-card__header">
-          <div className="test-card__icon">
-            <SiSpeedtest size={28} color="#134686" />
-          </div>
-          <div>
-            <div className="test-card__title">{title}</div>
-            <div className="test-card__desc">{description}</div>
-          </div>
+      <div className="stats-card">
+        {/* 상단 제목 영역 */}
+        <div className="stats-card__header">
+          <div className="stats-card__title">{title}</div>
+          <div className="stats-card__subtitle">{subtitle}</div>
         </div>
 
-        {/* 지표 영역 */}
-        <div className="test-card__metrics">
-          {metrics.map((m, idx) => (
-            <div key={idx} className="test-card__metric">
-              <div className="test-card__metric-label">{m.label}</div>
-              <div className="test-card__metric-value">{m.value}</div>
+        {/* 하단 본문 영역 */}
+        <div className="stats-card__bottom">
+          {/* 왼쪽: 수치 정보 */}
+          <div className="stats-card__content">
+            <div className="stats-card__total">{total}번</div>
+            <div className="stats-card__current">이번 주 {currentWeek}번</div>
+            <div
+              className={`stats-card__percent ${
+                positive ? 'stats-card__percent--up' : 'stats-card__percent--down'
+              }`}
+            >
+              {positive ? '+' : '-'}
+              {changePercent}% 지난 주 대비
             </div>
-          ))}
-        </div>
+          </div>
 
-        {/* 버튼 영역 */}
-        <div className="test-card__footer">
-          <Button variant="blue" size="md" onClick={onStart}>
-            테스트 시작 →
-          </Button>
+          {/* 오른쪽: 그래프 */}
+          <div className="stats-card__chart">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={data} margin={{ top: 20, right: 0, bottom: -10, left: 0 }}>
+                <defs>
+                  <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1.2">
+                    <stop offset="0%" stopColor="#10b981" stopOpacity={0.6} />
+                    <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="name" hide />
+                <YAxis hide />
+                <Tooltip cursor={false} contentStyle={{ display: 'none' }} />
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke="none"
+                  fill="url(#chartGradient)"
+                  fillOpacity={1}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="value"
+                  stroke="#10b981"
+                  strokeWidth={2}
+                  dot={false}
+                  activeDot={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
 
       <style>{`
-        .test-card {
-          background-color: var(--color-white);
-          border: 1px solid var(--color-gray-200);
-          border-radius: 16px;
-          box-shadow: 0 2px 6px rgba(0,0,0,0.05);
-          padding: 32px 40px;
-          width: 480px;
+        /* 전체 카드 */
+        .stats-card {
           display: flex;
           flex-direction: column;
-          align-items: center;
-          gap: 24px;
+          justify-content: space-between;
+          background-color: var(--color-white);
+          border: 1px solid rgba(0, 0, 0, 0.1);
+          border-radius: 14px;
+          box-shadow: var(--shadow);
+          padding: 24px;
+          width: 325px;
+          height: 215px;
           box-sizing: border-box;
+          gap: 24px;
         }
 
-        /* 헤더 */
-        .test-card__header {
-          display: flex;
-          align-items: top;
-          gap: 20px;
-          text-align: left;
-          width: 100%;
-        }
-
-        .test-card__icon {
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          width: 42px;
-          height: 42px;
-          background-color: var(--color-light-blue);
-          border-radius: 50%;
-        }
-
-        .test-card__title {
-          font: var(--preSemiBold24);
+        /* 상단 텍스트 */
+        .stats-card__title {
+          font: var(--preSemiBold16);
           color: var(--color-black);
         }
 
-        .test-card__desc {
-          font: var(--preRegular16);
+        .stats-card__subtitle {
+          font: var(--preRegular14);
           color: var(--color-dark-gray);
           margin-top: 2px;
         }
 
-        /* 지표 */
-        .test-card__metrics {
+        /* 하단 (좌우 2열) */
+        .stats-card__bottom {
           display: flex;
-          justify-content: center;
-          align-items: center;
+          justify-content: space-between;
+          align-items: stretch;
+          flex: 1;
           gap: 24px;
-          width: 100%;
-          flex-wrap: wrap;
         }
 
-        .test-card__metric {
+        /* 왼쪽 내용 */
+        .stats-card__content {
           display: flex;
           flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          width: 110px;
-          height: 110px;
-          flex-shrink: 0;
-          border: 1px solid var(--color-gray-blue);
-          border-radius: 50%;
-          text-align: center;
-          box-sizing: border-box;
+          justify-content: flex-start;
+          flex: 1;
         }
 
-        .test-card__metric-label {
-          font: var(--preRegular16);
+        .stats-card__total {
+          font-weight: var(--fw-semiBold);
+          font-size: 32px;
+          line-height: 1.2;
+          color: var(--color-black);
+          margin-bottom: 2px;
+        }
+
+        .stats-card__current {
+          font: var(--preRegular14);
           color: var(--color-dark-gray);
+          margin-bottom: 8px;
         }
 
-        .test-card__metric-value {
-          font: var(--preSemiBold24);
-          color: var(--color-main-blue);
-          margin-top: 4px;
+        .stats-card__percent {
+          font: var(--preMedium14);
         }
 
-        /* 버튼 */
-        .test-card__footer {
-          display: flex;
-          justify-content: center;
-          width: 100%;
+        .stats-card__percent--up {
+          color: #10b981;
+        }
+
+        .stats-card__percent--down {
+          color: #ef4444;
+        }
+
+        /* 오른쪽 그래프 */
+        .stats-card__chart {
+          flex: 1;
+          height: 100%;
+          flex: 1;
+          height: 60px;
+          align-self: flex-end;
         }
       `}</style>
     </>
