@@ -25,7 +25,7 @@ async function fetchMySQLRandomSample(
     await connection.end()
     const result = (rows as { [key: string]: unknown }[])[0]
     if (!result) {
-      throw new Error('테이블에 데이터가 없습니다.')
+      return { sample: null }
     }
     return { sample: result[column] }
   } catch (error: unknown) {
@@ -93,7 +93,7 @@ async function fetchPostgreSQLRandomSample(
     await client.end()
 
     if (result.rows.length === 0) {
-      throw new Error('테이블에 데이터가 없습니다.')
+      return { sample: null }
     }
     return { sample: result.rows[0][column] }
   } catch (error: unknown) {

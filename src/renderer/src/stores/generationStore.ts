@@ -111,6 +111,7 @@ interface GenerationState {
     recordCnt: number
     columns: { columnName: string; dataSource: string; metaData: object }[]
   }>
+  reset: () => void
 }
 
 export const useGenerationStore = create<GenerationState>((set, get) => ({
@@ -361,5 +362,6 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
 
       return { tableName, recordCnt: table.recordCnt, columns }
     })
-  }
+  },
+  reset: () => set({ tables: {}, selectedTables: new Set() })
 }))
