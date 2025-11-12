@@ -134,10 +134,9 @@ const Sidebar: React.FC<SidebarProps> = ({ locked = false, projectName, dbType, 
           </NavLink>
           <NavLink
             to={projectId ? `/main/dummy/${projectId}` : '#'}
-            className={(): string => {
-              const isDummyRelated =
-                location.pathname.startsWith(`/main/dummy/${projectId}`) ||
-                location.pathname.startsWith(`/main/select-method/${projectId}`)
+            className={() => {
+              const path = location.pathname
+              const isDummyRelated = path.startsWith(`/main/dummy/${projectId}`)
               return `sidebar-link ${isDummyRelated ? 'sidebar-link-active' : ''}`
             }}
           >
