@@ -77,32 +77,30 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
   // 무작위 샘플링
   useEffect(() => {
     if (strategy === 'RANDOM_SAMPLE' && databaseId) {
-      if (samplePreview.status === 'success' || samplePreview.status === 'loading') {
-        return
-      }
-
-      setSamplePreview({ status: 'loading', value: '' })
-      window.api.schema
-        .getRandomSample({
-          databaseId,
-          table: referencedTableName,
-          column: referencedColumnName
-        })
-        .then((result) => {
+      const fetchSample = async () => {
+        setSamplePreview({ status: 'loading', value: '' })
+        try {
+          const result = await window.api.schema.getRandomSample({
+            databaseId,
+            table: referencedTableName,
+            column: referencedColumnName
+          })
           if (result && result.sample !== null && result.sample !== undefined) {
             setSamplePreview({ status: 'success', value: String(result.sample) })
           } else {
             setSamplePreview({
-              status: 'empty', value: '먼저 해당 테이블의 데이터를 생성해주세요.'
+              status: 'empty',
+              value: '먼저 해당 테이블의 데이터를 생성해주세요.'
             })
           }
-        })
-        .catch((err) => {
+        } catch (err) {
           console.error(err)
           setSamplePreview({ status: 'error', value: '샘플 로딩 실패' })
-        })
+        }
+      }
+      fetchSample()
     }
-  }, [strategy, databaseId, referencedTableName, referencedColumnName, samplePreview.status])
+  }, [strategy, databaseId, referencedTableName, referencedColumnName])
 
   //  고정값 검증
   const handleValidateValue = (): void => {
