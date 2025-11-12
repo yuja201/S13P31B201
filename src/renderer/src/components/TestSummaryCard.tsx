@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useId } from 'react'
 import { LineChart, Line, Area, ResponsiveContainer, Tooltip, YAxis, XAxis } from 'recharts'
 
 interface TestSummaryCardProps {
@@ -20,6 +20,11 @@ const TestSummaryCard: React.FC<TestSummaryCardProps> = ({
   data,
   positive = true
 }) => {
+  const formattedChangePercent = Math.abs(changePercent)
+  const sign = positive ? '+' : '-'
+  const rawGradientId = useId()
+  const gradientId = `stats-card-gradient-${rawGradientId.replace(/:/g, '')}`
+
   return (
     <>
       <div className="stats-card">
@@ -40,8 +45,8 @@ const TestSummaryCard: React.FC<TestSummaryCardProps> = ({
                 positive ? 'stats-card__percent--up' : 'stats-card__percent--down'
               }`}
             >
-              {positive ? '+' : '-'}
-              {changePercent}% 지난 주 대비
+              {sign}
+              {formattedChangePercent}% 지난 주 대비
             </div>
           </div>
 
@@ -50,7 +55,7 @@ const TestSummaryCard: React.FC<TestSummaryCardProps> = ({
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data} margin={{ top: 20, right: 0, bottom: -10, left: 0 }}>
                 <defs>
-                  <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1.2">
+                  <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1.2">
                     <stop offset="0%" stopColor="#10b981" stopOpacity={0.6} />
                     <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
                   </linearGradient>
@@ -62,7 +67,7 @@ const TestSummaryCard: React.FC<TestSummaryCardProps> = ({
                   type="monotone"
                   dataKey="value"
                   stroke="none"
-                  fill="url(#chartGradient)"
+                  fill={`url(#${gradientId})`}
                   fillOpacity={1}
                 />
                 <Line
