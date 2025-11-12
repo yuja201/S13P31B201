@@ -1,9 +1,32 @@
 import React from 'react'
 import InfoCard from '@renderer/components/InfoCard'
-import PageTitle from '@renderer/components/PageTitle'
+import warningIcon from '@renderer/assets/imgs/warning.svg'
 import AIRecommendation from '@renderer/components/AIRecommendation'
+import TestHeader from '@renderer/components/TestHeader'
+import SummaryCards from '@renderer/components/SummaryCards'
 
 const IndexTestView: React.FC = () => {
+  // TODO: 실제 기능 구현
+  const handleRerunTest = (): void => {
+    console.log('테스트 재실행')
+  }
+  const handleDownload = (): void => {
+    console.log('결과 다운로드')
+  }
+
+  // TODO: 요약 정보 파싱
+  const summaryMainCard = {
+    icon: warningIcon,
+    title: '정상 인덱스 비율',
+    value: '50%',
+    color: 'orange' as const
+  }
+  const summarySubCardStats = [
+    { label: '정상', value: 10, color: 'green' as const },
+    { label: '미사용', value: 7, color: 'red' as const },
+    { label: '저효율', value: 3, color: 'orange' as const }
+  ]
+
   // TODO: 실제 데이터 파싱
   const indexData = [
     {
@@ -25,7 +48,6 @@ const IndexTestView: React.FC = () => {
       content: '크기: 25MB 스캔: 8,320회  생성: 2025-10-15  카디널리티: 98.5%  고유값: 1,245,890개'
     }
   ]
-
   const aiRecommendations = [
     {
       id: 1,
@@ -53,12 +75,21 @@ const IndexTestView: React.FC = () => {
   return (
     <>
       <div className="view-container">
-        <PageTitle
-          title="인덱스 테스트 결과"
-          description="인덱스 효율성 분석 및 최적화 제안을 확인해보세요."
+        <TestHeader
+          title="사용자 쿼리 테스트 결과"
+          subtitle="테스트 결과를 확인하고 다시 실행할 수 있습니다."
+          onRerunTest={handleRerunTest}
+          onDownload={handleDownload}
         />
 
-        <div className="section-gap">
+        <SummaryCards
+          mainCard={summaryMainCard}
+          subCard={{
+            stats: summarySubCardStats
+          }}
+        />
+
+        <div className="index-section-gap">
           <h2 className="section-title preSemiBold20">보완 인덱스 목록</h2>
           <div className="section-grid">
             {indexData.map((index) => (
@@ -73,7 +104,7 @@ const IndexTestView: React.FC = () => {
           </div>
         </div>
 
-        <div className="section-gap">
+        <div className="ai-section-gap">
           <h2 className="section-title preSemiBold20">AI 개선 추천</h2>
           <AIRecommendation />
           <AIRecommendation list={aiRecommendations} />
@@ -88,7 +119,11 @@ const IndexTestView: React.FC = () => {
           overflow-y: auto;
         }
 
-        .section-gap {
+        .index-section-gap {
+          margin-top: 20px;
+        }
+
+        .ai-section-gap {
           margin-top: 40px;
         }
 
