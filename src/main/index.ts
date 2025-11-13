@@ -13,6 +13,7 @@ import './ipc/file-handlers'
 import './ipc/env-handlers'
 import './ipc/domain-handler'
 import './ipc/index-test-handlers'
+import './ipc/test-handler'
 
 const logger = createLogger('Main')
 

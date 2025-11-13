@@ -139,6 +139,9 @@ interface API {
       error?: string
     }>
   }
+  test: {
+    getDashboardData: () => Promise<DashboardData>
+  }
 }
 
 declare global {

@@ -177,6 +177,11 @@ const api = {
   // Index test operations
   indexTest: {
     analyze: (databaseId: number) => ipcRenderer.invoke('index:analyze', databaseId)
+  },
+
+  // test crud operations
+  test: {
+    getDashboardData: () => ipcRenderer.invoke('tests:get-dashboard-data')
   }
 }
 
