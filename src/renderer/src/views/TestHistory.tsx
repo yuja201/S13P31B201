@@ -82,7 +82,7 @@ const mockHistoryData = [
     summary: '인덱스 스캔 비율: 85%'
   }
 ]
-const HistoryView: React.FC = () => {
+const TestHistoryView: React.FC = () => {
   const title = '테스트 히스토리'
   const description = '이전에 진행된 테스트 이력을 확인하세요'
 
@@ -156,7 +156,7 @@ const HistoryView: React.FC = () => {
               disabled={currentPage === 1}
               className="pagination-button"
             >
-              &lt; 이전
+              &lt;
             </button>
 
             <div className="page-info">
@@ -169,7 +169,7 @@ const HistoryView: React.FC = () => {
               disabled={currentPage === totalPages}
               className="pagination-button"
             >
-              다음 &gt;
+              &gt;
             </button>
           </div>
         )}
@@ -269,24 +269,30 @@ const HistoryView: React.FC = () => {
         }
 
         .pagination-button {
-            background-color: transparent;
-            border: 1px solid var(--color-gray-300, #ccc);
-            color: var(--color-dark-gray, #333);
-            padding: 8px 12px;
-            margin: 0 4px;
-            cursor: pointer;
-            border-radius: 4px;
-            transition: all 0.2s ease;
+          border: none;
+          color: #134686;
+          padding: 8px 14px;
+          margin: 0 4px;
+          cursor: pointer;
+          border-radius: 8px;
+          font-weight: 600;
+          transition: all 0.2s ease;
+          background-color: var(--color-background);
         }
+
+        .pagination-button:hover:not(:disabled) {
+          background-color: #E6EEFF;
+          border-color: #B6CCFF;
+        }
+
         .pagination-button:disabled {
-            cursor: not-allowed;
-            opacity: 0.5;
+          opacity: 0.5;
+          cursor: not-allowed;
         }
         
-        /* 기존 .page-numbers 관련 CSS는 완전히 제거했습니다. */
       `}</style>
     </>
   )
 }
 
-export default HistoryView
+export default TestHistoryView
