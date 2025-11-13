@@ -262,3 +262,49 @@ export interface IndexAnalysisSummary {
   // 권장사항
   recommendations?: string[]
 }
+
+export interface Test {
+  id: number
+  project_id: number
+  project_name: string
+  type: 'QUERY' | 'INDEX'
+  summary: string | null
+  result: string
+  response_time: number | null
+  index_ratio: number | null
+  created_at: number
+}
+
+export interface TestInput {
+  project_id: number
+  type: 'QUERY' | 'INDEX'
+  summary?: string | null
+  result: string
+  response_time?: number | null
+  index_ratio?: number | null
+}
+
+export interface TestUpdate {
+  id: number
+  project_id?: number
+  type?: 'QUERY' | 'INDEX'
+  summary?: string | null
+  result?: string
+  response_time?: number | null
+  index_ratio?: number | null
+}
+
+export interface DailyQueryStat {
+  date: string // YYYY-MM-DD
+  avg_response_time: number | null
+}
+
+export interface DailyIndexStat {
+  date: string // YYYY-MM-DD
+  avg_index_ratio: number | null
+}
+
+export interface TestSummary {
+  count: number
+  avg_value: number | null
+}
