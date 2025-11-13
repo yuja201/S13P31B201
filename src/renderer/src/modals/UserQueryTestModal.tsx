@@ -176,9 +176,9 @@ const UserQueryTestModal: React.FC<UserQueryTestModalProps> = ({ isOpen, onClose
         
         .query-modal .actions {
           display: flex;
-          justify-content: flex-end;  /* 🔥 오른쪽 정렬 */
+          justify-content: flex-end;
           gap: 12px;
-          margin-top: 24px;           /* 🔥 위 여백 추가 */
+          margin-top: 24px;
         }
       `}</style>
     </Modal>
