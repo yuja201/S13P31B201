@@ -106,7 +106,6 @@ const IndexTestView: React.FC = () => {
       missing_fk_index: 'FK 누락',
       column_order: '순서 문제',
       oversized: '과도한 크기',
-      bloated: 'Bloat',
       inappropriate_type: '부적절한 타입',
       underindexed_table: '인덱스 부족'
     }
@@ -121,6 +120,12 @@ const IndexTestView: React.FC = () => {
         const contentParts: string[] = []
         contentParts.push(`${issue.description}`)
         contentParts.push(`${issue.recommendation}`)
+        if (issue.impact) {
+          contentParts.push(`영향: ${issue.impact}`)
+        }
+        if (issue.relatedIndexName) {
+          contentParts.push(`관련 인덱스: ${issue.relatedIndexName}`)
+        }
         if (index.indexSizeBytes) {
           contentParts.push(`크기: ${(index.indexSizeBytes / 1024 / 1024).toFixed(2)}MB`)
         }
@@ -130,14 +135,14 @@ const IndexTestView: React.FC = () => {
         if (index.selectivity !== undefined) {
           contentParts.push(`선택도: ${index.selectivity.toFixed(2)}%`)
         }
-        if (index.bloatRatio) {
-          contentParts.push(`Bloat: ${index.bloatRatio}%`)
-        }
         contentParts.push(`테이블: ${index.tableName}`)
         contentParts.push(`컬럼: ${index.columns.join(', ')}`)
+        if (issue.suggestedSQL) {
+          contentParts.push(`\n권장 SQL:\n${issue.suggestedSQL}`)
+        }
 
         cards.push({
-          id: `${index.tableName}.${index.indexName}.${issue.category}`,
+          id: `${index.tableName}.${index.indexName}.${issue.category}.${cards.length}`,
           title: index.indexName,
           badge: {
             text: categoryLabel,

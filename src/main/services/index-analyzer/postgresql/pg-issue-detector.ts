@@ -25,41 +25,9 @@ export function detectUnusedIndexes(
       impact: '미사용 인덱스는 INSERT/UPDATE 성능을 저하시키고 저장 공간을 낭비합니다.',
       metrics: {
         scanCount: 0,
-        sizeMB: parseFloat(sizeMB.toFixed(2)),
-        potentialSavingsMB: parseFloat(sizeMB.toFixed(2))
+        sizeMB: parseFloat(sizeMB.toFixed(2))
       },
       suggestedSQL: `DROP INDEX IF EXISTS ${indexName};`
-    }
-  }
-
-  return null
-}
-
-/**
- * 인덱스 bloat 탐지
- */
-export function detectIndexBloat(
-  indexName: string,
-  _tableName: string,
-  bloatRatio: number,
-  indexSizeBytes: number
-): IndexIssue | null {
-  if (bloatRatio > 30) {
-    const sizeMB = indexSizeBytes / 1024 / 1024
-    const bloatMB = (sizeMB * bloatRatio) / 100
-
-    return {
-      severity: bloatRatio > 50 ? 'critical' : 'recommended',
-      category: 'bloated',
-      description: `인덱스 '${indexName}'에 bloat가 ${bloatRatio.toFixed(1)}% 발생했습니다.`,
-      recommendation: `REINDEX를 실행하여 bloat를 제거하세요.`,
-      impact: `약 ${bloatMB.toFixed(2)}MB의 공간 낭비`,
-      metrics: {
-        bloatRatio: parseFloat(bloatRatio.toFixed(2)),
-        sizeMB: parseFloat(sizeMB.toFixed(2)),
-        potentialSavingsMB: parseFloat(bloatMB.toFixed(2))
-      },
-      suggestedSQL: `REINDEX INDEX ${indexName};`
     }
   }
 
@@ -82,8 +50,7 @@ export function detectLowSelectivity(
   const firstColumn = columns.find((c) => c.column_position === 1)
   if (!firstColumn) return null
 
-  // n_distinct가 없다면 사용 불가
-  if (!nDistinct) return null
+  if (nDistinct == null) return null
 
   // n_distinct가 음수면 비율(예: -0.5 = 50% unique), 양수면 절대값
   const cardinality = nDistinct < 0 ? Math.abs(nDistinct) * tableRows : nDistinct
@@ -132,9 +99,11 @@ export function detectColumnOrderIssues(
   if (columns.length < 2) return null
 
   const firstColumn = columns.find((c) => c.column_position === 1)
-  if (!firstColumn || !nDistinct || tableRows === 0) {
+  if (!firstColumn || tableRows === 0) {
     return null
   }
+
+  if (nDistinct == null) return null
 
   // n_distinct로 선택도 계산
   const cardinality = nDistinct < 0 ? Math.abs(nDistinct) * tableRows : nDistinct
@@ -214,12 +183,20 @@ export function detectRedundantIndexes(indexes: Map<string, IndexColumn[]>): Ind
  * 외래키 인덱스 누락 탐지
  */
 export function detectMissingFkIndexes(
-  foreignKeys: Array<{ tablename: string; column_name: string; constraint_name: string }>,
+  foreignKeys: Array<{
+    tablename: string
+    column_name: string
+    constraint_name: string
+    ordinal_position: number
+  }>,
   indexes: Map<string, Map<string, IndexColumn[]>>
 ): IndexIssue[] {
   const issues: IndexIssue[] = []
 
   for (const fk of foreignKeys) {
+    // 복합 FK의 경우 첫 번째 컬럼만 검사
+    if (fk.ordinal_position !== 1) continue
+
     const tableIndexes = indexes.get(fk.tablename)
     if (!tableIndexes) continue
 

@@ -6,12 +6,10 @@ import {
   fetchTableStats,
   fetchForeignKeys,
   fetchColumnTypes,
-  fetchColumnStats,
-  fetchIndexBloat
+  fetchColumnStats
 } from './pg-queries'
 import {
   detectUnusedIndexes,
-  detectIndexBloat,
   detectLowSelectivity,
   detectColumnOrderIssues,
   detectRedundantIndexes,
@@ -32,15 +30,12 @@ export async function collectPostgreSQLIndexStats(
   const foreignKeys = await fetchForeignKeys(client, schemaName)
   const columnTypes = await fetchColumnTypes(client, schemaName)
   const columnStats = await fetchColumnStats(client, schemaName)
-  const indexBloats = await fetchIndexBloat(client, schemaName)
 
   // 2. 데이터 구조화
   // 테이블별 통계 맵
   const tableStatsMap = new Map(tableStats.map((t) => [t.tablename, t]))
   // 인덱스별 통계 맵
   const indexStatsMap = new Map(indexStats.map((i) => [`${i.tablename}.${i.indexname}`, i]))
-  // 인덱스별 bloat 맵
-  const bloatMap = new Map(indexBloats.map((b) => [`${b.tablename}.${b.indexname}`, b.bloat_ratio]))
 
   interface IndexColumnWithDetails {
     schemaname: string
@@ -84,11 +79,12 @@ export async function collectPostgreSQLIndexStats(
     // 테이블 레벨 이슈 탐지
     const totalIndexSize = Array.from(indexes.keys()).reduce((sum, indexName) => {
       const stat = indexStatsMap.get(`${tableName}.${indexName}`)
-      return sum + (stat?.index_size_bytes || 0)
+      const size = stat?.index_size_bytes ? Number(stat.index_size_bytes) : 0
+      return sum + size
     }, 0)
 
     const oversizedIssue = tableStat
-      ? detectOversizedIndexes(tableName, tableStat.table_size_bytes, totalIndexSize)
+      ? detectOversizedIndexes(tableName, Number(tableStat.table_size_bytes), totalIndexSize)
       : null
 
     const underindexedIssue = detectUnderindexedTables(
@@ -111,17 +107,11 @@ export async function collectPostgreSQLIndexStats(
       // 인덱스 통계 가져오기
       const stat = indexStatsMap.get(`${tableName}.${indexName}`)
       const scanCount = stat?.idx_scan || 0
-      const indexSizeBytes = stat?.index_size_bytes || 0
+      const indexSizeBytes = stat?.index_size_bytes ? Number(stat.index_size_bytes) : 0
 
       // 미사용 인덱스 탐지
       const unusedIssue = detectUnusedIndexes(indexName, tableName, scanCount, indexSizeBytes)
       if (unusedIssue) issues.push(unusedIssue)
-
-      // Bloat 탐지
-      const bloatRatioRaw = bloatMap.get(`${tableName}.${indexName}`) || 0
-      const bloatRatio = typeof bloatRatioRaw === 'number' ? bloatRatioRaw : parseFloat(bloatRatioRaw) || 0
-      const bloatIssue = detectIndexBloat(indexName, tableName, bloatRatio, indexSizeBytes)
-      if (bloatIssue) issues.push(bloatIssue)
 
       // 낮은 선택도 탐지
       const firstColumn = columns.find((c) => c.column_position === 1)
@@ -181,13 +171,11 @@ export async function collectPostgreSQLIndexStats(
         scanCount: stat?.idx_scan,
         tuplesRead: stat?.idx_tup_read,
         tuplesFetched: stat?.idx_tup_fetch,
-        indexSizeBytes: stat?.index_size_bytes,
-        bloatRatio: bloatRatio > 0 ? parseFloat(bloatRatio.toFixed(2)) : undefined,
+        indexSizeBytes: stat?.index_size_bytes ? Number(stat.index_size_bytes) : undefined,
         dbmsType: 'postgresql',
         statsAvailable: {
           usageStats: true,
-          sizeStats: true,
-          bloatStats: true
+          sizeStats: true
         }
       })
     }

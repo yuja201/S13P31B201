@@ -70,7 +70,7 @@ export function detectLowSelectivity(
 ): IndexIssue | null {
   // 복합 인덱스의 첫 번째 컬럼만 체크
   const firstColumn = columns.find((c) => c.seq_in_index === 1)
-  if (!firstColumn || !firstColumn.cardinality || tableRows === 0) {
+  if (!firstColumn || firstColumn.cardinality == null || tableRows === 0) {
     return null
   }
 
@@ -108,12 +108,20 @@ export function detectLowSelectivity(
  * 외래키 인덱스 누락 탐지
  */
 export function detectMissingFkIndexes(
-  foreignKeys: Array<{ table_name: string; column_name: string; constraint_name: string }>,
+  foreignKeys: Array<{
+    table_name: string
+    column_name: string
+    constraint_name: string
+    ordinal_position: number
+  }>,
   indexes: Map<string, Map<string, IndexColumn[]>>
 ): IndexIssue[] {
   const issues: IndexIssue[] = []
 
   for (const fk of foreignKeys) {
+    // 복합 FK의 경우 첫 번째 컬럼만 검사
+    if (fk.ordinal_position !== 1) continue
+
     const tableIndexes = indexes.get(fk.table_name)
     if (!tableIndexes) continue
 
@@ -155,11 +163,12 @@ export function detectColumnOrderIssues(
   if (columns.length < 2) return null
 
   const firstColumn = columns.find((c) => c.seq_in_index === 1)
-  if (!firstColumn || !firstColumn.cardinality || tableRows === 0) {
+  if (!firstColumn || tableRows === 0) {
     return null
   }
 
-  const firstSelectivity = (firstColumn.cardinality / tableRows) * 100
+  const cardinality = firstColumn.cardinality ?? 0
+  const firstSelectivity = (cardinality / tableRows) * 100
 
   // 첫 번째 컬럼의 선택도가 낮으면 경고
   if (firstSelectivity < 20) {
@@ -225,7 +234,11 @@ export function detectInappropriateTypeIndexes(
     const { data_type } = typeInfo
 
     // TEXT/BLOB 타입에 전체 인덱스
-    if (['TEXT', 'BLOB', 'MEDIUMTEXT', 'LONGTEXT', 'MEDIUMBLOB', 'LONGBLOB'].includes(data_type)) {
+    if (
+      ['TEXT', 'BLOB', 'MEDIUMTEXT', 'LONGTEXT', 'MEDIUMBLOB', 'LONGBLOB'].includes(
+        data_type.toUpperCase()
+      )
+    ) {
       issues.push({
         severity: 'recommended',
         category: 'inappropriate_type',
