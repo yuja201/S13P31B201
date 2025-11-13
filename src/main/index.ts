@@ -12,6 +12,7 @@ import './ipc/rule-handlers'
 import './ipc/file-handlers'
 import './ipc/env-handlers'
 import './ipc/domain-handler'
+import './ipc/index-test-handlers'
 
 const logger = createLogger('Main')
 

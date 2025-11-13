@@ -172,6 +172,11 @@ const api = {
     getAll: (): Promise<DomainCategory[]> => ipcRenderer.invoke('domain:getAll'),
     getByLogicalType: (logicalType: string): Promise<DomainCategory[]> =>
       ipcRenderer.invoke('domain:getByLogicalType', logicalType)
+  },
+
+  // Index test operations
+  indexTest: {
+    analyze: (databaseId: number) => ipcRenderer.invoke('index:analyze', databaseId)
   }
 }
 

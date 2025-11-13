@@ -14,6 +14,7 @@ import InfoView from '@renderer/views/InfoView'
 import SchemaView from '@renderer/views/SchemaView'
 import CreateDummyView from '@renderer/views/CreateDummyView'
 import TestView from '@renderer/views/TestView'
+import IndexTestView from '@renderer/views/IndexTestView'
 import HistoryView from '@renderer/views/HistoryView'
 import SelectMethodView from '@renderer/views/SelectMethodView'
 import DummyInsertView from '@renderer/views/DummyInsertView'
@@ -44,6 +45,7 @@ const router = createHashRouter([
       { path: 'main/info/:projectId', element: <InfoView />, errorElement: <ErrorView /> },
       { path: 'main/schema/:projectId', element: <SchemaView />, errorElement: <ErrorView /> },
       { path: 'main/test/:projectId', element: <TestView />, errorElement: <ErrorView /> },
+      { path: 'main/test/:projectId/index', element: <IndexTestView />, errorElement: <ErrorView /> },
       { path: 'main/history/:projectId', element: <HistoryView />, errorElement: <ErrorView /> },
       {
         path: 'main/dummy/:projectId',
