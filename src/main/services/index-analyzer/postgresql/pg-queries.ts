@@ -27,7 +27,7 @@ export async function fetchIndexStatsWithUsage(
       s.idx_scan,
       s.idx_tup_read,
       s.idx_tup_fetch,
-      CAST(pg_relation_size(s.indexrelid) AS NUMERIC) as index_size_bytes,
+      pg_relation_size(s.indexrelid)::float8 as index_size_bytes,
       pg_get_indexdef(s.indexrelid) as index_def
     FROM pg_stat_user_indexes s
     WHERE s.schemaname = $1
@@ -106,7 +106,7 @@ export async function fetchTableStats(
       n_live_tup,
       seq_scan,
       idx_scan,
-      CAST(pg_total_relation_size(relid) AS NUMERIC) as table_size_bytes
+      pg_total_relation_size(relid)::float8 as table_size_bytes
     FROM pg_stat_user_tables
     WHERE schemaname = $1
     `,
@@ -134,7 +134,7 @@ export async function fetchForeignKeys(
 > {
   const result = await client.query(
     `
-    SELECT DISTINCT ON (c.conname, a.attname)
+    SELECT
       n.nspname as schemaname,
       t.relname as tablename,
       a.attname as column_name,
@@ -150,7 +150,7 @@ export async function fetchForeignKeys(
     JOIN pg_attribute ra ON ra.attrelid = c.confrelid AND ra.attnum = ANY(c.confkey)
     WHERE c.contype = 'f'
       AND n.nspname = $1
-    ORDER BY c.conname, a.attname, ordinal_position
+    ORDER BY c.conname, ordinal_position
     `,
     [schemaName]
   )

@@ -79,12 +79,12 @@ export async function collectPostgreSQLIndexStats(
     // 테이블 레벨 이슈 탐지
     const totalIndexSize = Array.from(indexes.keys()).reduce((sum, indexName) => {
       const stat = indexStatsMap.get(`${tableName}.${indexName}`)
-      const size = stat?.index_size_bytes ? Number(stat.index_size_bytes) : 0
+      const size = stat?.index_size_bytes ?? 0
       return sum + size
     }, 0)
 
     const oversizedIssue = tableStat
-      ? detectOversizedIndexes(tableName, Number(tableStat.table_size_bytes), totalIndexSize)
+      ? detectOversizedIndexes(tableName, tableStat.table_size_bytes, totalIndexSize)
       : null
 
     const underindexedIssue = detectUnderindexedTables(
@@ -107,7 +107,7 @@ export async function collectPostgreSQLIndexStats(
       // 인덱스 통계 가져오기
       const stat = indexStatsMap.get(`${tableName}.${indexName}`)
       const scanCount = stat?.idx_scan || 0
-      const indexSizeBytes = stat?.index_size_bytes ? Number(stat.index_size_bytes) : 0
+      const indexSizeBytes = stat?.index_size_bytes ?? 0
 
       // 미사용 인덱스 탐지
       const unusedIssue = detectUnusedIndexes(indexName, tableName, scanCount, indexSizeBytes)
@@ -171,7 +171,7 @@ export async function collectPostgreSQLIndexStats(
         scanCount: stat?.idx_scan,
         tuplesRead: stat?.idx_tup_read,
         tuplesFetched: stat?.idx_tup_fetch,
-        indexSizeBytes: stat?.index_size_bytes ? Number(stat.index_size_bytes) : undefined,
+        indexSizeBytes: stat?.index_size_bytes,
         dbmsType: 'postgresql',
         statsAvailable: {
           usageStats: true,

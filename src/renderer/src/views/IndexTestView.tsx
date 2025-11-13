@@ -116,6 +116,7 @@ const IndexTestView: React.FC = () => {
       for (const issue of index.issues) {
         const badgeColor = issue.severity === 'critical' ? ('red' as const) : ('yellow' as const)
         const categoryLabel = categoryLabels[issue.category] || issue.category
+        const issueIndex = index.issues.indexOf(issue)
 
         const contentParts: string[] = []
         contentParts.push(`${issue.description}`)
@@ -142,7 +143,7 @@ const IndexTestView: React.FC = () => {
         }
 
         cards.push({
-          id: `${index.tableName}.${index.indexName}.${issue.category}.${cards.length}`,
+          id: `${index.tableName}.${index.indexName}.${issue.category}.${issueIndex}`,
           title: index.indexName,
           badge: {
             text: categoryLabel,
