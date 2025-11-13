@@ -1,9 +1,12 @@
 import React from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import PageTitle from '@renderer/components/PageTitle'
 import TestSummaryCard from '@renderer/components/TestSummaryCard'
 import TestCard from '@renderer/components/TestCard'
 
 const TestView: React.FC = () => {
+  const navigate = useNavigate()
+  const { projectId } = useParams<{ projectId: string }>()
   const statsData = [
     { name: 'Mon', value: 10 },
     { name: 'Tue', value: 40 },
@@ -79,7 +82,7 @@ const TestView: React.FC = () => {
               { label: '평균 응답', value: '12.3m' },
               { label: '최적화 완료', value: 892 }
             ]}
-            onStart={() => console.log('인덱스 테스트 시작')}
+            onStart={() => navigate(`/main/test/${projectId}/index`)}
           />
         </div>
       </section>

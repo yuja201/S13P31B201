@@ -14,7 +14,8 @@ import type {
   RuleInput,
   RuleUpdate,
   DatabaseSchema,
-  DomainCategory
+  DomainCategory,
+  IndexAnalysisSummary
 } from '../main/database/types'
 import type { GenerateRequest, GenerationResult } from '@shared/types'
 
@@ -130,6 +131,13 @@ interface API {
   domain: {
     getAll: () => Promise<DomainCategory[]>
     getByLogicalType: (logicalType: string) => Promise<DomainCategory[]>
+  }
+  indexTest: {
+    analyze: (databaseId: number) => Promise<{
+      success: boolean
+      data?: IndexAnalysisSummary
+      error?: string
+    }>
   }
 }
 
