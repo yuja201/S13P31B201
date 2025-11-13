@@ -113,6 +113,11 @@ export async function collectMySQLIndexStats(
       const cardinality = firstColumn.cardinality || 0
       const selectivity = tableRows > 0 ? (cardinality / tableRows) * 100 : 0
 
+      // MySQL의 개별 인덱스 크기는 테이블 전체 인덱스 크기를 인덱스 개수로 나눈 근사치
+      const approximateIndexSize = tableStat && indexes.size > 0
+        ? Math.round(tableStat.index_length / indexes.size)
+        : undefined
+
       results.push({
         indexName,
         tableName,
@@ -125,12 +130,11 @@ export async function collectMySQLIndexStats(
         cardinality,
         selectivity: parseFloat(selectivity.toFixed(2)),
         tableRows,
-        tableIndexSizeBytes: tableStat?.index_length,
+        indexSizeBytes: approximateIndexSize,
         dbmsType: 'mysql',
         statsAvailable: {
           usageStats: false,
-          sizeStats: true,
-          bloatStats: false
+          sizeStats: true
         }
       })
     }

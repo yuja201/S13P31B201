@@ -27,7 +27,7 @@ export async function fetchIndexStatsWithUsage(
       s.idx_scan,
       s.idx_tup_read,
       s.idx_tup_fetch,
-      pg_relation_size(s.indexrelid) as index_size_bytes,
+      pg_relation_size(s.indexrelid)::float8 as index_size_bytes,
       pg_get_indexdef(s.indexrelid) as index_def
     FROM pg_stat_user_indexes s
     WHERE s.schemaname = $1
@@ -106,7 +106,7 @@ export async function fetchTableStats(
       n_live_tup,
       seq_scan,
       idx_scan,
-      pg_total_relation_size(relid) as table_size_bytes
+      pg_total_relation_size(relid)::float8 as table_size_bytes
     FROM pg_stat_user_tables
     WHERE schemaname = $1
     `,
@@ -129,6 +129,7 @@ export async function fetchForeignKeys(
     constraint_name: string
     referenced_table: string
     referenced_column: string
+    ordinal_position: number
   }>
 > {
   const result = await client.query(
@@ -139,7 +140,8 @@ export async function fetchForeignKeys(
       a.attname as column_name,
       c.conname as constraint_name,
       rt.relname as referenced_table,
-      ra.attname as referenced_column
+      ra.attname as referenced_column,
+      array_position(c.conkey, a.attnum) as ordinal_position
     FROM pg_constraint c
     JOIN pg_class t ON t.oid = c.conrelid
     JOIN pg_namespace n ON n.oid = t.relnamespace
@@ -148,6 +150,7 @@ export async function fetchForeignKeys(
     JOIN pg_attribute ra ON ra.attrelid = c.confrelid AND ra.attnum = ANY(c.confkey)
     WHERE c.contype = 'f'
       AND n.nspname = $1
+    ORDER BY c.conname, ordinal_position
     `,
     [schemaName]
   )
@@ -209,42 +212,6 @@ export async function fetchColumnStats(
     FROM pg_stats
     WHERE schemaname = $1
       AND n_distinct IS NOT NULL
-    `,
-    [schemaName]
-  )
-  return result.rows
-}
-
-/**
- * 인덱스 bloat 추정
- */
-export async function fetchIndexBloat(
-  client: Client,
-  schemaName: string = 'public'
-): Promise<
-  Array<{
-    schemaname: string
-    tablename: string
-    indexname: string
-    bloat_ratio: number
-  }>
-> {
-  const result = await client.query(
-    `
-    SELECT
-      s.schemaname,
-      s.relname as tablename,
-      s.indexrelname as indexname,
-      ROUND(
-        CASE
-          WHEN pg_relation_size(s.indexrelid) > 0
-          THEN (pg_relation_size(s.indexrelid) - (pg_relation_size(s.indexrelid) * 0.8))::numeric / pg_relation_size(s.indexrelid) * 100
-          ELSE 0
-        END,
-        2
-      ) as bloat_ratio
-    FROM pg_stat_user_indexes s
-    WHERE s.schemaname = $1
     `,
     [schemaName]
   )

@@ -1,19 +1,10 @@
 import mysql from 'mysql2/promise'
 import { Client as PgClient } from 'pg'
-import type { IndexAnalysisSummary, IndexIssue } from '../../database/types'
+import type { IndexAnalysisSummary, IndexIssue, ConnectionConfig } from '../../database/types'
 import { collectMySQLIndexStats } from './mysql/mysql-stats-collector'
 import { collectPostgreSQLIndexStats } from './postgresql/pg-stats-collector'
 import { getDatabaseById } from '../../database/databases'
 import { getDBMSById } from '../../database/dbms'
-
-interface ConnectionConfig {
-  dbType: 'MySQL' | 'PostgreSQL'
-  host: string
-  port: number
-  username: string
-  password: string
-  database: string
-}
 
 async function getConnectionConfig(databaseId: number): Promise<ConnectionConfig> {
   const database = getDatabaseById(databaseId)
@@ -58,6 +49,10 @@ async function getConnectionConfig(databaseId: number): Promise<ConnectionConfig
 export async function analyzeIndexes(databaseId: number): Promise<IndexAnalysisSummary> {
   const config = await getConnectionConfig(databaseId)
 
+  if (!config.database) {
+    throw new Error('Database name is required for index analysis')
+  }
+
   let results
 
   if (config.dbType === 'MySQL') {
@@ -101,7 +96,6 @@ export async function analyzeIndexes(databaseId: number): Promise<IndexAnalysisS
     missing_fk_index: 0,
     column_order: 0,
     oversized: 0,
-    bloated: 0,
     inappropriate_type: 0,
     underindexed_table: 0
   }
@@ -142,12 +136,6 @@ export async function analyzeIndexes(databaseId: number): Promise<IndexAnalysisS
     )
   }
 
-  if (issuesByCategory.bloated > 0) {
-    recommendations.push(
-      `${issuesByCategory.bloated}개의 인덱스에 bloat가 발생했습니다. REINDEX를 실행하세요.`
-    )
-  }
-
   return {
     databaseId,
     databaseName: config.database,
@@ -163,8 +151,7 @@ export async function analyzeIndexes(databaseId: number): Promise<IndexAnalysisS
         ? results[0].statsAvailable
         : {
             usageStats: false,
-            sizeStats: false,
-            bloatStats: false
+            sizeStats: false
           },
     recommendations
   }
