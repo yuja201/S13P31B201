@@ -194,7 +194,7 @@ const TestHistoryView: React.FC = () => {
           border-collapse: collapse;
           border-top: 1px solid var(--color-gray-200);
           table-layout: fixed;
-          height:100%
+          height:670px;
         }
 
         .column-table th {
@@ -209,7 +209,7 @@ const TestHistoryView: React.FC = () => {
         .column-table td {
           padding: 16px;
           text-align: center;
-          vertical-align: middle;
+          vertical-align: text-top;
           border-bottom: 1px solid var(--color-gray-200);
           background-color: var(--color-white); 
           transition: background-color 0.2s ease;
