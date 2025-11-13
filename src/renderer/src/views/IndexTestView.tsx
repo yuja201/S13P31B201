@@ -53,7 +53,8 @@ const IndexTestView: React.FC = () => {
       const testData = {
         project_id: selectedProject.id,
         type: 'INDEX' as const,
-        summary: `정상: ${healthyIndexes}개, 심각: ${criticalIndexesCount}개, 권장: ${recommendedIndexesCount}개`,
+        summary: '인덱스 테스트',
+        // summary: `정상: ${healthyIndexes}개, 심각: ${criticalIndexesCount}개, 권장: ${recommendedIndexesCount}개`,
         result: JSON.stringify(analysisResult),
         index_ratio: healthRatio,
         response_time: null
