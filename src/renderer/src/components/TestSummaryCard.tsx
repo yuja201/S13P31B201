@@ -95,7 +95,7 @@ const TestSummaryCard: React.FC<TestSummaryCardProps> = ({
           border-radius: 14px;
           box-shadow: var(--shadow);
           padding: 24px;
-          width: 325px;
+          width: 300px;
           height: 215px;
           box-sizing: border-box;
           gap: 24px;
