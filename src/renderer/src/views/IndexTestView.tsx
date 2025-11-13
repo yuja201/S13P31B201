@@ -348,7 +348,7 @@ const IndexTestView: React.FC = () => {
         }
 
         .yuja-image {
-          width: 200x;
+          width: 200px;
           height: 200px;
           margin-bottom: 20px;
           object-fit: contain;
@@ -361,7 +361,7 @@ const IndexTestView: React.FC = () => {
           margin-bottom: 12px;
         }
 
-        .info-subtext{
+        .info-subtext {
           font-size: 16px;
           color: var(--color-gray-500);
           line-height: 1.5;
