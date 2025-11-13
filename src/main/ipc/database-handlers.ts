@@ -8,6 +8,9 @@ import { testDatabaseConnection, ConnectionConfig } from '../utils/db-connection
 import { fetchDatabaseSchema } from '../utils/schema-fetch'
 import { fetchRandomSample, checkFkValueExists } from '../utils/db-query'
 import Database from 'better-sqlite3'
+import { createLogger } from '../utils/logger'
+
+const logger = createLogger('database-handlers')
 
 /**
  * SQLite Database
@@ -114,16 +117,34 @@ ipcMain.handle('db:rule:delete', (_, id: number) => {
 })
 
 // Test operations
-ipcMain.handle('db:test:create', (_, data) => {
-  return testOps.createTest(data)
+ipcMain.handle('db:test:create', async (_, data) => {
+  try {
+    return testOps.createTest(data)
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : '테스트 생성 중 오류 발생'
+    logger.error('db:test:create:', errorMessage)
+    throw new Error(errorMessage)
+  }
 })
 
-ipcMain.handle('db:test:getAll', () => {
-  return testOps.getAllTests()
+ipcMain.handle('db:test:getAll', async () => {
+  try {
+    return testOps.getAllTests()
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : '테스트 조회 중 오류 발생'
+    logger.error('db:test:getAll:', errorMessage)
+    throw new Error(errorMessage)
+  }
 })
 
-ipcMain.handle('db:test:getById', (_, id: number) => {
-  return testOps.getTestById(id)
+ipcMain.handle('db:test:getById', async (_, id: number) => {
+  try {
+    return testOps.getTestById(id)
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : '테스트 조회 중 오류 발생'
+    logger.error('db:test:getById:', errorMessage)
+    throw new Error(errorMessage)
+  }
 })
 
 /**
@@ -175,7 +196,7 @@ ipcMain.handle(
       return await fetchRandomSample(config, table, column)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '샘플링 중 오류 발생'
-      console.error('[IPC Error] db:get-random-sample:', errorMessage)
+      logger.error('db:get-random-sample:', errorMessage)
       throw new Error(errorMessage)
     }
   }
@@ -198,7 +219,7 @@ ipcMain.handle(
       return await checkFkValueExists(config, table, column, value)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : '검증 중 오류 발생'
-      console.error('[IPC Error] db:validate-fk-value:', errorMessage)
+      logger.error('db:validate-fk-value:', errorMessage)
 
       if (error && typeof error === 'object' && 'code' in error) {
         throw new Error(errorMessage)
@@ -261,7 +282,7 @@ ipcMain.handle(
       const result = stmt.get(bindings)
       return (result as { isValid: number }).isValid === 1
     } catch (error) {
-      console.error('Check constraint validation error:', error)
+      logger.error('Check constraint validation error:', error)
       return false
     } finally {
       db.close()

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo } from 'react'
+import React, { useEffect, useMemo, useRef } from 'react'
 import InfoCard from '@renderer/components/InfoCard'
 import warningIcon from '@renderer/assets/imgs/warning.svg'
 import successIcon from '@renderer/assets/imgs/success.svg'
@@ -15,6 +15,7 @@ import { useProjectStore } from '@renderer/stores/projectStore'
 const IndexTestView: React.FC = () => {
   const { selectedProject } = useProjectStore()
   const { isAnalyzing, analysisResult, error, analyzeIndexes, clearResult } = useIndexTest()
+  const lastSavedResultRef = useRef<string | null>(null)
 
   const databaseId = selectedProject?.database?.id
 
@@ -25,52 +26,6 @@ const IndexTestView: React.FC = () => {
     }
     return () => clearResult()
   }, [databaseId, analyzeIndexes, clearResult])
-
-  // 분석 완료 시 자동 저장
-  useEffect(() => {
-    const saveTestResult = async (): Promise<void> => {
-      if (!analysisResult || !selectedProject) return
-
-      const totalIndexes = analysisResult.totalIndexes
-      if (totalIndexes === 0) return
-      let criticalIndexesCount = 0
-      let recommendedIndexesCount = 0
-
-      for (const index of analysisResult.indexes) {
-        if (index.issues.length === 0) continue
-        const hasCriticalIssue = index.issues.some((issue) => issue.severity === 'critical')
-        if (hasCriticalIssue) {
-          criticalIndexesCount++
-        } else {
-          recommendedIndexesCount++
-        }
-      }
-
-      const indexesWithIssuesCount = criticalIndexesCount + recommendedIndexesCount
-      const healthyIndexes = totalIndexes - indexesWithIssuesCount
-      const healthRatio = totalIndexes > 0 ? (healthyIndexes / totalIndexes) * 100 : 0
-
-      const testData = {
-        project_id: selectedProject.id,
-        type: 'INDEX' as const,
-        summary: '인덱스 테스트',
-        // summary: `정상: ${healthyIndexes}개, 심각: ${criticalIndexesCount}개, 권장: ${recommendedIndexesCount}개`,
-        result: JSON.stringify(analysisResult),
-        index_ratio: healthRatio,
-        response_time: null
-      }
-
-      try {
-        await window.api.test.create(testData)
-      } catch (error) {
-        window.api.logger.error('인덱스 분석 결과 저장 실패:', error)
-      }
-    }
-
-    if (analysisResult && !isAnalyzing) {
-      saveTestResult()
-    }
-  }, [analysisResult, isAnalyzing, selectedProject])
 
   // 요약 정보 계산
   const summaryData = useMemo(() => {
@@ -137,6 +92,41 @@ const IndexTestView: React.FC = () => {
       }
     }
   }, [analysisResult])
+
+  // 분석 완료 시 자동 저장
+  useEffect(() => {
+    const saveTestResult = async (): Promise<void> => {
+      if (!summaryData || !analysisResult || !selectedProject) return
+      if (analysisResult.totalIndexes === 0) return
+
+      const resultHash = JSON.stringify(analysisResult)
+      if (lastSavedResultRef.current === resultHash) return
+
+      const healthyIndexes = summaryData.subCard.stats[0].value
+      const healthRatio =
+        analysisResult.totalIndexes > 0 ? (healthyIndexes / analysisResult.totalIndexes) * 100 : 0
+
+      const testData = {
+        project_id: selectedProject.id,
+        type: 'INDEX' as const,
+        summary: '인덱스 테스트',
+        result: JSON.stringify(analysisResult),
+        index_ratio: healthRatio,
+        response_time: null
+      }
+
+      try {
+        await window.api.test.create(testData)
+        lastSavedResultRef.current = resultHash
+      } catch (error) {
+        window.api.logger.error('인덱스 분석 결과 저장 실패:', error)
+      }
+    }
+
+    if (analysisResult && !isAnalyzing && summaryData) {
+      saveTestResult()
+    }
+  }, [analysisResult, isAnalyzing, selectedProject, summaryData])
 
   const issueCards = useMemo(() => {
     if (!analysisResult) return []
