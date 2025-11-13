@@ -153,7 +153,7 @@ const TestHistoryView: React.FC = () => {
               onClick={handleStartTest}
               size="md"
               variant="blue"
-              style={{ marginTop: '24px' }}
+              className="start-test-button"
             >
               테스트 시작하기
             </Button>
@@ -194,119 +194,6 @@ const TestHistoryView: React.FC = () => {
           }
 
         
-          .table-scroll-wrapper {
-            flex-grow: 1; 
-            overflow-y: auto; 
-            min-height: 0; 
-            overflow-x: auto;
-            margin-top: 32px;
-            margin-bottom: 20px; 
-          }
-          .column-table {
-            width: 100%;
-            border-collapse: collapse;
-            border-top: 1px solid var(--color-gray-200);
-            table-layout: fixed;
-          }
-
-          .column-table th {
-            background-color: #FAFAFA;
-            text-align: center;
-            padding: 16px 8px;
-            font: var(--preMedium16);
-            position: sticky;
-            top: 0;
-            z-index: 2;
-          }
-          .column-table td {
-            padding: 16px;
-            text-align: center;
-            vertical-align: text-top;
-            border-bottom: 1px solid var(--color-gray-200);
-            background-color: var(--color-white); 
-            transition: background-color 0.2s ease;
-            word-break: break-word;
-          }
-          
-          .column-table .empty-row td {
-              color: transparent; 
-              visibility: hidden; 
-              border-bottom: 1px solid var(--color-gray-200); 
-          }
-          
-          .column-table th:nth-child(1),
-          .column-table td:nth-child(1),
-          .column-table td:nth-child(5),
-          .column-table th:nth-child(5) {
-            width: 100px; 
-          }
-
-          .column-table th:nth-child(4),
-          .column-table td:nth-child(4){
-            width: 180px; 
-          }
-          
-          .column-table td:nth-child(4){
-            font: var(--preMedium14);
-            color: var(--color-dark-gray)
-          }
-
-          .badge {
-            padding: 4px 8px;
-            border-radius: 5px;
-            font-size: 12px;
-            font-weight: 600;
-            width: 60px;
-          }
-          .badge-query { 
-            background-color: #EFF6FF; 
-            color: #134686; 
-          }
-          .badge-index { 
-            background-color: #FFF6E5; 
-            color: #865713; 
-          }
-          
-          .pagination-container {
-              display: flex;
-              justify-content: center;
-              align-items: center;
-              padding: 10px 0;
-              margin-top: auto;
-          }
-          
-          .page-info {
-              font-size: 15px;
-              font-weight: 500;
-              color: var(--color-main-blue); 
-              margin: 0 16px; 
-          }
-          .current-page-number {
-              font-weight: 700;
-              color: var(--color-main-blue); 
-          }
-
-          .pagination-button {
-            background-color: #F3F6FF;
-            border: none;
-            color: #134686;
-            padding: 8px 14px;
-            margin: 0 4px;
-            cursor: pointer;
-            border-radius: 8px;
-            font-weight: 600;
-            transition: all 0.2s ease;
-            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-          }
-
-          .pagination-button:hover:not(:disabled) {
-            background-color: #E6EEFF;
-          }
-
-          .pagination-button:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-          }
         `}</style>
       </>
     )
