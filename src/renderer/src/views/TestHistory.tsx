@@ -14,7 +14,85 @@ interface TestHistoryItem {
   summary: string
 }
 
-const mockHistoryData: TestHistoryItem[] = []
+const mockHistoryData: TestHistoryItem[] = [
+  {
+    status: 'success',
+    testName: '주문 생성 시나리오',
+    type: 'QUERY',
+    timestamp: '2023-10-27 14:30:15',
+    summary: '평균 응답 시간: 25.3ms'
+  },
+  {
+    status: 'fail',
+    testName: '사용자 테이블 인덱스 분석',
+    type: 'INDEX',
+    timestamp: '2023-10-27 14:28:10',
+    summary: '인덱스 스캔 비율: 85%'
+  },
+  {
+    status: 'warning',
+    testName: '데이터 유효성 검사',
+    type: 'QUERY',
+    timestamp: '2023-10-27 14:25:00',
+    summary: '일부 데이터 불일치 발견'
+  },
+  {
+    status: 'success',
+    testName: '주문 생성 시나리오',
+    type: 'QUERY',
+    timestamp: '2023-10-27 14:30:15',
+    summary: '평균 응답 시간: 25.3ms'
+  },
+  {
+    status: 'success',
+    testName: '주문 생성 dgdfgdgdfgdgdf시나리오',
+    type: 'QUERY',
+    timestamp: '2023-10-27 14:30:15',
+    summary: '평균 응답 시간: 25.3ms'
+  },
+  {
+    status: 'success',
+    testName: '주문 생성 시나리오',
+    type: 'QUERY',
+    timestamp: '2023-10-27 14:30:15',
+    summary: '평균 응답 시간: 25.3ms'
+  },
+  {
+    status: 'success',
+    testName: '주문 생성 시나리오',
+    type: 'QUERY',
+    timestamp: '2023-10-27 14:30:15',
+    summary: '평균 응답 시간: 25.3ms'
+  },
+  {
+    status: 'fail',
+    testName: '사용자 테이블 인덱스 분석',
+    type: 'INDEX',
+    timestamp: '2023-10-27 14:28:10',
+    summary: '인덱스 스캔 비율: 85%'
+  },
+  {
+    status: 'fail',
+    testName: '사용자 테이블 인덱스 분석',
+    type: 'INDEX',
+    timestamp: '2023-10-27 14:28:10',
+    summary: '인덱스 스캔 비율: 85%'
+  },
+  {
+    status: 'fail',
+    testName: '사용자 테이블 인덱스 분석',
+    type: 'INDEX',
+    timestamp: '2023-10-27 14:28:10',
+    summary: '인덱스 스캔 비율: 85%'
+  },
+  {
+    status: 'fail',
+    testName: '사용자 테이블 인덱스 분석',
+    type: 'INDEX',
+    timestamp: '2023-10-27 14:28:10',
+    summary: '인덱스 스캔 비율: 85%'
+  }
+]
 
 const TestHistoryView: React.FC = () => {
   const title = '테스트 히스토리'
