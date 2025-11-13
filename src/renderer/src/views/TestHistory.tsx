@@ -181,7 +181,7 @@ const TestHistoryView: React.FC = () => {
             color: white;
             padding: 10px 20px;
             border-radius: 8px;
-            font: var(--PreMedium16)
+            font: var(--PreMedium16);
             cursor: pointer;
             transition: background-color 0.2s ease, box-shadow 0.2s ease;
             border: none;
@@ -317,7 +317,7 @@ const TestHistoryView: React.FC = () => {
         
         .column-table td:nth-child(4){
           font: var(--preMedium14);
-          color: var(--color-dark-gray)
+          color: var(--color-dark-gray);
         }
 
         .badge {
