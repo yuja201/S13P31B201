@@ -24,9 +24,20 @@ const HistoryView: React.FC = () => {
               <tr>
                 <td>성공</td>
                 <td>주문 생성 시나리오</td>
-                <td>QUERY</td>
+                <td>
+                  <span className="badge badge-query">QUERY</span>
+                </td>
                 <td>2023-10-27 14:30:15</td>
                 <td>평균 응답 시간: 25.3ms</td>
+              </tr>
+              <tr>
+                <td>실패</td>
+                <td>사용자 테이블 인덱스 분석</td>
+                <td>
+                  <span className="badge badge-index">INDEX</span>
+                </td>
+                <td>2023-10-27 14:28:10</td>
+                <td>인덱스 스캔 비율: 85%</td>
               </tr>
             </tbody>
           </table>
@@ -71,6 +82,14 @@ const HistoryView: React.FC = () => {
           transition: background-color 0.2s ease;
           word-break: break-word;
         }
+        .badge {
+          padding: 4px 8px;
+          border-radius: 5px;
+          font-size: 12px;
+          font-weight: 600;
+        }
+        .badge-query { background-color: #EFF6FF; color: #1D4ED8; }
+        .badge-index { background-color: #F5F3FF; color: #5B21B6; }
       `}</style>
     </>
   )
