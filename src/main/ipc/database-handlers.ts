@@ -3,6 +3,7 @@ import * as dbmsOps from '../database/dbms'
 import * as projectOps from '../database/projects'
 import * as databaseOps from '../database/databases'
 import * as ruleOps from '../database/rules'
+import * as testOps from '../database/tests'
 import { testDatabaseConnection, ConnectionConfig } from '../utils/db-connection-test'
 import { fetchDatabaseSchema } from '../utils/schema-fetch'
 import { fetchRandomSample, checkFkValueExists } from '../utils/db-query'
@@ -110,6 +111,19 @@ ipcMain.handle('db:rule:update', (_, data) => {
 
 ipcMain.handle('db:rule:delete', (_, id: number) => {
   return ruleOps.deleteRule(id)
+})
+
+// Test operations
+ipcMain.handle('db:test:create', (_, data) => {
+  return testOps.createTest(data)
+})
+
+ipcMain.handle('db:test:getAll', () => {
+  return testOps.getAllTests()
+})
+
+ipcMain.handle('db:test:getById', (_, id: number) => {
+  return testOps.getTestById(id)
 })
 
 /**

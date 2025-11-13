@@ -26,6 +26,51 @@ const IndexTestView: React.FC = () => {
     return () => clearResult()
   }, [databaseId, analyzeIndexes, clearResult])
 
+  // 분석 완료 시 자동 저장
+  useEffect(() => {
+    const saveTestResult = async (): Promise<void> => {
+      if (!analysisResult || !selectedProject) return
+
+      const totalIndexes = analysisResult.totalIndexes
+      if (totalIndexes === 0) return
+      let criticalIndexesCount = 0
+      let recommendedIndexesCount = 0
+
+      for (const index of analysisResult.indexes) {
+        if (index.issues.length === 0) continue
+        const hasCriticalIssue = index.issues.some((issue) => issue.severity === 'critical')
+        if (hasCriticalIssue) {
+          criticalIndexesCount++
+        } else {
+          recommendedIndexesCount++
+        }
+      }
+
+      const indexesWithIssuesCount = criticalIndexesCount + recommendedIndexesCount
+      const healthyIndexes = totalIndexes - indexesWithIssuesCount
+      const healthRatio = totalIndexes > 0 ? (healthyIndexes / totalIndexes) * 100 : 0
+
+      const testData = {
+        project_id: selectedProject.id,
+        type: 'INDEX' as const,
+        summary: `정상: ${healthyIndexes}개, 심각: ${criticalIndexesCount}개, 권장: ${recommendedIndexesCount}개`,
+        result: JSON.stringify(analysisResult),
+        index_ratio: healthRatio,
+        response_time: null
+      }
+
+      try {
+        await window.api.test.create(testData)
+      } catch (error) {
+        window.api.logger.error('인덱스 분석 결과 저장 실패:', error)
+      }
+    }
+
+    if (analysisResult && !isAnalyzing) {
+      saveTestResult()
+    }
+  }, [analysisResult, isAnalyzing, selectedProject])
+
   // 요약 정보 계산
   const summaryData = useMemo(() => {
     if (!analysisResult) return null
