@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react'
 import PageTitle from '@renderer/components/PageTitle'
 import DBTableList from '@renderer/components/DBTableList'
 import DBTableDetail from '@renderer/components/DBTableDetail'
+import LoadingSpinner from '@renderer/components/LoadingSpinner'
 import { useSchemaStore } from '@renderer/stores/schemaStore'
 import { useProjectStore } from '@renderer/stores/projectStore'
 import type { Table, Column, ForeignKey } from '@main/database/types'
@@ -232,7 +233,26 @@ const CreateDummyView: React.FC = () => {
   }
 
   if (isLoading) {
-    return <div>스키마 로딩 중...</div>
+    return (
+      <div className="loading-container">
+        <LoadingSpinner size={48} />
+        <p className="loading-text">스키마 정보를 불러오는 중...</p>
+        <style>{`
+          .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            gap: 16px;
+          }
+          .loading-text {
+            color: var(--color-gray-600);
+            font-size: 16px;
+          }
+        `}</style>
+      </div>
+    )
   }
   if (error) {
     return <div>오류: {error}</div>
