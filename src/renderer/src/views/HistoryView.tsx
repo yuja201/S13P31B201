@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react'
 import PageTitle from '@renderer/components/PageTitle'
-import { BsCheckCircleFill, BsXCircleFill, BsExclamationTriangleFill } from 'react-icons/bs'
+import { IoMdCheckmarkCircleOutline, IoMdCloseCircleOutline } from 'react-icons/io'
+import { PiWarningBold } from 'react-icons/pi'
 
 const mockHistoryData = [
   {
@@ -86,9 +87,9 @@ const HistoryView: React.FC = () => {
   const description = '이전에 진행된 테스트 이력을 확인하세요'
 
   const statusConfig = {
-    success: { icon: BsCheckCircleFill, color: '#4ade80' },
-    fail: { icon: BsXCircleFill, color: '#f87171' },
-    warning: { icon: BsExclamationTriangleFill, color: '#fbbf24' }
+    success: { icon: IoMdCheckmarkCircleOutline, color: '#4caf50' }, // 부드러운 그린
+    fail: { icon: IoMdCloseCircleOutline, color: '#e57373' }, // 파스텔 레드
+    warning: { icon: PiWarningBold, color: '#fbc02d' } // 따뜻한 옐로우
   }
 
   // Pagination
@@ -110,8 +111,6 @@ const HistoryView: React.FC = () => {
     }
   }
 
-  const pageNumbers = Array.from({ length: totalPages }, (_, i) => i + 1)
-
   return (
     <>
       <div className="history-container">
@@ -120,11 +119,11 @@ const HistoryView: React.FC = () => {
           <table className="column-table">
             <thead>
               <tr>
-                <th>상태</th>
-                <th>테스트명</th>
                 <th>타입</th>
-                <th>테스트시간</th>
+                <th>테스트명</th>
                 <th>결과 요약</th>
+                <th>테스트시간</th>
+                <th>상태</th>
               </tr>
             </thead>
             <tbody>
@@ -134,14 +133,14 @@ const HistoryView: React.FC = () => {
                 return (
                   <tr key={index}>
                     <td>
-                      <IconComponent color={IconColor} size={20} />
-                    </td>
-                    <td>{item.testName}</td>
-                    <td>
                       <span className={`badge badge-${item.type.toLowerCase()}`}>{item.type}</span>
                     </td>
-                    <td>{item.timestamp}</td>
+                    <td>{item.testName}</td>
                     <td>{item.summary}</td>
+                    <td>{item.timestamp}</td>
+                    <td>
+                      <IconComponent color={IconColor} size={24} />
+                    </td>
                   </tr>
                 )
               })}
@@ -160,16 +159,9 @@ const HistoryView: React.FC = () => {
               &lt; 이전
             </button>
 
-            <div className="page-numbers">
-              {pageNumbers.map((page) => (
-                <button
-                  key={page}
-                  onClick={() => handlePageChange(page)}
-                  className={`pagination-number ${currentPage === page ? 'active' : ''}`}
-                >
-                  {page}
-                </button>
-              ))}
+            <div className="page-info">
+              <span className="current-page-number">{currentPage}</span> /{' '}
+              <span className="total-page-number">{totalPages}</span> 페이지
             </div>
 
             <button
@@ -202,6 +194,7 @@ const HistoryView: React.FC = () => {
           border-collapse: collapse;
           border-top: 1px solid var(--color-gray-200);
           table-layout: fixed;
+          height:100%
         }
 
         .column-table th {
@@ -225,15 +218,19 @@ const HistoryView: React.FC = () => {
 
         .column-table th:nth-child(1),
         .column-table td:nth-child(1),
-        .column-table td:nth-child(3),
-        .column-table th:nth-child(3) {
+        .column-table td:nth-child(5),
+        .column-table th:nth-child(5) {
           width: 100px; 
         }
 
-        .column-table td:nth-child(4) {
-          width: 250px; 
+        .column-table th:nth-child(4),
+        .column-table td:nth-child(4){
+          width: 180px; 
+        }
+        
+        .column-table td:nth-child(4){
           font: var(--preMedium14);
-          color: var(--color-dark-gray);
+          color: var(--color-dark-gray)
         }
 
         .badge {
@@ -248,8 +245,8 @@ const HistoryView: React.FC = () => {
           color: #134686; 
         }
         .badge-index { 
-          background-color: #F5F3FF; 
-          color: #5B21B6; 
+          background-color: #FFF6E5; 
+          color: #865713; 
         }
         
         .pagination-container {
@@ -259,7 +256,19 @@ const HistoryView: React.FC = () => {
             padding: 10px 0;
             margin-top: auto;
         }
-        .pagination-button, .pagination-number {
+        
+        .page-info {
+            font-size: 15px;
+            font-weight: 500;
+            color: var(--color-main-blue); 
+            margin: 0 16px; 
+        }
+        .current-page-number {
+            font-weight: 700;
+            color: var(--color-main-blue); 
+        }
+
+        .pagination-button {
             background-color: transparent;
             border: 1px solid var(--color-gray-300, #ccc);
             color: var(--color-dark-gray, #333);
@@ -273,14 +282,8 @@ const HistoryView: React.FC = () => {
             cursor: not-allowed;
             opacity: 0.5;
         }
-        .pagination-number:hover:not(.active) {
-            background-color: var(--color-gray-100, #f0f0f0);
-        }
-        .pagination-number.active {
-            background-color: var(--color-blue-600, #1d4ed8); 
-            color: white;
-            border-color: var(--color-blue-600, #1d4ed8);
-        }
+        
+        /* 기존 .page-numbers 관련 CSS는 완전히 제거했습니다. */
       `}</style>
     </>
   )
