@@ -12,7 +12,7 @@ interface SummaryCardsProps {
     icon?: string
     title: string
     value: string | number
-    color?: 'blue' | 'orange' | 'green' | 'gray'
+    color?: 'green' | 'red' | 'orange' | 'gray'
   }
   subCard: {
     stats: SummaryStat[]
@@ -21,9 +21,22 @@ interface SummaryCardsProps {
 
 const SummaryCards: React.FC<SummaryCardsProps> = ({ mainCard, subCard }) => {
   // ====== 공통 스타일 ======
+
+  const getColor = (color?: string): string => {
+    switch (color) {
+      case 'green':
+        return '#27ae60'
+      case 'red':
+        return '#e74c3c'
+      case 'orange':
+        return 'var(--color-orange)'
+      default:
+        return 'var(--color-black)'
+    }
+  }
   const wrapperStyle: React.CSSProperties = {
     display: 'grid',
-    gridTemplateColumns: '0.8fr 2fr', // 왼쪽 1/3, 오른쪽 2/3
+    gridTemplateColumns: '0.8fr 2fr',
     gap: '24px',
     width: '100%',
     margin: '20px 0',
@@ -62,22 +75,9 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({ mainCard, subCard }) => {
     color: 'var(--color-dark-gray)'
   }
 
-  const getMainCardColor = (color?: string): string => {
-    switch (color) {
-      case 'orange':
-        return 'var(--color-orange)'
-      case 'blue':
-        return 'var(--color-main-blue)'
-      case 'green':
-        return '#27ae60'
-      default:
-        return 'var(--color-gray-500)'
-    }
-  }
-
   const mainValueStyle: React.CSSProperties = {
     font: 'var(--preBold32)',
-    color: getMainCardColor(mainCard.color),
+    color: getColor(mainCard.color),
     lineHeight: '1.0'
   }
 
@@ -104,19 +104,6 @@ const SummaryCards: React.FC<SummaryCardsProps> = ({ mainCard, subCard }) => {
     font: 'var(--preRegular16)',
     color: 'var(--color-dark-gray)',
     marginBottom: '4px'
-  }
-
-  const getColor = (color?: string): string => {
-    switch (color) {
-      case 'green':
-        return '#27ae60'
-      case 'red':
-        return '#e74c3c'
-      case 'orange':
-        return 'var(--color-orange)'
-      default:
-        return 'var(--color-black)'
-    }
   }
 
   const statValueStyle = (color?: string): React.CSSProperties => ({

@@ -6,20 +6,23 @@ import TestCard from '@renderer/components/TestCard'
 import UserQueryTestModal from '@renderer/modals/UserQueryTestModal'
 import type { DashboardData } from '@shared/types'
 
+import { useToastStore } from '@renderer/stores/toastStore'
+
 const TestView: React.FC = () => {
   const [isQueryModalOpen, setQueryModalOpen] = useState(false)
   const [dashboard, setDashboard] = useState<DashboardData | null>(null)
 
   const navigate = useNavigate()
   const { projectId } = useParams<{ projectId: string }>()
+  const showToast = useToastStore((s) => s.showToast)
 
-  // 숫자 포맷 (소수점 한 자리)
+  // 숫자 포맷
   const formatNumber = (value: number | null | undefined): number => {
     if (value === null || value === undefined || isNaN(value)) return 0
     return Number(value.toFixed(1))
   }
 
-  // 최근 7일 날짜 생성
+  // 최근 7일 날짜 배열
   const getLast7Days = (): string[] => {
     const arr: string[] = []
     const now = new Date()
@@ -31,7 +34,7 @@ const TestView: React.FC = () => {
     return arr
   }
 
-  // 날짜 정규화 (빠진 날짜는 0 채우기)
+  // 주간 그래프 정규화
   const normalizeDaily = (
     days: string[],
     map: Record<string, number>
@@ -41,6 +44,7 @@ const TestView: React.FC = () => {
       value: formatNumber(map[day] ?? 0)
     }))
 
+  // 대시보드 데이터 로드
   const loadDashboardData = useCallback(async () => {
     const data = await window.api.test.getDashboardData()
     setDashboard(data)
@@ -54,21 +58,21 @@ const TestView: React.FC = () => {
 
   const days = getLast7Days()
 
-  // --- 총 테스트 횟수 그래프 ---
+  // 총 테스트 그래프
   const totalMap: Record<string, number> = {}
   dashboard.weeklyTotalStats.forEach((d) => {
     totalMap[d.date] = Number(d.count)
   })
   const weeklyTotalGraph = normalizeDaily(days, totalMap)
 
-  // --- 응답시간 그래프 ---
+  // 응답시간 그래프
   const queryMap: Record<string, number> = {}
   dashboard.weeklyQueryStats.forEach((d) => {
     queryMap[d.date] = d.avg_response_time ?? 0
   })
   const weeklyQueryGraph = normalizeDaily(days, queryMap)
 
-  // --- 인덱스 사용율 그래프 ---
+  // 인덱스 사용율 그래프
   const indexMap: Record<string, number> = {}
   dashboard.weeklyIndexStats.forEach((d) => {
     indexMap[d.date] = d.avg_index_ratio ?? 0
@@ -79,17 +83,38 @@ const TestView: React.FC = () => {
 
   return (
     <div className="test-main-container">
+      {/* 사용자 쿼리 테스트 모달 */}
       <UserQueryTestModal
         isOpen={isQueryModalOpen}
         projectId={projectId ?? ''}
         onClose={() => setQueryModalOpen(false)}
-        onStart={(query, cnt, timeout) => {
-          console.log('사용자 쿼리 테스트 실행:', { query, cnt, timeout })
-          setQueryModalOpen(false)
-          void loadDashboardData()
+        onStart={async (query, cnt, timeout) => {
+          try {
+            const result = await window.api.userQueryTest.run({
+              projectId: Number(projectId),
+              query,
+              runCount: cnt,
+              timeout
+            })
+
+            const { testId } = result
+
+            setQueryModalOpen(false)
+            void loadDashboardData()
+            navigate(`/main/test/${projectId}/user-query/${testId}`)
+          } catch (error) {
+            console.error('[쿼리 테스트 실행 실패]', error)
+
+            showToast(
+              error instanceof Error ? error.message : '쿼리 테스트 실행 중 오류가 발생했습니다.',
+              'error',
+              '실행 실패'
+            )
+          }
         }}
       />
 
+      {/* 상단 헤더 */}
       <section className="test-main-header">
         <PageTitle
           title="DB 성능 테스트"
@@ -97,12 +122,11 @@ const TestView: React.FC = () => {
         />
       </section>
 
-      {/* Summary */}
+      {/* 테스트 히스토리 */}
       <section className="test-history-section">
         <h2 className="preSemiBold24 section-title">테스트 히스토리</h2>
 
         <div className="aligned-grid stats-card-grid">
-          {/* 총 테스트 횟수 */}
           <TestSummaryCard
             title="총 테스트 횟수"
             subtitle="사용자 쿼리. 인덱스 테스트"
@@ -116,7 +140,6 @@ const TestView: React.FC = () => {
             showUnitAfterTotal
           />
 
-          {/* 인덱스 사용율 */}
           <TestSummaryCard
             title="인덱스 사용율"
             subtitle="인덱스 테스트"
@@ -130,7 +153,6 @@ const TestView: React.FC = () => {
             showUnitAfterTotal
           />
 
-          {/* 평균 응답 시간 */}
           <TestSummaryCard
             title="평균 응답 시간"
             subtitle="사용자 쿼리 테스트"

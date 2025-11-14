@@ -208,7 +208,6 @@ export function getIndexSummary(): TestSummary {
  */
 export function getThisWeekTestCount(): number {
   const db = getDatabase()
-
   const stmt = db.prepare(`
     SELECT COUNT(*) AS count
     FROM tests
@@ -220,7 +219,7 @@ export function getThisWeekTestCount(): number {
 }
 
 /**
- * 지난주 대비 이번 주 테스트 횟수 증가율
+ * 지난주 대비 이번 주 증가율
  * (지난주=0이면 100%로 처리)
  */
 export function getWeeklyGrowthRate(): number {
@@ -259,42 +258,44 @@ export function getWeeklyGrowthRate(): number {
   return ((thisWeek - lastWeek) / lastWeek) * 100
 }
 
+export function insertIntoTests(data: TestInput): number {
+  return createTest(data).id
+}
+
 /**
  * 사용자 쿼리: 평균 응답 시간 변화율
  */
 export function getQueryWeeklyChangeRate(): number {
   const db = getDatabase()
 
-  const thisWeekRow = db
-    .prepare(
-      `
-    SELECT AVG(response_time) AS avg_value
-    FROM tests
-    WHERE type = 'QUERY'
-      AND created_at >= strftime('%s', 'now', 'weekday 1', '-0 days')
-  `
-    )
-    .get() as { avg_value: number | null }
+  const thisWeek = (
+    db
+      .prepare(
+        `
+      SELECT AVG(response_time) AS avg_value
+      FROM tests
+      WHERE type = 'QUERY'
+        AND created_at >= strftime('%s', 'now', 'weekday 1', '-0 days')
+    `
+      )
+      .get() as { avg_value: number | null }
+  ).avg_value
 
-  const lastWeekRow = db
-    .prepare(
-      `
-    SELECT AVG(response_time) AS avg_value
-    FROM tests
-    WHERE type = 'QUERY'
-      AND created_at >= strftime('%s', 'now', 'weekday 1', '-7 days')
-      AND created_at <  strftime('%s', 'now', 'weekday 1')
-  `
-    )
-    .get() as { avg_value: number | null }
+  const lastWeek = (
+    db
+      .prepare(
+        `
+      SELECT AVG(response_time) AS avg_value
+      FROM tests
+      WHERE type = 'QUERY'
+        AND created_at >= strftime('%s', 'now', 'weekday 1', '-7 days')
+        AND created_at <  strftime('%s', 'now', 'weekday 1')
+    `
+      )
+      .get() as { avg_value: number | null }
+  ).avg_value
 
-  const thisWeek = thisWeekRow.avg_value
-  const lastWeek = lastWeekRow.avg_value
-
-  if (lastWeek === null || lastWeek === 0) {
-    return thisWeek ? 100 : 0
-  }
-
+  if (lastWeek === null || lastWeek === 0) return thisWeek ? 100 : 0
   return ((thisWeek! - lastWeek!) / lastWeek!) * 100
 }
 
@@ -304,39 +305,40 @@ export function getQueryWeeklyChangeRate(): number {
 export function getIndexWeeklyChangeRate(): number {
   const db = getDatabase()
 
-  const thisWeekRow = db
-    .prepare(
-      `
-    SELECT AVG(index_ratio) AS avg_value
-    FROM tests
-    WHERE type = 'INDEX'
-      AND created_at >= strftime('%s', 'now', 'weekday 1', '-0 days')
-  `
-    )
-    .get() as { avg_value: number | null }
+  const thisWeek = (
+    db
+      .prepare(
+        `
+      SELECT AVG(index_ratio) AS avg_value
+      FROM tests
+      WHERE type = 'INDEX'
+        AND created_at >= strftime('%s', 'now', 'weekday 1', '-0 days')
+    `
+      )
+      .get() as { avg_value: number | null }
+  ).avg_value
 
-  const lastWeekRow = db
-    .prepare(
-      `
-    SELECT AVG(index_ratio) AS avg_value
-    FROM tests
-    WHERE type = 'INDEX'
-      AND created_at >= strftime('%s', 'now', 'weekday 1', '-7 days')
-      AND created_at <  strftime('%s', 'now', 'weekday 1')
-  `
-    )
-    .get() as { avg_value: number | null }
+  const lastWeek = (
+    db
+      .prepare(
+        `
+      SELECT AVG(index_ratio) AS avg_value
+      FROM tests
+      WHERE type = 'INDEX'
+        AND created_at >= strftime('%s', 'now', 'weekday 1', '-7 days')
+        AND created_at <  strftime('%s', 'now', 'weekday 1')
+    `
+      )
+      .get() as { avg_value: number | null }
+  ).avg_value
 
-  const thisWeek = thisWeekRow.avg_value
-  const lastWeek = lastWeekRow.avg_value
-
-  if (lastWeek === null || lastWeek === 0) {
-    return thisWeek ? 100 : 0
-  }
-
+  if (lastWeek === null || lastWeek === 0) return thisWeek ? 100 : 0
   return ((thisWeek! - lastWeek!) / lastWeek!) * 100
 }
 
+/**
+ * 최근 7일간 총 테스트 개수
+ */
 export function getWeeklyTotalTestStats(): { date: string; count: number }[] {
   const db = getDatabase()
   const stmt = db.prepare(`

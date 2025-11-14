@@ -1,35 +1,74 @@
-import React from 'react'
+import React, { useEffect, useState } from 'react'
+import { useParams } from 'react-router-dom'
+
 import InfoCard from '@renderer/components/InfoCard'
 import AIRecommendation from '@renderer/components/AIRecommendation'
 import SummaryCards from '@renderer/components/SummaryCards'
 import ResponseTimeChart from '@renderer/components/ResponseTimeChart'
 import TestHeader from '@renderer/components/TestHeader'
 
+import type { Test, UserQueryTestResultJson, ExplainResult } from '@shared/types'
+
 const successIcon = new URL('@renderer/assets/imgs/success.svg', import.meta.url).href
 const warningIcon = new URL('@renderer/assets/imgs/warning.svg', import.meta.url).href
+const failureIcon = new URL('@renderer/assets/imgs/failure.svg', import.meta.url).href
 
 const UserQueryTestView: React.FC = () => {
-  const aiRecommendations = []
+  const { testId } = useParams()
+  const [test, setTest] = useState<Test | null>(null)
 
-  /** 🔹 테스트 다시 실행 */
-  const handleRerunTest = (): void => {
-    console.log('테스트 다시 실행')
-    // TODO: 실제 쿼리 재테스트 로직 연결
+  useEffect(() => {
+    if (!testId) return
+    window.api.tests.getById(Number(testId)).then((data: Test | undefined) => {
+      if (data) setTest(data)
+    })
+  }, [testId])
+
+  if (!test) return <div className="view-container">Loading...</div>
+
+  // SQLite에 저장된 JSON 파싱
+  const result: UserQueryTestResultJson = JSON.parse(test.result)
+  const stats = result.stats
+  const explain: ExplainResult = result.explain
+  const warnings = result.warnings
+
+  /** -----------------------------------------------------
+   *  SummaryCards 응답속도 자동 평가 로직
+   *  기준:
+   *  - 0 ~ 100ms: 빠름 (green)
+   *  - 100 ~ 300ms: 주의 (orange)
+   *  - 300ms 이상: 느림 (red)
+   * ----------------------------------------------------- */
+  let perfIcon = successIcon
+  let perfColor: 'green' | 'orange' | 'red' = 'green'
+
+  if (stats.avg >= 100 && stats.avg < 300) {
+    perfIcon = warningIcon
+    perfColor = 'orange'
+  } else if (stats.avg >= 300) {
+    perfIcon = failureIcon
+    perfColor = 'red'
   }
 
-  /** 🔹 결과 다운로드 */
+  /** 다시 실행 */
+  const handleRerunTest = (): void => {
+    console.log('테스트 다시 실행')
+    // TODO: 동일 쿼리 재실행 기능 연결
+  }
+
+  /** 다운로드 */
   const handleDownload = (): void => {
     console.log('테스트 결과 다운로드')
-    // TODO: 결과 내보내기 로직 연결
+    // TODO: 파일 저장 기능 연결
   }
 
   return (
     <>
       <div className="view-container">
-        {/* 페이지 제목 + 버튼 */}
+        {/* 페이지 제목 */}
         <TestHeader
           title="사용자 쿼리 테스트"
-          subtitle="테스트할 쿼리를 입력하고 성능을 확인해 보세요."
+          subtitle="테스트 결과를 확인해 보세요."
           onDownload={handleDownload}
           onRerunTest={handleRerunTest}
         />
@@ -37,18 +76,19 @@ const UserQueryTestView: React.FC = () => {
         {/* 테스트 통계 */}
         <div className="section-gap">
           <h2 className="section-title preSemiBold20">테스트 통계</h2>
+
           <SummaryCards
             mainCard={{
-              icon: warningIcon,
+              icon: perfIcon,
               title: '성능 점수',
-              value: '167ms',
-              color: 'orange'
+              value: `${stats.avg}ms`,
+              color: perfColor
             }}
             subCard={{
               stats: [
-                { label: '총 실행 횟수', value: 50 },
-                { label: '성공', value: 50, color: 'green' },
-                { label: '실패', value: 0, color: 'red' }
+                { label: '총 실행 횟수', value: result.runCount },
+                { label: '최소 응답시간', value: stats.min, color: 'green' },
+                { label: '최대 응답시간', value: stats.max, color: 'red' }
               ]
             }}
           />
@@ -57,10 +97,7 @@ const UserQueryTestView: React.FC = () => {
         {/* 응답시간 분포 */}
         <div className="section-gap">
           <h2 className="section-title preSemiBold20">응답시간 분포</h2>
-          <ResponseTimeChart
-            //TODO: 실제 응답시간으로 변경
-            responseTimes={[38, 45, 67, 89, 125, 140].map((v) => v + Math.floor(Math.random() * 5))}
-          />
+          <ResponseTimeChart responseTimes={result.responseTimes} />
         </div>
 
         {/* 쿼리 실행 계획 분석 */}
@@ -68,25 +105,52 @@ const UserQueryTestView: React.FC = () => {
           <h2 className="section-title preSemiBold20">쿼리 실행 계획 분석</h2>
           <div className="section-grid">
             <InfoCard
-              title="Seq Scan 감지"
-              content="users 테이블 (1,245,800 rows)"
+              title={explain.planType}
+              content={`Estimated Rows: ${explain.estimatedRows}`}
               titleIcon={<img src={warningIcon} alt="warning" width={24} height={24} />}
             />
-            <InfoCard
-              title="Index Scan 사용"
-              content="orders 테이블 (idx_user_id)"
-              titleIcon={<img src={successIcon} alt="success" width={24} height={24} />}
-            />
+
+            {'actualRows' in explain && (
+              <InfoCard
+                title="Actual Rows"
+                content={String(explain.actualRows)}
+                titleIcon={<img src={successIcon} alt="success" width={24} height={24} />}
+              />
+            )}
+
+            {'cost' in explain && typeof explain.cost !== 'number' && (
+              <InfoCard
+                title="Total Cost"
+                content={String(explain.cost.total)}
+                titleIcon={<img src={successIcon} alt="success" width={24} height={24} />}
+              />
+            )}
           </div>
         </div>
+
+        {/* 경고 표시 */}
+        {warnings.length > 0 && (
+          <div className="section-gap">
+            <h2 className="section-title preSemiBold20">경고</h2>
+            {warnings.map((w, i) => (
+              <InfoCard
+                key={i}
+                title="Warning"
+                content={w}
+                titleIcon={<img src={warningIcon} alt="warning" width={24} height={24} />}
+              />
+            ))}
+          </div>
+        )}
+
         {/* AI 개선 추천 */}
         <div className="section-gap">
           <h2 className="section-title preSemiBold20">AI 개선 추천</h2>
-          <AIRecommendation list={aiRecommendations} />
+          <AIRecommendation list={[]} />
         </div>
       </div>
 
-      {/* 스타일 정의 */}
+      {/* 스타일 */}
       <style>{`
         .view-container {
           display: flex;
@@ -112,7 +176,6 @@ const UserQueryTestView: React.FC = () => {
           flex-direction: column;
           gap: 20px;
         }
-
       `}</style>
     </>
   )
