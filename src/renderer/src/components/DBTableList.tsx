@@ -258,13 +258,14 @@ const DBTableList: React.FC<DBTableListProps> = ({
 
         .list-footer {
           width: 100%;
-          min-height: 60px;
+          height: 120px;
           display: flex;
           flex-direction: column;
           margin-top: 12px;
           padding-top: 16px;
           border-top: 1.5px solid var(--color-gray-200);
           flex-shrink: 0;
+          justify-content: center;
         }
 
         .selected-info-wrapper {
@@ -272,6 +273,7 @@ const DBTableList: React.FC<DBTableListProps> = ({
           flex-direction: column;
           gap: 8px;
           width: 100%;
+          height: 100%;
         }
 
         .selected-header {
@@ -279,6 +281,7 @@ const DBTableList: React.FC<DBTableListProps> = ({
           justify-content: space-between;
           align-items: center;
           width: 100%;
+          flex-shrink: 0;
         }
 
         .selected-count-badge {
@@ -289,6 +292,7 @@ const DBTableList: React.FC<DBTableListProps> = ({
           background-color: var(--color-main-blue);
           border-radius: 20px;
           color: white;
+          flex-shrink: 0;
         }
 
         .selected-count-badge svg {
@@ -314,15 +318,15 @@ const DBTableList: React.FC<DBTableListProps> = ({
           display: flex;
           flex-wrap: wrap;
           gap: 6px;
-          max-height: 60px;
+          min-height: 0px;
           overflow-y: auto;
           padding: 2px;
+          flex: 1; 
         }
 
         .table-tag {
           display: inline-flex;
           align-items: center;
-          gap: 6px;
           padding: 4px 10px;
           background-color: var(--color-light-blue);
           color: var(--color-main-blue);
@@ -332,6 +336,7 @@ const DBTableList: React.FC<DBTableListProps> = ({
           transition: all 0.2s ease;
           cursor: pointer;
           position: relative;
+          height:24px;
         }
 
         .table-tag:hover {
