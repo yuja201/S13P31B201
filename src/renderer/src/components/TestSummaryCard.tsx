@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useId } from 'react'
 import { LineChart, Line, Area, ResponsiveContainer, Tooltip, YAxis, XAxis } from 'recharts'
 
 interface TestSummaryCardProps {
@@ -9,9 +9,6 @@ interface TestSummaryCardProps {
   changePercent: number
   data: { name: string; value: number }[]
   positive?: boolean
-  unit?: string // "번", "%", "ms" 등
-  currentPrefix?: string // "이번 주", "최근 개선율" 등
-  showUnitAfterTotal?: boolean
 }
 
 const TestSummaryCard: React.FC<TestSummaryCardProps> = ({
@@ -21,36 +18,28 @@ const TestSummaryCard: React.FC<TestSummaryCardProps> = ({
   currentWeek,
   changePercent,
   data,
-  positive = true,
-  unit = '번',
-  currentPrefix = '이번 주',
-  showUnitAfterTotal = true
+  positive = true
 }) => {
   const formattedChangePercent = Math.abs(changePercent)
   const sign = positive ? '+' : '-'
-  const color = positive ? '#10b981' : '#ef4444'
+  const rawGradientId = useId()
+  const gradientId = `stats-card-gradient-${rawGradientId.replace(/:/g, '')}`
 
-  const gradientId = `stats-card-gradient-${title.replace(/\s+/g, '-')}`
   return (
     <>
       <div className="stats-card">
+        {/* 상단 제목 영역 */}
         <div className="stats-card__header">
           <div className="stats-card__title">{title}</div>
           <div className="stats-card__subtitle">{subtitle}</div>
         </div>
 
+        {/* 하단 본문 영역 */}
         <div className="stats-card__bottom">
+          {/* 왼쪽: 수치 정보 */}
           <div className="stats-card__content">
-            <div className="stats-card__total">
-              {total}
-              {showUnitAfterTotal && unit}
-            </div>
-
-            <div className="stats-card__current">
-              {currentPrefix} {currentWeek}
-              {unit}
-            </div>
-
+            <div className="stats-card__total">{total}번</div>
+            <div className="stats-card__current">이번 주 {currentWeek}번</div>
             <div
               className={`stats-card__percent ${
                 positive ? 'stats-card__percent--up' : 'stats-card__percent--down'
@@ -61,20 +50,19 @@ const TestSummaryCard: React.FC<TestSummaryCardProps> = ({
             </div>
           </div>
 
+          {/* 오른쪽: 그래프 */}
           <div className="stats-card__chart">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data} margin={{ top: 20, right: 0, bottom: -10, left: 0 }}>
                 <defs>
                   <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1.2">
-                    <stop offset="0%" stopColor={color} stopOpacity={0.6} />
-                    <stop offset="100%" stopColor={color} stopOpacity={0} />
+                    <stop offset="0%" stopColor="#10b981" stopOpacity={0.6} />
+                    <stop offset="100%" stopColor="#10b981" stopOpacity={0} />
                   </linearGradient>
                 </defs>
-
                 <XAxis dataKey="name" hide />
                 <YAxis hide />
                 <Tooltip cursor={false} contentStyle={{ display: 'none' }} />
-
                 <Area
                   type="monotone"
                   dataKey="value"
@@ -82,11 +70,10 @@ const TestSummaryCard: React.FC<TestSummaryCardProps> = ({
                   fill={`url(#${gradientId})`}
                   fillOpacity={1}
                 />
-
                 <Line
                   type="monotone"
                   dataKey="value"
-                  stroke={color}
+                  stroke="#10b981"
                   strokeWidth={2}
                   dot={false}
                   activeDot={false}
@@ -140,7 +127,7 @@ const TestSummaryCard: React.FC<TestSummaryCardProps> = ({
           display: flex;
           flex-direction: column;
           justify-content: flex-start;
-          flex: 3;
+          flex: 1;
         }
 
         .stats-card__total {
@@ -171,7 +158,7 @@ const TestSummaryCard: React.FC<TestSummaryCardProps> = ({
 
         /* 오른쪽 그래프 */
         .stats-card__chart {
-          flex: 2;
+          flex: 1;
           height: 100%;
           align-self: flex-end;
         }
