@@ -11,11 +11,13 @@ import LoadingSpinner from '@renderer/components/LoadingSpinner'
 import ErrorView from '@renderer/views/ErrorView'
 import { useIndexTest } from '@renderer/hooks/useIndexTest'
 import { useProjectStore } from '@renderer/stores/projectStore'
+import { toPng } from 'html-to-image'
 
 const IndexTestView: React.FC = () => {
   const { selectedProject } = useProjectStore()
   const { isAnalyzing, analysisResult, error, analyzeIndexes, clearResult } = useIndexTest()
   const lastSavedResultRef = useRef<string | null>(null)
+  const resultContainerRef = useRef<HTMLDivElement>(null)
 
   const databaseId = selectedProject?.database?.id
 
@@ -251,8 +253,54 @@ const IndexTestView: React.FC = () => {
     }
   }
 
-  const handleDownload = (): void => {
-    // TODO: 다운로드 기능 구현
+  const handleDownload = async (): Promise<void> => {
+    if (!resultContainerRef.current || !analysisResult) return
+
+    try {
+      // 원본 이미지 생성
+      const originalDataUrl = await toPng(resultContainerRef.current, {
+        cacheBust: true,
+        pixelRatio: 2,
+        backgroundColor: '#ffffff'
+      })
+
+      // 이미지 로드
+      const img = new Image()
+      img.src = originalDataUrl
+
+      await new Promise((resolve) => {
+        img.onload = resolve
+      })
+
+      // 여백 크기
+      const padding = 40
+
+      // 새 캔버스 생성
+      const canvas = document.createElement('canvas')
+      canvas.width = img.width + padding * 2
+      canvas.height = img.height + padding * 2
+
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+
+      // 새 캔버스에 흰색 배경 적용
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+
+      // 캔버스에 원본 이미지 삽입
+      ctx.drawImage(img, padding, padding)
+
+      // 다운로드
+      const link = document.createElement('a')
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5)
+      const fileName = `${analysisResult.databaseName}_index_test_${timestamp}.png`
+
+      link.download = fileName
+      link.href = canvas.toDataURL('image/png')
+      link.click()
+    } catch (error) {
+      window.api.logger.error('이미지 다운로드 실패:', error)
+    }
   }
 
   if (isAnalyzing) {
@@ -319,7 +367,7 @@ const IndexTestView: React.FC = () => {
             <p className="info-subtext">빠른 데이터베이스 검색을 위해 인덱스를 추가해보세요.</p>
           </div>
         ) : (
-          <>
+          <div ref={resultContainerRef}>
             <SummaryCards mainCard={summaryData.mainCard} subCard={summaryData.subCard} />
 
             {issueCards.length > 0 ? (
@@ -346,7 +394,7 @@ const IndexTestView: React.FC = () => {
                 <p className="info-subtext">모든 인덱스의 상태가 양호해요.</p>
               </div>
             )}
-          </>
+          </div>
         )}
       </div>
       <style>{`
