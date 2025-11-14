@@ -174,6 +174,15 @@ const api = {
       ipcRenderer.invoke('domain:getByLogicalType', logicalType)
   },
 
+  tests: {
+    getById: (id: number): Promise<unknown> => ipcRenderer.invoke('tests:getById', id)
+  },
+
+  userQueryTest: {
+    run: (payload: { projectId: number; query: string; runCount: number; timeout: number }) =>
+      ipcRenderer.invoke('userQueryTest:run', payload)
+  },
+
   // Index test operations
   indexTest: {
     analyze: (databaseId: number) => ipcRenderer.invoke('index:analyze', databaseId)

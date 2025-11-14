@@ -22,6 +22,7 @@ const UserQueryTestModal: React.FC<UserQueryTestModalProps> = ({ isOpen, onClose
 
   const handleValidate = (): void => {
     if (!query.trim()) {
+      // TODO: 문법 검증 로직 추가
       showToast('SQL 쿼리를 입력해주세요.', 'warning', '문법 검증 실패')
       return
     }

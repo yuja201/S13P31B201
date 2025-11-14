@@ -1,10 +1,12 @@
-import React from 'react'
+import React, { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import PageTitle from '@renderer/components/PageTitle'
 import TestSummaryCard from '@renderer/components/TestSummaryCard'
 import TestCard from '@renderer/components/TestCard'
+import UserQueryTestModal from '@renderer/modals/UserQueryTestModal'
 
 const TestView: React.FC = () => {
+  const [isQueryModalOpen, setQueryModalOpen] = useState(false)
   const navigate = useNavigate()
   const { projectId } = useParams<{ projectId: string }>()
   const statsData = [
@@ -19,6 +21,29 @@ const TestView: React.FC = () => {
 
   return (
     <div className="test-main-container">
+      {/* 사용자 쿼리 테스트 모달 */}
+      <UserQueryTestModal
+        isOpen={isQueryModalOpen}
+        onClose={() => setQueryModalOpen(false)}
+        onStart={async (query, cnt, timeout) => {
+          // 1) IPC 호출
+          const result = await window.api.userQueryTest.run({
+            projectId: Number(projectId),
+            query,
+            runCount: cnt,
+            timeout
+          })
+
+          // 2) DB 저장 후 testId 반환됨
+          const { testId } = result
+
+          // 3) 모달 닫기
+          setQueryModalOpen(false)
+
+          // 4) 결과 페이지로 이동
+          navigate(`/main/test/${projectId}/user-query/${testId}`)
+        }}
+      />
       {/* 상단 헤더 */}
       <section className="test-main-header">
         <PageTitle
@@ -72,7 +97,7 @@ const TestView: React.FC = () => {
               { label: '평균 응답', value: '12.3m' },
               { label: '최적화 완료', value: 892 }
             ]}
-            onStart={() => console.log('사용자 쿼리 테스트 시작')}
+            onStart={() => setQueryModalOpen(true)}
           />
           <TestCard
             title="인덱스 테스트"

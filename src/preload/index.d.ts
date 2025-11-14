@@ -72,20 +72,17 @@ interface API {
   }>
   schema: {
     fetch: (databaseId: number) => Promise<DatabaseSchema>
-
     getRandomSample: (params: {
       databaseId: number
       table: string
       column: string
     }) => Promise<{ sample: unknown }>
-
     validateFkValue: (params: {
       databaseId: number
       table: string
       column: string
       value: unknown
     }) => Promise<{ isValid: boolean }>
-
     validateCheckConstraint: (args: {
       value: string
       checkConstraint: string
@@ -132,6 +129,20 @@ interface API {
     getAll: () => Promise<DomainCategory[]>
     getByLogicalType: (logicalType: string) => Promise<DomainCategory[]>
   }
+
+  tests: {
+    getById: (id: number) => Promise<Test | undefined>
+  }
+
+  userQueryTest: {
+    run: (payload: {
+      projectId: number
+      query: string
+      runCount: number
+      timeout: number
+    }) => Promise<{ testId: number }>
+  }
+
   indexTest: {
     analyze: (databaseId: number) => Promise<{
       success: boolean

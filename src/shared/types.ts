@@ -202,3 +202,68 @@ export interface AIRuleInput {
   token: string
   prompt?: string
 }
+
+//
+// 공용 Database Test 타입
+//
+export interface Test {
+  id: number
+  project_id: number
+  project_name: string
+  type: string
+  summary: string | null
+  result: string
+  response_time: number | null
+  index_ratio: number | null
+  created_at: number
+}
+
+//
+// PostgreSQL 실행 계획 타입
+//
+export interface PostgresExplainResult {
+  raw: unknown[] // PostgreSQL FORMAT JSON 원본
+  planType: string
+  estimatedRows: number
+  actualRows: number
+  cost: {
+    startup: number
+    total: number
+  }
+}
+
+//
+// MySQL 실행 계획 타입
+//
+export interface MySQLExplainResult {
+  raw: string[] // EXPLAIN ANALYZE 텍스트 라인 배열
+  planType: string
+  estimatedRows: number
+  cost: number
+}
+
+//
+// 공용 Explain 타입
+//
+export type ExplainResult = PostgresExplainResult | MySQLExplainResult
+
+//
+// 사용자 쿼리 테스트 결과 JSON 타입
+//
+export interface UserQueryTestResultJson {
+  query: string
+  runCount: number
+  timeout: number
+  dbms: 'mysql' | 'postgresql'
+  responseTimes: number[]
+  stats: {
+    avg: number
+    min: number
+    max: number
+    p50: number
+    p95: number
+    p99: number
+  }
+  explain: ExplainResult
+  warnings: string[]
+}
