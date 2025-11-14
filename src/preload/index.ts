@@ -193,6 +193,7 @@ if (process.contextIsolated) {
     contextBridge.exposeInMainWorld('electron', electronAPI)
     contextBridge.exposeInMainWorld('api', api)
     contextBridge.exposeInMainWorld('env', {
+      ...api.env,
       OPENAI_API_KEY: process.env.OPENAI_API_KEY || null,
       ANTHROPIC_API_KEY: process.env.ANTHROPIC_API_KEY || null,
       GOOGLE_API_KEY: process.env.GOOGLE_API_KEY || null
