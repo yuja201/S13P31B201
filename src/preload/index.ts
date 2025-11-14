@@ -84,7 +84,8 @@ const api = {
   test: {
     create: (data: TestInput): Promise<Test> => ipcRenderer.invoke('db:test:create', data),
     getAll: (): Promise<Test[]> => ipcRenderer.invoke('db:test:getAll'),
-    getById: (id: number): Promise<Test | undefined> => ipcRenderer.invoke('db:test:getById', id)
+    getById: (id: number): Promise<Test | undefined> => ipcRenderer.invoke('db:test:getById', id),
+    getDashboardData: () => ipcRenderer.invoke('tests:get-dashboard-data')
   },
 
   // Database connection test
@@ -186,11 +187,6 @@ const api = {
   // Index test operations
   indexTest: {
     analyze: (databaseId: number) => ipcRenderer.invoke('index:analyze', databaseId)
-  },
-
-  // test crud operations
-  test: {
-    getDashboardData: () => ipcRenderer.invoke('tests:get-dashboard-data')
   }
 }
 
