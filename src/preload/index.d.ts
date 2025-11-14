@@ -61,6 +61,7 @@ interface API {
     create: (data: TestInput) => Promise<Test>
     getAll: () => Promise<Test[]>
     getById: (id: number) => Promise<Test | undefined>
+    getDashboardData: () => Promise<DashboardData>
   }
   testConnection: (config: {
     dbType: 'MySQL' | 'PostgreSQL'
