@@ -1,14 +1,8 @@
 import mysql from 'mysql2/promise'
 import { Client as PgClient } from 'pg'
+import type { ConnectionConfig } from '../database/types'
 
-export interface ConnectionConfig {
-  dbType: 'MySQL' | 'PostgreSQL'
-  host: string
-  port: number
-  username: string
-  password: string
-  database?: string
-}
+export type { ConnectionConfig }
 
 export interface ConnectionTestResult {
   success: boolean

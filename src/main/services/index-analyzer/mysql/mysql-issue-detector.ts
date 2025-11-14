@@ -70,7 +70,7 @@ export function detectLowSelectivity(
 ): IndexIssue | null {
   // 복합 인덱스의 첫 번째 컬럼만 체크
   const firstColumn = columns.find((c) => c.seq_in_index === 1)
-  if (!firstColumn || !firstColumn.cardinality || tableRows === 0) {
+  if (!firstColumn || firstColumn.cardinality == null || tableRows === 0) {
     return null
   }
 
@@ -108,33 +108,63 @@ export function detectLowSelectivity(
  * 외래키 인덱스 누락 탐지
  */
 export function detectMissingFkIndexes(
-  foreignKeys: Array<{ table_name: string; column_name: string; constraint_name: string }>,
+  foreignKeys: Array<{
+    table_name: string
+    column_name: string
+    constraint_name: string
+    ordinal_position: number
+  }>,
   indexes: Map<string, Map<string, IndexColumn[]>>
 ): IndexIssue[] {
   const issues: IndexIssue[] = []
 
+  // 제약조건별로 FK 컬럼들을 그룹화
+  const fkByConstraint = new Map<
+    string,
+    Array<{ table_name: string; column_name: string; ordinal_position: number }>
+  >()
+
   for (const fk of foreignKeys) {
-    const tableIndexes = indexes.get(fk.table_name)
+    const key = `${fk.table_name}.${fk.constraint_name}`
+    if (!fkByConstraint.has(key)) {
+      fkByConstraint.set(key, [])
+    }
+    fkByConstraint.get(key)!.push(fk)
+  }
+
+  // 각 제약조건별로 검사
+  for (const [, fkColumns] of fkByConstraint) {
+    const tablename = fkColumns[0].table_name
+    const tableIndexes = indexes.get(tablename)
     if (!tableIndexes) continue
 
-    // FK 컬럼이 어떤 인덱스의 첫 번째 컬럼으로 포함되어 있는지 확인
+    // FK 컬럼을 ordinal_position 순으로 정렬
+    const sortedFkColumns = [...fkColumns].sort((a, b) => a.ordinal_position - b.ordinal_position)
+    const fkColumnNames = sortedFkColumns.map((col) => col.column_name)
+
+    // 인덱스 prefix가 FK 컬럼 시퀀스를 모두 포함하는지 확인
     let hasIndex = false
     for (const [, columns] of tableIndexes) {
-      const firstColumn = columns.find((c) => c.seq_in_index === 1)
-      if (firstColumn && firstColumn.column_name === fk.column_name) {
+      const orderedColumns = [...columns].sort((a, b) => a.seq_in_index - b.seq_in_index)
+      const indexColumnNames = orderedColumns.map((c) => c.column_name)
+
+      // 인덱스의 prefix가 FK 컬럼 시퀀스와 일치하는지 확인
+      if (fkColumnNames.every((fkCol, idx) => indexColumnNames[idx] === fkCol)) {
         hasIndex = true
         break
       }
     }
 
     if (!hasIndex) {
+      const columnList = fkColumnNames.join(', ')
+      const indexSuffix = fkColumnNames.join('_')
       issues.push({
         severity: 'critical',
         category: 'missing_fk_index',
-        description: `외래키 컬럼 '${fk.table_name}.${fk.column_name}'에 인덱스가 없습니다.`,
+        description: `외래키 컬럼 '${tablename}.${columnList}'에 인덱스가 없습니다.`,
         recommendation: `외래키 컬럼에 인덱스를 추가해보세요.`,
         impact: 'DELETE/UPDATE 시 참조 테이블 전체 스캔 발생 가능',
-        suggestedSQL: `ALTER TABLE ${fk.table_name} ADD INDEX idx_${fk.table_name}_${fk.column_name} (${fk.column_name});`
+        suggestedSQL: `ALTER TABLE ${tablename} ADD INDEX idx_${tablename}_${indexSuffix} (${columnList});`
       })
     }
   }
@@ -155,11 +185,12 @@ export function detectColumnOrderIssues(
   if (columns.length < 2) return null
 
   const firstColumn = columns.find((c) => c.seq_in_index === 1)
-  if (!firstColumn || !firstColumn.cardinality || tableRows === 0) {
+  if (!firstColumn || tableRows === 0) {
     return null
   }
 
-  const firstSelectivity = (firstColumn.cardinality / tableRows) * 100
+  const cardinality = firstColumn.cardinality ?? 0
+  const firstSelectivity = (cardinality / tableRows) * 100
 
   // 첫 번째 컬럼의 선택도가 낮으면 경고
   if (firstSelectivity < 20) {
@@ -225,7 +256,11 @@ export function detectInappropriateTypeIndexes(
     const { data_type } = typeInfo
 
     // TEXT/BLOB 타입에 전체 인덱스
-    if (['TEXT', 'BLOB', 'MEDIUMTEXT', 'LONGTEXT', 'MEDIUMBLOB', 'LONGBLOB'].includes(data_type)) {
+    if (
+      ['TEXT', 'BLOB', 'MEDIUMTEXT', 'LONGTEXT', 'MEDIUMBLOB', 'LONGBLOB'].includes(
+        data_type.toUpperCase()
+      )
+    ) {
       issues.push({
         severity: 'recommended',
         category: 'inappropriate_type',

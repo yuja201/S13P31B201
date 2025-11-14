@@ -208,7 +208,6 @@ export function getIndexSummary(): TestSummary {
  */
 export function getThisWeekTestCount(): number {
   const db = getDatabase()
-
   const stmt = db.prepare(`
     SELECT COUNT(*) AS count
     FROM tests
@@ -261,4 +260,95 @@ export function getWeeklyGrowthRate(): number {
 
 export function insertIntoTests(data: TestInput): number {
   return createTest(data).id
+}
+
+/**
+ * 사용자 쿼리: 평균 응답 시간 변화율
+ */
+export function getQueryWeeklyChangeRate(): number {
+  const db = getDatabase()
+
+  const thisWeek = (
+    db
+      .prepare(
+        `
+      SELECT AVG(response_time) AS avg_value
+      FROM tests
+      WHERE type = 'QUERY'
+        AND created_at >= strftime('%s', 'now', 'weekday 1', '-0 days')
+    `
+      )
+      .get() as { avg_value: number | null }
+  ).avg_value
+
+  const lastWeek = (
+    db
+      .prepare(
+        `
+      SELECT AVG(response_time) AS avg_value
+      FROM tests
+      WHERE type = 'QUERY'
+        AND created_at >= strftime('%s', 'now', 'weekday 1', '-7 days')
+        AND created_at <  strftime('%s', 'now', 'weekday 1')
+    `
+      )
+      .get() as { avg_value: number | null }
+  ).avg_value
+
+  if (lastWeek === null || lastWeek === 0) return thisWeek ? 100 : 0
+  return ((thisWeek! - lastWeek!) / lastWeek!) * 100
+}
+
+/**
+ * 인덱스 테스트: 평균 인덱스 사용율 변화율
+ */
+export function getIndexWeeklyChangeRate(): number {
+  const db = getDatabase()
+
+  const thisWeek = (
+    db
+      .prepare(
+        `
+      SELECT AVG(index_ratio) AS avg_value
+      FROM tests
+      WHERE type = 'INDEX'
+        AND created_at >= strftime('%s', 'now', 'weekday 1', '-0 days')
+    `
+      )
+      .get() as { avg_value: number | null }
+  ).avg_value
+
+  const lastWeek = (
+    db
+      .prepare(
+        `
+      SELECT AVG(index_ratio) AS avg_value
+      FROM tests
+      WHERE type = 'INDEX'
+        AND created_at >= strftime('%s', 'now', 'weekday 1', '-7 days')
+        AND created_at <  strftime('%s', 'now', 'weekday 1')
+    `
+      )
+      .get() as { avg_value: number | null }
+  ).avg_value
+
+  if (lastWeek === null || lastWeek === 0) return thisWeek ? 100 : 0
+  return ((thisWeek! - lastWeek!) / lastWeek!) * 100
+}
+
+/**
+ * 최근 7일간 총 테스트 개수
+ */
+export function getWeeklyTotalTestStats(): { date: string; count: number }[] {
+  const db = getDatabase()
+  const stmt = db.prepare(`
+    SELECT
+      date(created_at, 'unixepoch') AS date,
+      COUNT(*) AS count
+    FROM tests
+    WHERE created_at >= strftime('%s', 'now', '-7 days')
+    GROUP BY date
+    ORDER BY date
+  `)
+  return stmt.all() as { date: string; count: number }[]
 }

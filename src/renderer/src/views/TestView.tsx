@@ -1,32 +1,91 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import PageTitle from '@renderer/components/PageTitle'
 import TestSummaryCard from '@renderer/components/TestSummaryCard'
 import TestCard from '@renderer/components/TestCard'
 import UserQueryTestModal from '@renderer/modals/UserQueryTestModal'
+import type { DashboardData } from '@shared/types'
 
 const TestView: React.FC = () => {
   const [isQueryModalOpen, setQueryModalOpen] = useState(false)
+  const [dashboard, setDashboard] = useState<DashboardData | null>(null)
+
   const navigate = useNavigate()
   const { projectId } = useParams<{ projectId: string }>()
-  const statsData = [
-    { name: 'Mon', value: 10 },
-    { name: 'Tue', value: 40 },
-    { name: 'Wed', value: 20 },
-    { name: 'Thu', value: 70 },
-    { name: 'Fri', value: 30 },
-    { name: 'Sat', value: 80 },
-    { name: 'Sun', value: 50 }
-  ]
+
+  // 숫자 포맷
+  const formatNumber = (value: number | null | undefined): number => {
+    if (value === null || value === undefined || isNaN(value)) return 0
+    return Number(value.toFixed(1))
+  }
+
+  // 최근 7일 날짜 배열
+  const getLast7Days = (): string[] => {
+    const arr: string[] = []
+    const now = new Date()
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now)
+      d.setDate(now.getDate() - i)
+      arr.push(d.toISOString().split('T')[0])
+    }
+    return arr
+  }
+
+  // 주간 그래프 정규화
+  const normalizeDaily = (
+    days: string[],
+    map: Record<string, number>
+  ): { name: string; value: number }[] =>
+    days.map((day) => ({
+      name: day,
+      value: formatNumber(map[day] ?? 0)
+    }))
+
+  // 대시보드 데이터 로드
+  const loadDashboardData = useCallback(async () => {
+    const data = await window.api.test.getDashboardData()
+    setDashboard(data)
+  }, [])
+
+  useEffect(() => {
+    void loadDashboardData()
+  }, [loadDashboardData])
+
+  if (dashboard === null) return <div>Loading...</div>
+
+  const days = getLast7Days()
+
+  // 총 테스트 그래프
+  const totalMap: Record<string, number> = {}
+  dashboard.weeklyTotalStats.forEach((d) => {
+    totalMap[d.date] = Number(d.count)
+  })
+  const weeklyTotalGraph = normalizeDaily(days, totalMap)
+
+  // 응답시간 그래프
+  const queryMap: Record<string, number> = {}
+  dashboard.weeklyQueryStats.forEach((d) => {
+    queryMap[d.date] = d.avg_response_time ?? 0
+  })
+  const weeklyQueryGraph = normalizeDaily(days, queryMap)
+
+  // 인덱스 사용율 그래프
+  const indexMap: Record<string, number> = {}
+  dashboard.weeklyIndexStats.forEach((d) => {
+    indexMap[d.date] = d.avg_index_ratio ?? 0
+  })
+  const weeklyIndexGraph = normalizeDaily(days, indexMap)
+
+  const totalTests = dashboard.querySummary.count + dashboard.indexSummary.count
 
   return (
     <div className="test-main-container">
       {/* 사용자 쿼리 테스트 모달 */}
       <UserQueryTestModal
         isOpen={isQueryModalOpen}
+        projectId={projectId ?? ''}
         onClose={() => setQueryModalOpen(false)}
         onStart={async (query, cnt, timeout) => {
-          // 1) IPC 호출
           const result = await window.api.userQueryTest.run({
             projectId: Number(projectId),
             query,
@@ -34,16 +93,16 @@ const TestView: React.FC = () => {
             timeout
           })
 
-          // 2) DB 저장 후 testId 반환됨
           const { testId } = result
 
-          // 3) 모달 닫기
           setQueryModalOpen(false)
 
-          // 4) 결과 페이지로 이동
+          void loadDashboardData()
+
           navigate(`/main/test/${projectId}/user-query/${testId}`)
         }}
       />
+
       {/* 상단 헤더 */}
       <section className="test-main-header">
         <PageTitle
@@ -55,57 +114,74 @@ const TestView: React.FC = () => {
       {/* 테스트 히스토리 */}
       <section className="test-history-section">
         <h2 className="preSemiBold24 section-title">테스트 히스토리</h2>
+
         <div className="aligned-grid stats-card-grid">
           <TestSummaryCard
             title="총 테스트 횟수"
             subtitle="사용자 쿼리. 인덱스 테스트"
-            total={107}
-            currentWeek={26}
-            changePercent={40}
-            data={statsData}
-            positive
+            total={totalTests}
+            currentWeek={dashboard.thisWeek}
+            changePercent={formatNumber(dashboard.growthRate)}
+            data={weeklyTotalGraph}
+            positive={dashboard.growthRate >= 0}
+            unit="번"
+            currentPrefix="이번 주"
+            showUnitAfterTotal
           />
+
           <TestSummaryCard
-            title="평균 개선율"
+            title="인덱스 사용율"
             subtitle="인덱스 테스트"
-            total={18}
-            currentWeek={20}
-            changePercent={3}
-            data={statsData}
+            total={formatNumber(dashboard.indexSummary.avg_value)}
+            currentWeek={weeklyIndexGraph.at(-1)?.value ?? 0}
+            changePercent={formatNumber(dashboard.indexChangeRate)}
+            data={weeklyIndexGraph}
             positive
+            unit="%"
+            currentPrefix="최근 사용율"
+            showUnitAfterTotal
           />
+
           <TestSummaryCard
-            title="평균 개선율"
+            title="평균 응답 시간"
             subtitle="사용자 쿼리 테스트"
-            total={79}
-            currentWeek={80}
-            changePercent={-3}
-            data={statsData}
-            positive={false}
+            total={formatNumber(dashboard.querySummary.avg_value)}
+            currentWeek={weeklyQueryGraph.at(-1)?.value ?? 0}
+            changePercent={formatNumber(dashboard.queryChangeRate)}
+            data={weeklyQueryGraph}
+            positive
+            unit="ms"
+            currentPrefix="최근 응답"
+            showUnitAfterTotal
           />
         </div>
       </section>
 
-      {/* 사용자 테스트 카드 */}
+      {/* 하단 TestCard */}
       <section className="test-card-section">
         <div className="aligned-grid test-card-grid">
           <TestCard
             title="사용자 쿼리 테스트"
             description="사용자 쿼리 성능 분석 및 최적화 방안을 제안"
             metrics={[
-              { label: '테스트 수', value: 107 },
-              { label: '평균 응답', value: '12.3m' },
-              { label: '최적화 완료', value: 892 }
+              { label: '테스트 수', value: dashboard.querySummary.count },
+              {
+                label: '평균 응답',
+                value: `${formatNumber(dashboard.querySummary.avg_value)} ms`
+              }
             ]}
             onStart={() => setQueryModalOpen(true)}
           />
+
           <TestCard
             title="인덱스 테스트"
             description="데이터베이스 인덱스 분석 및 최적화 방안을 제안"
             metrics={[
-              { label: '테스트 수', value: 107 },
-              { label: '평균 응답', value: '12.3m' },
-              { label: '최적화 완료', value: 892 }
+              { label: '테스트 수', value: dashboard.indexSummary.count },
+              {
+                label: '평균 사용율',
+                value: `${formatNumber(dashboard.indexSummary.avg_value)} %`
+              }
             ]}
             onStart={() => navigate(`/main/test/${projectId}/index`)}
           />

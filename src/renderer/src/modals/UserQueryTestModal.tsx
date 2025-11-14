@@ -6,6 +6,7 @@ import { useToastStore } from '@renderer/stores/toastStore'
 
 interface UserQueryTestModalProps {
   isOpen: boolean
+  projectId: string
   onClose: () => void
   onStart: (query: string, count: number, timeout: number) => void
 }
@@ -53,7 +54,7 @@ const UserQueryTestModal: React.FC<UserQueryTestModalProps> = ({ isOpen, onClose
         {/* SQL 입력 */}
         <div className="label-row">
           <div className="section-title preSemiBold20">SQL 쿼리 입력</div>
-          <Button variant="blue" size="sm" onClick={handleValidate}>
+          <Button variant="blue" size="md" onClick={handleValidate}>
             문법 검증
           </Button>
         </div>
@@ -110,28 +111,34 @@ const UserQueryTestModal: React.FC<UserQueryTestModalProps> = ({ isOpen, onClose
       </div>
 
       <style>{`
-        .query-modal {
-          width: 640px;
-          padding: 28px 32px;
+        .query-modal .label-row {
           display: flex;
-          flex-direction: column;
+          justify-content: space-between;
+          align-items: flex-end;
+          margin-top: 24px;
+          margin-bottom: 8px;
         }
 
-        .divider {
+        .query-modal .section-title {
+          display: flex;
+          align-items: flex-end;
+          margin-bottom: 8px;
+        }
+
+        .query-modal .input-label {
+          margin-bottom: 8px;
+          margin-top: 6px;
+          color: var(--color-black);
+        }
+
+         .divider {
           width: 100%;
           border: none;
           border-top: 1px solid var(--color-dark-gray);
           margin: 14px 0 24px;
         }
 
-        .label-row {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-          margin-bottom: 10px;
-        }
-
-        .textarea-field {
+        .query-modal .textarea-field {
           width: 100%;
           height: 160px;
           border-radius: 10px;
@@ -141,21 +148,10 @@ const UserQueryTestModal: React.FC<UserQueryTestModalProps> = ({ isOpen, onClose
           font-family: var(--font-family);
           font-size: 14px;
           box-shadow: var(--shadow);
-          margin-bottom: 10px;
+          margin-bottom: 20px;
         }
 
-        .option-block {
-          display: flex;
-          flex-direction: column;
-          margin-top: 16px;
-        }
-
-        .input-label {
-          margin-bottom: 4px;
-          color: var(--color-black);
-        }
-
-        .select-field {
+        .query-modal .select-field {
           width: 100%;
           max-width: 240px;
           height: 40px;
@@ -173,12 +169,17 @@ const UserQueryTestModal: React.FC<UserQueryTestModalProps> = ({ isOpen, onClose
           background-position: right 10px center;
         }
 
-
-        .actions {
+        .query-modal .option-block {
+          display: flex;
+          flex-direction: column;
+          margin-bottom: 5px;
+        }
+        
+        .query-modal .actions {
           display: flex;
           justify-content: flex-end;
           gap: 12px;
-          margin-top: 32px;
+          margin-top: 24px;
         }
       `}</style>
     </Modal>

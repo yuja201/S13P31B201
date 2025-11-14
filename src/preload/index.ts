@@ -15,7 +15,9 @@ import type {
   RuleInput,
   RuleUpdate,
   DatabaseSchema,
-  DomainCategory
+  DomainCategory,
+  Test,
+  TestInput
 } from '../main/database/types'
 
 import { FakerRuleInput, AIRuleInput, GenerateRequest, GenerationResult } from '@shared/types'
@@ -76,6 +78,14 @@ const api = {
     createAI: (data: AIRuleInput): Promise<Rule> => ipcRenderer.invoke('db:rule:createAI', data),
     getByLogicalType: (logicalType: string) =>
       ipcRenderer.invoke('db:rule:getByLogicalType', logicalType)
+  },
+
+  // Test operations
+  test: {
+    create: (data: TestInput): Promise<Test> => ipcRenderer.invoke('db:test:create', data),
+    getAll: (): Promise<Test[]> => ipcRenderer.invoke('db:test:getAll'),
+    getById: (id: number): Promise<Test | undefined> => ipcRenderer.invoke('db:test:getById', id),
+    getDashboardData: () => ipcRenderer.invoke('tests:get-dashboard-data')
   },
 
   // Database connection test

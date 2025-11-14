@@ -92,6 +92,7 @@ export async function fetchForeignKeys(
     constraint_name: string
     referenced_table_name: string
     referenced_column_name: string
+    ordinal_position: number
   }>
 > {
   const [rows] = await connection.query(
@@ -101,10 +102,12 @@ export async function fetchForeignKeys(
       COLUMN_NAME as column_name,
       CONSTRAINT_NAME as constraint_name,
       REFERENCED_TABLE_NAME as referenced_table_name,
-      REFERENCED_COLUMN_NAME as referenced_column_name
+      REFERENCED_COLUMN_NAME as referenced_column_name,
+      ORDINAL_POSITION as ordinal_position
     FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE
     WHERE TABLE_SCHEMA = ?
       AND REFERENCED_TABLE_NAME IS NOT NULL
+    ORDER BY TABLE_NAME, CONSTRAINT_NAME, ORDINAL_POSITION
     `,
     [databaseName]
   )
@@ -114,6 +117,7 @@ export async function fetchForeignKeys(
     constraint_name: string
     referenced_table_name: string
     referenced_column_name: string
+    ordinal_position: number
   }>
 }
 

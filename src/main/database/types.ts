@@ -26,6 +26,15 @@ export interface Database {
   connected_at: number
 }
 
+export interface ConnectionConfig {
+  dbType: 'MySQL' | 'PostgreSQL'
+  host: string
+  port: number
+  username: string
+  password: string
+  database?: string
+}
+
 export interface Rule {
   id: number
   name: string
@@ -175,7 +184,6 @@ export interface IndexIssue {
     | 'missing_fk_index' // FK 인덱스 누락
     | 'column_order' // 복합 인덱스 컬럼 순서 문제
     | 'oversized' // 과도하게 큰 인덱스
-    | 'bloated' // 인덱스 bloat
     | 'inappropriate_type' // 부적절한 컬럼 타입에 인덱스
     | 'underindexed_table' // 대형 테이블에 인덱스 부족
 
@@ -188,8 +196,6 @@ export interface IndexIssue {
     selectivity?: number // 선택도(0-100%)
     scanCount?: number // 스캔 횟수
     sizeMB?: number // 크기(MB)
-    bloatRatio?: number // Bloat 비율
-    potentialSavingsMB?: number // 절약 가능한 용량
   }
 
   // 관련 정보
@@ -230,7 +236,6 @@ export interface IndexAnalysisResult {
   statsAvailable: {
     usageStats: boolean // PostgreSQL: true, MySQL: false
     sizeStats: boolean // PostgreSQL: true(개별), MySQL: true(테이블 전체)
-    bloatStats: boolean // PostgreSQL: true, MySQL: false
   }
 }
 
@@ -256,9 +261,54 @@ export interface IndexAnalysisSummary {
   statsAvailable: {
     usageStats: boolean
     sizeStats: boolean
-    bloatStats: boolean
   }
 
   // 권장사항
   recommendations?: string[]
+}
+
+export interface Test {
+  id: number
+  project_id: number
+  project_name: string
+  type: 'QUERY' | 'INDEX'
+  summary: string | null
+  result: string
+  response_time: number | null
+  index_ratio: number | null
+  created_at: number
+}
+
+export interface TestInput {
+  project_id: number
+  type: 'QUERY' | 'INDEX'
+  summary?: string | null
+  result: string
+  response_time?: number | null
+  index_ratio?: number | null
+}
+
+export interface TestUpdate {
+  id: number
+  project_id?: number
+  type?: 'QUERY' | 'INDEX'
+  summary?: string | null
+  result?: string
+  response_time?: number | null
+  index_ratio?: number | null
+}
+
+export interface DailyQueryStat {
+  date: string // YYYY-MM-DD
+  avg_response_time: number | null
+}
+
+export interface DailyIndexStat {
+  date: string // YYYY-MM-DD
+  avg_index_ratio: number | null
+}
+
+export interface TestSummary {
+  count: number
+  avg_value: number | null
 }

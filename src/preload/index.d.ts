@@ -15,7 +15,9 @@ import type {
   RuleUpdate,
   DatabaseSchema,
   DomainCategory,
-  IndexAnalysisSummary
+  IndexAnalysisSummary,
+  Test,
+  TestInput
 } from '../main/database/types'
 import type { GenerateRequest, GenerationResult } from '@shared/types'
 
@@ -54,6 +56,12 @@ interface API {
     createFaker: (data: FakerRuleInput) => Promise<Rule>
     createAI: (data: AIRuleInput) => Promise<Rule>
     getByLogicalType: (logicalType: string) => Promise<Rule[]>
+  }
+  test: {
+    create: (data: TestInput) => Promise<Test>
+    getAll: () => Promise<Test[]>
+    getById: (id: number) => Promise<Test | undefined>
+    getDashboardData: () => Promise<DashboardData>
   }
   testConnection: (config: {
     dbType: 'MySQL' | 'PostgreSQL'

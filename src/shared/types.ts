@@ -35,6 +35,7 @@ export type AIMetaData = {
 export type FixedMetaData = {
   fixedValue: string
 }
+
 export type ReferenceMetaData = {
   kind: 'reference'
   refTable: string
@@ -171,9 +172,6 @@ export interface AIGenRequest {
   info: ColumnSchemaInfo
 }
 
-/**
- * AI 생성 결과
- */
 export interface AIGenResult {
   values: string[]
   diagnostics: {
@@ -185,16 +183,13 @@ export interface AIGenResult {
 }
 
 /**
- * Faker 규칙 입력
+ * Faker / AI rule
  */
 export interface FakerRuleInput {
   name: string
   domain: number
 }
 
-/**
- * AI 규칙 입력
- */
 export interface AIRuleInput {
   name: string
   domain: number
@@ -203,9 +198,13 @@ export interface AIRuleInput {
   prompt?: string
 }
 
-//
-// 공용 Database Test 타입
-//
+/* ============================================================
+   feature/be/user-query-test — 테스트/Explain/쿼리 타입
+   ============================================================ */
+
+/**
+ * 공용 Database Test 타입
+ */
 export interface Test {
   id: number
   project_id: number
@@ -218,11 +217,11 @@ export interface Test {
   created_at: number
 }
 
-//
-// PostgreSQL 실행 계획 타입
-//
+/**
+ * PostgreSQL 실행 계획 타입
+ */
 export interface PostgresExplainResult {
-  raw: unknown[] // PostgreSQL FORMAT JSON 원본
+  raw: unknown[]
   planType: string
   estimatedRows: number
   actualRows: number
@@ -232,24 +231,21 @@ export interface PostgresExplainResult {
   }
 }
 
-//
-// MySQL 실행 계획 타입
-//
+/**
+ * MySQL 실행 계획 타입
+ */
 export interface MySQLExplainResult {
-  raw: string[] // EXPLAIN ANALYZE 텍스트 라인 배열
+  raw: string[]
   planType: string
   estimatedRows: number
   cost: number
 }
 
-//
-// 공용 Explain 타입
-//
 export type ExplainResult = PostgresExplainResult | MySQLExplainResult
 
-//
-// 사용자 쿼리 테스트 결과 JSON 타입
-//
+/**
+ * 사용자 쿼리 테스트 결과 JSON 타입
+ */
 export interface UserQueryTestResultJson {
   query: string
   runCount: number
@@ -266,4 +262,47 @@ export interface UserQueryTestResultJson {
   }
   explain: ExplainResult
   warnings: string[]
+}
+
+/* ============================================================
+   develop — 대시보드/일간 통계 타입
+   ============================================================ */
+
+/**
+ * 최근 7일 사용자 쿼리 평균 응답 시간
+ */
+export interface DailyQueryStat {
+  date: string
+  avg_response_time: number | null
+}
+
+/**
+ * 최근 7일 인덱스 평균 사용율
+ */
+export interface DailyIndexStat {
+  date: string
+  avg_index_ratio: number | null
+}
+
+/**
+ * 테스트 요약 (평균 응답/평균 인덱스 사용율)
+ */
+export interface TestSummary {
+  count: number
+  avg_value: number | null
+}
+
+/**
+ * 전체 대시보드 데이터 구조
+ */
+export interface DashboardData {
+  thisWeek: number
+  growthRate: number
+  weeklyTotalStats: { date: string; count: number }[]
+  weeklyQueryStats: DailyQueryStat[]
+  weeklyIndexStats: DailyIndexStat[]
+  querySummary: TestSummary
+  indexSummary: TestSummary
+  queryChangeRate: number
+  indexChangeRate: number
 }
