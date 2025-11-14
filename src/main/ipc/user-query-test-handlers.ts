@@ -13,6 +13,16 @@ import type {
   UserQueryTestResultJson
 } from '../../shared/types'
 
+// --------------------------------------------------
+// Payload 타입 정의
+// --------------------------------------------------
+interface UserQueryTestRunPayload {
+  projectId: number
+  query: string
+  runCount: number
+  timeout: number
+}
+
 // PostgreSQL 판별
 function isPostgresExplain(result: ExplainResult): result is PostgresExplainResult {
   return (result as PostgresExplainResult).actualRows !== undefined
@@ -45,8 +55,15 @@ function generateWarnings(explain: ExplainResult): string[] {
   return warnings
 }
 
-ipcMain.handle('userQueryTest:run', async (_, payload) => {
+// --------------------------------------------------
+// IPC 핸들러
+// --------------------------------------------------
+ipcMain.handle('userQueryTest:run', async (_, payload: UserQueryTestRunPayload) => {
   const { projectId, query, runCount, timeout } = payload
+
+  // 안전 범위 제한
+  const safeRunCount = Math.min(Math.max(runCount, 1), 1000)
+  const safeTimeout = Math.min(Math.max(timeout, 1), 300)
 
   try {
     const config = await getConnectionConfig(projectId)
@@ -56,20 +73,19 @@ ipcMain.handle('userQueryTest:run', async (_, payload) => {
 
     if (config.dbType === 'MySQL') {
       explainResult = await runMySQLExplainAnalyze(config, query)
-      executionTimes = await runMySQLQueryMultiple(config, query, runCount, timeout)
+      executionTimes = await runMySQLQueryMultiple(config, query, safeRunCount, safeTimeout)
     } else {
       explainResult = await runPostgresExplainAnalyze(config, query)
-      executionTimes = await runPostgresQueryMultiple(config, query, runCount, timeout)
+      executionTimes = await runPostgresQueryMultiple(config, query, safeRunCount, safeTimeout)
     }
 
     const stats = calculateLatencyStats(executionTimes)
     const warnings = generateWarnings(explainResult)
 
-    // SQLite 저장 JSON
     const resultJson: UserQueryTestResultJson = {
       query,
-      runCount,
-      timeout,
+      runCount: safeRunCount,
+      timeout: safeTimeout,
       dbms: config.dbType === 'MySQL' ? 'mysql' : 'postgresql',
       responseTimes: executionTimes,
       stats,

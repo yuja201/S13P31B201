@@ -6,12 +6,15 @@ import TestCard from '@renderer/components/TestCard'
 import UserQueryTestModal from '@renderer/modals/UserQueryTestModal'
 import type { DashboardData } from '@shared/types'
 
+import { useToastStore } from '@renderer/stores/toastStore'
+
 const TestView: React.FC = () => {
   const [isQueryModalOpen, setQueryModalOpen] = useState(false)
   const [dashboard, setDashboard] = useState<DashboardData | null>(null)
 
   const navigate = useNavigate()
   const { projectId } = useParams<{ projectId: string }>()
+  const showToast = useToastStore((s) => s.showToast)
 
   // 숫자 포맷
   const formatNumber = (value: number | null | undefined): number => {
@@ -86,20 +89,28 @@ const TestView: React.FC = () => {
         projectId={projectId ?? ''}
         onClose={() => setQueryModalOpen(false)}
         onStart={async (query, cnt, timeout) => {
-          const result = await window.api.userQueryTest.run({
-            projectId: Number(projectId),
-            query,
-            runCount: cnt,
-            timeout
-          })
+          try {
+            const result = await window.api.userQueryTest.run({
+              projectId: Number(projectId),
+              query,
+              runCount: cnt,
+              timeout
+            })
 
-          const { testId } = result
+            const { testId } = result
 
-          setQueryModalOpen(false)
+            setQueryModalOpen(false)
+            void loadDashboardData()
+            navigate(`/main/test/${projectId}/user-query/${testId}`)
+          } catch (error) {
+            console.error('[쿼리 테스트 실행 실패]', error)
 
-          void loadDashboardData()
-
-          navigate(`/main/test/${projectId}/user-query/${testId}`)
+            showToast(
+              error instanceof Error ? error.message : '쿼리 테스트 실행 중 오류가 발생했습니다.',
+              'error',
+              '실행 실패'
+            )
+          }
         }}
       />
 
