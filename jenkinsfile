@@ -1,0 +1,26 @@
+pipeline {
+  agent any
+
+  triggers {
+      githubPush() 
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        git branch: 'master',
+            url: 'https://github.com/yuja201/here-is-dummy.git'
+      }
+    }
+
+    stage('Deploy HTML') {
+      steps {
+        sshagent(['deploy-key']) {
+          sh '''
+            scp -o StrictHostKeyChecking=no -r ./src/web/* ubuntu@localhost:/var/www/html/
+          '''
+        }
+      }
+    }
+  }
+}
