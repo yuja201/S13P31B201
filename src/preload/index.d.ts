@@ -93,6 +93,14 @@ interface API {
       runCount: number
       timeout: number
     }) => Promise<{ testId: number }>
+    AIGenerate: (payload: {
+      projectId: number
+      query: string
+      modelId?: number | null
+    }) => Promise<{
+      explain: MySQLExplainResult | PostgresExplainResult
+      ai: string
+    }>
   }
 
   /* ======================= INDEX TEST ======================= */
