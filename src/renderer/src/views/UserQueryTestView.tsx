@@ -251,7 +251,6 @@ const UserQueryTestView: React.FC = () => {
           padding: 16px;
           background-color: white;
           border-radius: 6px;
-          font: preSemiBold20
           color: #334155;
           line-height: 1.6;
           white-space: pre-wrap;
