@@ -1,11 +1,14 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import { useParams } from 'react-router-dom'
+import { toPng } from 'html-to-image'
 
 import InfoCard from '@renderer/components/InfoCard'
 import AIRecommendation from '@renderer/components/AIRecommendation'
 import SummaryCards from '@renderer/components/SummaryCards'
 import ResponseTimeChart from '@renderer/components/ResponseTimeChart'
 import TestHeader from '@renderer/components/TestHeader'
+import UserQueryTestModal from '@renderer/modals/UserQueryTestModal'
+import { useNavigate } from 'react-router-dom'
 
 import type { Test, UserQueryTestResultJson, ExplainResult } from '@shared/types'
 
@@ -16,6 +19,11 @@ const failureIcon = new URL('@renderer/assets/imgs/failure.svg', import.meta.url
 const UserQueryTestView: React.FC = () => {
   const { testId } = useParams()
   const [test, setTest] = useState<Test | null>(null)
+  const navigate = useNavigate()
+  const [isRerunModalOpen, setRerunModalOpen] = useState(false)
+
+  // 메인 컨텐츠 캡처를 위한 ref
+  const resultContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!testId) return
@@ -26,11 +34,11 @@ const UserQueryTestView: React.FC = () => {
 
   if (!test) return <div className="view-container">Loading...</div>
 
-  // SQLite에 저장된 JSON 파싱
   const result: UserQueryTestResultJson = JSON.parse(test.result)
   const stats = result.stats
   const explain: ExplainResult = result.explain
   const warnings = result.warnings
+  const query = result.query
 
   /** -----------------------------------------------------
    *  SummaryCards 응답속도 자동 평가 로직
@@ -50,22 +58,78 @@ const UserQueryTestView: React.FC = () => {
     perfColor = 'red'
   }
 
-  /** 다시 실행 */
   const handleRerunTest = (): void => {
-    console.log('테스트 다시 실행')
-    // TODO: 동일 쿼리 재실행 기능 연결
+    setRerunModalOpen(true)
   }
 
-  /** 다운로드 */
-  const handleDownload = (): void => {
-    console.log('테스트 결과 다운로드')
-    // TODO: 파일 저장 기능 연결
+  /** -----------------------------------------------------
+   *  다운로드 기능
+   * ----------------------------------------------------- */
+  const handleDownload = async (): Promise<void> => {
+    if (!resultContainerRef.current) return
+
+    try {
+      const originalDataUrl = await toPng(resultContainerRef.current, {
+        cacheBust: true,
+        pixelRatio: 2,
+        backgroundColor: '#f7f8fa'
+      })
+
+      const img = new Image()
+      img.src = originalDataUrl
+      await new Promise((resolve) => (img.onload = resolve))
+
+      const padding = 40
+
+      const canvas = document.createElement('canvas')
+      canvas.width = img.width + padding * 2
+      canvas.height = img.height + padding * 2
+
+      const ctx = canvas.getContext('2d')
+      if (!ctx) return
+
+      ctx.fillStyle = '#ffffff'
+      ctx.fillRect(0, 0, canvas.width, canvas.height)
+      ctx.drawImage(img, padding, padding)
+
+      const link = document.createElement('a')
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5)
+      link.download = `user_query_test_${timestamp}.png`
+      link.href = canvas.toDataURL('image/png')
+      link.click()
+    } catch (error) {
+      window.api.logger.error('쿼리 테스트 결과 이미지 다운로드 실패:', error)
+    }
   }
 
   return (
     <>
+      <UserQueryTestModal
+        isOpen={isRerunModalOpen}
+        projectId={String(test.project_id)}
+        initialQuery={query}
+        initialCount={result.runCount}
+        initialTimeout={result.timeout ?? 30}
+        onClose={() => setRerunModalOpen(false)}
+        onStart={(newQuery, cnt, timeout) => {
+          // 여기서 다시 실행한 후 TestView 로 이동
+          window.api.userQueryTest
+            .run({
+              projectId: Number(test.project_id),
+              query: newQuery,
+              runCount: cnt,
+              timeout
+            })
+            .then((res) => {
+              const testId = res.testId
+              navigate(`/main/test/${test.project_id}/user-query/${testId}`)
+            })
+
+          setRerunModalOpen(false)
+        }}
+      />
       <div className="view-container">
-        {/* 페이지 제목 */}
+        {/* 페이지 제목*/}
         <TestHeader
           title="사용자 쿼리 테스트"
           subtitle="테스트 결과를 확인해 보세요."
@@ -73,81 +137,87 @@ const UserQueryTestView: React.FC = () => {
           onRerunTest={handleRerunTest}
         />
 
-        {/* 테스트 통계 */}
-        <div className="section-gap">
-          <h2 className="section-title preSemiBold20">테스트 통계</h2>
+        {/*여기부터 캡처 영역 */}
+        <div className="capture" ref={resultContainerRef}>
+          <pre className="sql-code preRegular20">{query}</pre>
 
-          <SummaryCards
-            mainCard={{
-              icon: perfIcon,
-              title: '성능 점수',
-              value: `${stats.avg}ms`,
-              color: perfColor
-            }}
-            subCard={{
-              stats: [
-                { label: '총 실행 횟수', value: result.runCount },
-                { label: '최소 응답시간', value: stats.min, color: 'green' },
-                { label: '최대 응답시간', value: stats.max, color: 'red' }
-              ]
-            }}
-          />
-        </div>
-
-        {/* 응답시간 분포 */}
-        <div className="section-gap">
-          <h2 className="section-title preSemiBold20">응답시간 분포</h2>
-          <ResponseTimeChart responseTimes={result.responseTimes} />
-        </div>
-
-        {/* 쿼리 실행 계획 분석 */}
-        <div className="section-gap">
-          <h2 className="section-title preSemiBold20">쿼리 실행 계획 분석</h2>
-          <div className="section-grid">
-            <InfoCard
-              title={explain.planType}
-              content={`Estimated Rows: ${explain.estimatedRows}`}
-              titleIcon={<img src={warningIcon} alt="warning" width={24} height={24} />}
-            />
-
-            {'actualRows' in explain && (
-              <InfoCard
-                title="Actual Rows"
-                content={String(explain.actualRows)}
-                titleIcon={<img src={successIcon} alt="success" width={24} height={24} />}
-              />
-            )}
-
-            {'cost' in explain && typeof explain.cost !== 'number' && (
-              <InfoCard
-                title="Total Cost"
-                content={String(explain.cost.total)}
-                titleIcon={<img src={successIcon} alt="success" width={24} height={24} />}
-              />
-            )}
-          </div>
-        </div>
-
-        {/* 경고 표시 */}
-        {warnings.length > 0 && (
+          {/* 테스트 통계 */}
           <div className="section-gap">
-            <h2 className="section-title preSemiBold20">경고</h2>
-            {warnings.map((w, i) => (
+            <h2 className="section-title preSemiBold20">테스트 통계</h2>
+
+            <SummaryCards
+              mainCard={{
+                icon: perfIcon,
+                title: '성능 점수',
+                value: `${stats.avg}ms`,
+                color: perfColor
+              }}
+              subCard={{
+                stats: [
+                  { label: '총 실행 횟수', value: result.runCount },
+                  { label: '최소 응답시간', value: stats.min, color: 'green' },
+                  { label: '최대 응답시간', value: stats.max, color: 'red' }
+                ]
+              }}
+            />
+          </div>
+
+          {/* 응답시간 분포 */}
+          <div className="section-gap">
+            <h2 className="section-title preSemiBold20">응답시간 분포</h2>
+            <ResponseTimeChart responseTimes={result.responseTimes} />
+          </div>
+
+          {/* 실행 계획 분석 */}
+          <div className="section-gap">
+            <h2 className="section-title preSemiBold20">쿼리 실행 계획 분석</h2>
+            <div className="section-grid">
               <InfoCard
-                key={i}
-                title="Warning"
-                content={w}
+                title={explain.planType}
+                content={`Estimated Rows: ${explain.estimatedRows}`}
                 titleIcon={<img src={warningIcon} alt="warning" width={24} height={24} />}
               />
-            ))}
-          </div>
-        )}
 
-        {/* AI 개선 추천 */}
-        <div className="section-gap">
-          <h2 className="section-title preSemiBold20">AI 개선 추천</h2>
-          <AIRecommendation list={[]} />
+              {'actualRows' in explain && (
+                <InfoCard
+                  title="Actual Rows"
+                  content={String(explain.actualRows)}
+                  titleIcon={<img src={successIcon} alt="success" width={24} height={24} />}
+                />
+              )}
+
+              {'cost' in explain && typeof explain.cost !== 'number' && (
+                <InfoCard
+                  title="Total Cost"
+                  content={String(explain.cost.total)}
+                  titleIcon={<img src={successIcon} alt="success" width={24} height={24} />}
+                />
+              )}
+            </div>
+          </div>
+
+          {/* 경고 표시 */}
+          {warnings.length > 0 && (
+            <div className="section-gap">
+              <h2 className="section-title preSemiBold20">경고</h2>
+              {warnings.map((w, i) => (
+                <InfoCard
+                  key={i}
+                  title="Warning"
+                  content={w}
+                  titleIcon={<img src={warningIcon} alt="warning" width={24} height={24} />}
+                />
+              ))}
+            </div>
+          )}
+
+          {/* AI 추천 */}
+          <div className="section-gap">
+            <h2 className="section-title preSemiBold20">AI 개선 추천</h2>
+            <AIRecommendation list={[]} />
+          </div>
         </div>
+        {/* 캡처 영역 끝 */}
       </div>
 
       {/* 스타일 */}
@@ -158,7 +228,6 @@ const UserQueryTestView: React.FC = () => {
           width: 100%;
           height: 100%;
           overflow-y: auto;
-          background-color: var(--color-bg);
         }
 
         .section-gap {
@@ -175,6 +244,19 @@ const UserQueryTestView: React.FC = () => {
           display: flex;
           flex-direction: column;
           gap: 20px;
+        }
+
+        /* SQL Code Box */
+        .sql-code {
+          margin: 0 0 15px 0;
+          padding: 16px;
+          background-color: white;
+          border-radius: 6px;
+          font: preSemiBold20
+          color: #334155;
+          line-height: 1.6;
+          white-space: pre-wrap;
+          border: 1px solid rgba(0, 0, 0, 0.1);
         }
       `}</style>
     </>
