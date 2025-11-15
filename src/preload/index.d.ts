@@ -5,7 +5,8 @@ import type {
   GenerationResult,
   DashboardData,
   Test,
-  TestInput
+  TestInput,
+  AIRecommendationItem
 } from '@shared/types'
 
 import type { ElectronAPI } from '@electron-toolkit/preload'
@@ -99,7 +100,7 @@ interface API {
       modelId?: number | null
     }) => Promise<{
       explain: MySQLExplainResult | PostgresExplainResult
-      ai: string
+      ai: AIRecommendationItem[]
     }>
   }
 
