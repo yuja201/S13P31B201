@@ -5,6 +5,7 @@ import { runMySQLExplainAnalyze } from '../services/user-query-test/mysql-explai
 import { runPostgresQueryMultiple } from '../services/user-query-test/postgres-run'
 import { runMySQLQueryMultiple } from '../services/user-query-test/mysql-run'
 import { calculateLatencyStats } from '../services/user-query-test/stats'
+import { UserQueryAIService } from '../services/user-query-test/ai-service'
 import { insertIntoTests } from '../database/tests'
 
 import type {
@@ -54,6 +55,8 @@ function generateWarnings(explain: ExplainResult): string[] {
 
   return warnings
 }
+
+const userQueryAIService = new UserQueryAIService()
 
 // --------------------------------------------------
 // IPC 핸들러
@@ -105,6 +108,31 @@ ipcMain.handle('userQueryTest:run', async (_, payload: UserQueryTestRunPayload) 
     return { testId }
   } catch (error) {
     console.error('[userQueryTest:run] ERROR:', error)
+    throw error
+  }
+})
+
+ipcMain.handle('userQueryTest:AIGenerate', async (_event, payload) => {
+  const { projectId, query, modelId } = payload
+
+  try {
+    // 1) 프로젝트 DB 접속 정보
+    const config = await getConnectionConfig(projectId)
+
+    // 2) dbType 통일: mysql | postgres
+    const dbType = config.dbType === 'MySQL' ? 'mysql' : 'postgres'
+
+    // 3) 실행
+    const result = await userQueryAIService.generateRecommendation({
+      dbType,
+      connection: config,
+      query,
+      modelId
+    })
+
+    return result
+  } catch (error) {
+    console.error('[userQueryTest:AIGenerate] ERROR:', error)
     throw error
   }
 })
