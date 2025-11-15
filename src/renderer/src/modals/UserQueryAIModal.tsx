@@ -5,12 +5,12 @@ import InputField from '@renderer/components/InputField'
 import Button from '@renderer/components/Button'
 import { useToastStore } from '@renderer/stores/toastStore'
 
-interface AISettingModalProps {
+interface UserQueryAIModalProps {
   isOpen: boolean
   onClose: () => void
 }
 
-const AISettingModal: React.FC<AISettingModalProps> = ({ isOpen, onClose }) => {
+const UserQueryAIModal: React.FC<UserQueryAIModalProps> = ({ isOpen, onClose }) => {
   const showToast = useToastStore((s) => s.showToast)
 
   const [model, setModel] = useState('1')
@@ -49,14 +49,17 @@ const AISettingModal: React.FC<AISettingModalProps> = ({ isOpen, onClose }) => {
       }
     }
 
-    showToast('AI 설정이 저장되었습니다.', 'success', '성공')
     onClose()
   }
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} width="720px">
       <div className="ai-setting-modal">
-        <PageTitle size="small" title="설정" description="AI API 토큰을 입력하세요." />
+        <PageTitle
+          size="small"
+          title="AI 쿼리 개선"
+          description="API 토큰을 입력하고 쿼리 개선 추천을 받아보세요."
+        />
         <hr className="rule-create__divider" />
 
         {/* 모델 선택 */}
@@ -151,4 +154,4 @@ const AISettingModal: React.FC<AISettingModalProps> = ({ isOpen, onClose }) => {
   )
 }
 
-export default AISettingModal
+export default UserQueryAIModal

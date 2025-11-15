@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import InfoCard from './InfoCard'
-import AISettingModal from '@renderer/modals/AISettingModal'
+import AISettingModal from '@renderer/modals/UserQueryAIModal'
 
 interface AIRecommendationItem {
   id: number
