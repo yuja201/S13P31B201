@@ -88,7 +88,7 @@ const UserQueryTestView: React.FC = () => {
       const ctx = canvas.getContext('2d')
       if (!ctx) return
 
-      ctx.fillStyle = '#ffffff'
+      ctx.fillStyle = '#f7f8fa'
       ctx.fillRect(0, 0, canvas.width, canvas.height)
       ctx.drawImage(img, padding, padding)
 
@@ -112,7 +112,6 @@ const UserQueryTestView: React.FC = () => {
         initialTimeout={result.timeout ?? 30}
         onClose={() => setRerunModalOpen(false)}
         onStart={(newQuery, cnt, timeout) => {
-          // 여기서 다시 실행한 후 TestView 로 이동
           window.api.userQueryTest
             .run({
               projectId: Number(test.project_id),
