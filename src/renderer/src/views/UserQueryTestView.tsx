@@ -9,6 +9,7 @@ import ResponseTimeChart from '@renderer/components/ResponseTimeChart'
 import TestHeader from '@renderer/components/TestHeader'
 import UserQueryTestModal from '@renderer/modals/UserQueryTestModal'
 import { useNavigate } from 'react-router-dom'
+import { useToastStore } from '@renderer/stores/toastStore'
 
 import type { Test, UserQueryTestResultJson, ExplainResult } from '@shared/types'
 
@@ -21,6 +22,7 @@ const UserQueryTestView: React.FC = () => {
   const [test, setTest] = useState<Test | null>(null)
   const navigate = useNavigate()
   const [isRerunModalOpen, setRerunModalOpen] = useState(false)
+  const showToast = useToastStore((s) => s.showToast)
 
   // 메인 컨텐츠 캡처를 위한 ref
   const resultContainerRef = useRef<HTMLDivElement>(null)
@@ -77,7 +79,11 @@ const UserQueryTestView: React.FC = () => {
 
       const img = new Image()
       img.src = originalDataUrl
-      await new Promise((resolve) => (img.onload = resolve))
+
+      await new Promise((resolve, reject) => {
+        img.onload = resolve
+        img.onerror = () => reject(new Error('이미지 생성 실패'))
+      })
 
       const padding = 40
 
@@ -86,7 +92,9 @@ const UserQueryTestView: React.FC = () => {
       canvas.height = img.height + padding * 2
 
       const ctx = canvas.getContext('2d')
-      if (!ctx) return
+      if (!ctx) {
+        throw new Error('테스트 결과 이미지를 생성할 수 없습니다.')
+      }
 
       ctx.fillStyle = '#f7f8fa'
       ctx.fillRect(0, 0, canvas.width, canvas.height)
@@ -122,11 +130,16 @@ const UserQueryTestView: React.FC = () => {
             .then((res) => {
               const testId = res.testId
               navigate(`/main/test/${test.project_id}/user-query/${testId}`)
+              setRerunModalOpen(false)
             })
+            .catch((error) => {
+              window.api.logger.error('쿼리 테스트 재실행 실패:', error)
 
-          setRerunModalOpen(false)
+              showToast('쿼리 재실행 중 오류가 발생했습니다.', 'error', '재실행 실패')
+            })
         }}
       />
+
       <div className="view-container">
         {/* 페이지 제목*/}
         <TestHeader
