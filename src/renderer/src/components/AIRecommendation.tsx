@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState } from 'react'
 import AIRecommendationCard from './AIRecommendationCard'
 import UserQueryAIModal from '@renderer/modals/UserQueryAIModal'
 import LoadingSpinner from '@renderer/components/LoadingSpinner'
