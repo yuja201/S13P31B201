@@ -1,5 +1,6 @@
-import React from 'react'
+import React, { useState } from 'react'
 import InfoCard from './InfoCard'
+import AISettingModal from '@renderer/modals/AISettingModal'
 
 interface AIRecommendationItem {
   id: number
@@ -10,17 +11,21 @@ interface AIRecommendationItem {
 
 interface AIRecommendationProps {
   list?: AIRecommendationItem[]
-  onGenerate?: () => void
   onRegenerate?: () => void
 }
 
-const AIRecommendation: React.FC<AIRecommendationProps> = ({
-  list = [],
-  onGenerate,
-  onRegenerate
-}) => {
+const AIRecommendation: React.FC<AIRecommendationProps> = ({ list = [], onRegenerate }) => {
+  const [isAISettingOpen, setAISettingOpen] = useState(false)
+
+  const handleOpenAISetting = (): void => {
+    setAISettingOpen(true)
+  }
+
   return (
     <>
+      {/* AI 설정 모달 */}
+      <AISettingModal isOpen={isAISettingOpen} onClose={() => setAISettingOpen(false)} />
+
       <style>
         {`
           .ai-section {
@@ -104,12 +109,13 @@ const AIRecommendation: React.FC<AIRecommendationProps> = ({
                 AI 응답 재생성
               </button>
             </div>
-            {list.map((recommendation) => (
+
+            {list.map((item) => (
               <InfoCard
-                key={recommendation.id}
-                title={recommendation.title}
-                titleIcon={<span style={{ fontSize: '28px' }}>{recommendation.icon}</span>}
-                content={recommendation.content}
+                key={item.id}
+                title={item.title}
+                titleIcon={<span style={{ fontSize: '28px' }}>{item.icon}</span>}
+                content={item.content}
                 width="100%"
                 variant="inner"
               />
@@ -118,7 +124,8 @@ const AIRecommendation: React.FC<AIRecommendationProps> = ({
         ) : (
           <div className="ai-empty-state">
             <p className="ai-empty-message">AI를 통해 인덱스 개선 추천을 받아보세요.</p>
-            <button className="ai-generate-button" onClick={onGenerate}>
+
+            <button className="ai-generate-button" onClick={handleOpenAISetting}>
               AI 응답 생성
             </button>
           </div>
