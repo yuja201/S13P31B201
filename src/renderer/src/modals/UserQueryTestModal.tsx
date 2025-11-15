@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Modal from '@renderer/components/Modal'
 import Button from '@renderer/components/Button'
 import PageTitle from '@renderer/components/PageTitle'
@@ -7,19 +7,36 @@ import { useToastStore } from '@renderer/stores/toastStore'
 interface UserQueryTestModalProps {
   isOpen: boolean
   projectId: string
+  initialQuery?: string
+  initialCount?: number
+  initialTimeout?: number
   onClose: () => void
-  onStart: (query: string, count: number, timeout: number) => void
+  onStart: (query: string, cnt: number, timeout: number) => void
 }
 
 const RUN_COUNT_OPTIONS = [10, 20, 30, 50, 100, 200, 500, 1000]
 const TIMEOUT_OPTIONS = [5, 10, 20, 30, 60, 90, 120]
 
-const UserQueryTestModal: React.FC<UserQueryTestModalProps> = ({ isOpen, onClose, onStart }) => {
-  const [query, setQuery] = useState('')
-  const [runCount, setRunCount] = useState(50)
-  const [timeout, setTimeout] = useState(30)
-
+const UserQueryTestModal: React.FC<UserQueryTestModalProps> = ({
+  isOpen,
+  onClose,
+  onStart,
+  initialQuery,
+  initialCount,
+  initialTimeout
+}) => {
+  const [query, setQuery] = useState(initialQuery ?? '')
+  const [runCount, setRunCount] = useState(initialCount ?? 50)
+  const [timeout, setTimeout] = useState(initialTimeout ?? 30)
   const showToast = useToastStore((s) => s.showToast)
+
+  useEffect(() => {
+    if (isOpen) {
+      setQuery(initialQuery ?? '')
+      setRunCount(initialCount ?? 50)
+      setTimeout(initialTimeout ?? 30)
+    }
+  }, [isOpen, initialQuery, initialCount, initialTimeout])
 
   const handleValidate = (): void => {
     if (!query.trim()) {
