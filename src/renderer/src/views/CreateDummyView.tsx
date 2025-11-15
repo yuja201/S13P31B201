@@ -204,6 +204,10 @@ const CreateDummyView: React.FC = () => {
     setSelectedTables(next)
   }
 
+  const handleDeselectAll = (): void => {
+    setSelectedTables(new Set())
+  }
+
   const handleGenerateData = (): void => {
     if (selectedTables.size === 0) return
     if (!allReady) return // 불완전한 테이블 있으면 차단
@@ -273,6 +277,7 @@ const CreateDummyView: React.FC = () => {
             selectedTables={selectedTables}
             handleCheckboxChange={handleToggleTable}
             onTableSelect={(table) => setFocusedTable({ ...table })}
+            onDeselectAll={handleDeselectAll}
             validationStatus={validationStatus}
           />
           {focusedTable && (

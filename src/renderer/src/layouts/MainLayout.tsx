@@ -68,8 +68,21 @@ const MainLayout: React.FC = () => {
         display: flex;
         flex-direction: column;
         overflow-y: auto;
-        padding: 80px;
         background-color: var(--color-background);
+        padding: 80px;
+        min-width: 1340px;
+      }
+
+      @media (min-height: 1000px) {
+        .main-content {
+          padding: 120px 80px;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .main-content {
+          padding: 40px 20px;
+        }
       }
 
       .content-wrapper {
@@ -85,4 +98,5 @@ const MainLayout: React.FC = () => {
     </div>
   )
 }
+
 export default MainLayout
