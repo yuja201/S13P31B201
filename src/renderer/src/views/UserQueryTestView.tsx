@@ -13,6 +13,13 @@ import { useToastStore } from '@renderer/stores/toastStore'
 
 import type { Test, UserQueryTestResultJson, ExplainResult } from '@shared/types'
 
+interface AIRecommendationItem {
+  id: number
+  icon: string
+  title: string
+  content: string
+}
+
 const successIcon = new URL('@renderer/assets/imgs/success.svg', import.meta.url).href
 const warningIcon = new URL('@renderer/assets/imgs/warning.svg', import.meta.url).href
 const failureIcon = new URL('@renderer/assets/imgs/failure.svg', import.meta.url).href
@@ -23,6 +30,7 @@ const UserQueryTestView: React.FC = () => {
   const navigate = useNavigate()
   const [isRerunModalOpen, setRerunModalOpen] = useState(false)
   const showToast = useToastStore((s) => s.showToast)
+  const [aiList, setAiList] = useState<AIRecommendationItem[]>([])
 
   // 메인 컨텐츠 캡처를 위한 ref
   const resultContainerRef = useRef<HTMLDivElement>(null)
@@ -62,6 +70,28 @@ const UserQueryTestView: React.FC = () => {
 
   const handleRerunTest = (): void => {
     setRerunModalOpen(true)
+  }
+
+  const handleAIGenerate = async (modelId: number): Promise<void> => {
+    try {
+      const res = await window.api.userQueryTest.AIGenerate({
+        projectId: test.project_id,
+        query,
+        modelId
+      })
+
+      setAiList([
+        {
+          id: 1,
+          icon: '🤖',
+          title: 'AI 추천 결과',
+          content: res.ai
+        }
+      ])
+    } catch (error) {
+      console.error(error)
+      showToast('AI 추천 생성 중 오류가 발생했습니다.', 'error', 'AI 오류')
+    }
   }
 
   /** -----------------------------------------------------
@@ -226,7 +256,7 @@ const UserQueryTestView: React.FC = () => {
           {/* AI 추천 */}
           <div className="section-gap">
             <h2 className="section-title preSemiBold20">AI 개선 추천</h2>
-            <AIRecommendation list={[]} />
+            <AIRecommendation list={aiList} onGenerate={handleAIGenerate} />
           </div>
         </div>
         {/* 캡처 영역 끝 */}

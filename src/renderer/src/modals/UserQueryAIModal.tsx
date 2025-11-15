@@ -8,9 +8,10 @@ import { useToastStore } from '@renderer/stores/toastStore'
 interface UserQueryAIModalProps {
   isOpen: boolean
   onClose: () => void
+  onSubmit?: (modelId: number) => void
 }
 
-const UserQueryAIModal: React.FC<UserQueryAIModalProps> = ({ isOpen, onClose }) => {
+const UserQueryAIModal: React.FC<UserQueryAIModalProps> = ({ isOpen, onClose, onSubmit }) => {
   const showToast = useToastStore((s) => s.showToast)
 
   const [model, setModel] = useState('1')
@@ -47,6 +48,10 @@ const UserQueryAIModal: React.FC<UserQueryAIModalProps> = ({ isOpen, onClose }) 
         showToast('API 키 저장 실패', 'warning', '저장 실패')
         return
       }
+    }
+
+    if (onSubmit) {
+      onSubmit(Number(model))
     }
 
     onClose()

@@ -1,6 +1,6 @@
 import React, { useState } from 'react'
 import InfoCard from './InfoCard'
-import AISettingModal from '@renderer/modals/UserQueryAIModal'
+import UserQueryAIModal from '@renderer/modals/UserQueryAIModal'
 
 interface AIRecommendationItem {
   id: number
@@ -11,20 +11,28 @@ interface AIRecommendationItem {
 
 interface AIRecommendationProps {
   list?: AIRecommendationItem[]
+  onGenerate?: (modelId: number) => void
   onRegenerate?: () => void
 }
 
-const AIRecommendation: React.FC<AIRecommendationProps> = ({ list = [], onRegenerate }) => {
+const AIRecommendation: React.FC<AIRecommendationProps> = ({
+  list = [],
+  onGenerate,
+  onRegenerate
+}) => {
   const [isAISettingOpen, setAISettingOpen] = useState(false)
-
-  const handleOpenAISetting = (): void => {
-    setAISettingOpen(true)
-  }
 
   return (
     <>
       {/* AI 설정 모달 */}
-      <AISettingModal isOpen={isAISettingOpen} onClose={() => setAISettingOpen(false)} />
+      <UserQueryAIModal
+        isOpen={isAISettingOpen}
+        onClose={() => setAISettingOpen(false)}
+        onSubmit={(modelId) => {
+          setAISettingOpen(false)
+          if (onGenerate) onGenerate(modelId)
+        }}
+      />
 
       <style>
         {`
@@ -125,7 +133,7 @@ const AIRecommendation: React.FC<AIRecommendationProps> = ({ list = [], onRegene
           <div className="ai-empty-state">
             <p className="ai-empty-message">AI를 통해 인덱스 개선 추천을 받아보세요.</p>
 
-            <button className="ai-generate-button" onClick={handleOpenAISetting}>
+            <button className="ai-generate-button" onClick={() => setAISettingOpen(true)}>
               AI 응답 생성
             </button>
           </div>
