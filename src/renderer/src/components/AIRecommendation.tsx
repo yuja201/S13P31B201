@@ -117,7 +117,7 @@ const AIRecommendation: React.FC<AIRecommendationProps> = ({
         {requested && loading && (
           <div className="ai-empty-state">
             <LoadingSpinner
-              text="AI가 쿼리를 분석 중입니다..."
+              text="AI가 쿼리를 분석하고 있어요!"
               width={500}
               size={60}
               background="#ffffff"
