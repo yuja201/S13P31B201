@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, useNavigate } from 'react-router-dom'
 import { toPng } from 'html-to-image'
 
 import InfoCard from '@renderer/components/InfoCard'
@@ -8,8 +8,6 @@ import SummaryCards from '@renderer/components/SummaryCards'
 import ResponseTimeChart from '@renderer/components/ResponseTimeChart'
 import TestHeader from '@renderer/components/TestHeader'
 import UserQueryTestModal from '@renderer/modals/UserQueryTestModal'
-import { useNavigate } from 'react-router-dom'
-import { useToastStore } from '@renderer/stores/toastStore'
 
 import type { Test, UserQueryTestResultJson, ExplainResult } from '@shared/types'
 
@@ -22,7 +20,6 @@ const UserQueryTestView: React.FC = () => {
   const [test, setTest] = useState<Test | null>(null)
   const navigate = useNavigate()
   const [isRerunModalOpen, setRerunModalOpen] = useState(false)
-  const showToast = useToastStore((s) => s.showToast)
 
   // 메인 컨텐츠 캡처를 위한 ref
   const resultContainerRef = useRef<HTMLDivElement>(null)
@@ -119,24 +116,21 @@ const UserQueryTestView: React.FC = () => {
         initialCount={result.runCount}
         initialTimeout={result.timeout ?? 30}
         onClose={() => setRerunModalOpen(false)}
-        onStart={(newQuery, cnt, timeout) => {
-          window.api.userQueryTest
-            .run({
-              projectId: Number(test.project_id),
-              query: newQuery,
-              runCount: cnt,
-              timeout
-            })
-            .then((res) => {
-              const testId = res.testId
-              navigate(`/main/test/${test.project_id}/user-query/${testId}`)
-              setRerunModalOpen(false)
-            })
-            .catch((error) => {
-              window.api.logger.error('쿼리 테스트 재실행 실패:', error)
+        // 쿼리 실행 로직: 새 testId 반환
+        onStart={async (newQuery, cnt, timeout) => {
+          const res = await window.api.userQueryTest.run({
+            projectId: Number(test.project_id),
+            query: newQuery,
+            runCount: cnt,
+            timeout
+          })
 
-              showToast('쿼리 재실행 중 오류가 발생했습니다.', 'error', '재실행 실패')
-            })
+          return res.testId
+        }}
+        // 실행 성공 후 네비게이션 처리
+        onNavigate={(newTestId) => {
+          setRerunModalOpen(false)
+          navigate(`/main/test/${test.project_id}/user-query/${newTestId}`)
         }}
       />
 
