@@ -321,7 +321,6 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
                     ...prev,
                     dbType: 'MySQL',
                     port: '3306',
-                    username: 'root'
                   }))
                   setIsConnectionTested(false)
                 }}
@@ -337,7 +336,6 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
                     ...prev,
                     dbType: 'PostgreSQL',
                     port: '5432',
-                    username: 'postgres'
                   }))
                   setIsConnectionTested(false)
                 }}
