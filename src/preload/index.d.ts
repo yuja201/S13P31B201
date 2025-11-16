@@ -5,7 +5,8 @@ import type {
   GenerationResult,
   DashboardData,
   Test,
-  TestInput
+  TestInput,
+  AIRecommendationItem
 } from '@shared/types'
 
 import type { ElectronAPI } from '@electron-toolkit/preload'
@@ -93,6 +94,14 @@ interface API {
       runCount: number
       timeout: number
     }) => Promise<{ testId: number }>
+    AIGenerate: (payload: {
+      projectId: number
+      query: string
+      modelId?: number | null
+    }) => Promise<{
+      explain: MySQLExplainResult | PostgresExplainResult
+      ai: AIRecommendationItem[]
+    }>
   }
 
   /* ======================= INDEX TEST ======================= */

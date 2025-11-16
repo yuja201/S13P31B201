@@ -1,4 +1,4 @@
-import { createAIGateway } from './ai/ai-factory'
+import { createAIGateway } from '@main/services/ai/ai-factory'
 import {
   AIGenRequest,
   AIGenResult,
@@ -7,9 +7,9 @@ import {
   AIMetaData,
   ColumnConstraint
 } from '@shared/types'
-import { getDomainGuideline } from './ai/domain-config'
+import { getDomainGuideline } from './domain-config'
 import { buildAjvValidator, enforceUniqueness, parseValuesArray } from '../../utils/validators'
-import { resolveModel } from './ai/model-map'
+import { resolveModel } from '../ai/model-map'
 import type { Column as SchemaColumn, Table } from '../../database/types'
 
 /**

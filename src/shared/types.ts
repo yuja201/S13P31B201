@@ -306,3 +306,15 @@ export interface DashboardData {
   queryChangeRate: number
   indexChangeRate: number
 }
+
+/**
+ * AI 쿼리 개선 추천
+ */
+export interface AIRecommendationItem {
+  id: number
+  type: 'improve' | 'index' | 'rewrite'
+  title: string
+  description: string
+  suggestion: string
+  exampleSQL: string | null
+}
