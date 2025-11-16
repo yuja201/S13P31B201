@@ -15,13 +15,40 @@ const successIcon = new URL('@renderer/assets/imgs/success.svg', import.meta.url
 const warningIcon = new URL('@renderer/assets/imgs/warning.svg', import.meta.url).href
 const failureIcon = new URL('@renderer/assets/imgs/failure.svg', import.meta.url).href
 
+/* 실행 계획 타입 한국어 변환 */
+const planTypeMap: Record<string, string> = {
+  'Seq Scan': '전체 테이블 스캔 (Seq Scan)',
+  'Index Scan': '인덱스 스캔 (Index Scan)',
+  'Index Only Scan': '인덱스 온리 스캔 (Index Only Scan)',
+  'Bitmap Heap Scan': '비트맵 힙 스캔 (Bitmap Heap Scan)',
+  'Bitmap Index Scan': '비트맵 인덱스 스캔 (Bitmap Index Scan)',
+  'Nested Loop': '중첩 루프 조인 (Nested Loop)',
+  'Hash Join': '해시 조인 (Hash Join)',
+  'Merge Join': '머지 조인 (Merge Join)',
+  Limit: 'LIMIT 적용 (Limit)',
+  Sort: '정렬 수행 (Sort)'
+}
+
+/* 경고 메시지를 한국어로 변환 */
+const warningToKorean = (w: string): string => {
+  if (w.includes('Full table scan'))
+    return '전체 테이블 스캔이 감지되었습니다. WHERE 조건 인덱스 최적화를 고려하세요.'
+  if (w.includes('significantly exceed'))
+    return '실제 처리된 행 수가 예측보다 크게 높습니다. ANALYZE를 실행하여 통계를 최신화하는 것을 추천드립니다.'
+  if (w.includes('cost is extremely high'))
+    return '쿼리 비용이 매우 높습니다. 인덱스 최적화 또는 조건 재구성을 고려하세요.'
+  if (w.includes('large number of rows were scanned'))
+    return '인덱스 스캔이 사용되었지만 많은 행이 스캔되었습니다. 인덱스 선택도를 확인하세요.'
+
+  return w
+}
+
 const UserQueryTestView: React.FC = () => {
   const { testId } = useParams()
-  const [test, setTest] = useState<Test | null>(null)
   const navigate = useNavigate()
+  const [test, setTest] = useState<Test | null>(null)
   const [isRerunModalOpen, setRerunModalOpen] = useState(false)
 
-  // 메인 컨텐츠 캡처를 위한 ref
   const resultContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -39,13 +66,7 @@ const UserQueryTestView: React.FC = () => {
   const warnings = result.warnings
   const query = result.query
 
-  /** -----------------------------------------------------
-   *  SummaryCards 응답속도 자동 평가 로직
-   *  기준:
-   *  - 0 ~ 100ms: 빠름 (green)
-   *  - 100 ~ 300ms: 주의 (orange)
-   *  - 300ms 이상: 느림 (red)
-   * ----------------------------------------------------- */
+  /* 성능 점수 표시 색상 */
   let perfIcon = successIcon
   let perfColor: 'green' | 'orange' | 'red' = 'green'
 
@@ -57,13 +78,7 @@ const UserQueryTestView: React.FC = () => {
     perfColor = 'red'
   }
 
-  const handleRerunTest = (): void => {
-    setRerunModalOpen(true)
-  }
-
-  /** -----------------------------------------------------
-   *  다운로드 기능
-   * ----------------------------------------------------- */
+  /* 결과 캡처 다운로드 */
   const handleDownload = async (): Promise<void> => {
     if (!resultContainerRef.current) return
 
@@ -83,15 +98,12 @@ const UserQueryTestView: React.FC = () => {
       })
 
       const padding = 40
-
       const canvas = document.createElement('canvas')
       canvas.width = img.width + padding * 2
       canvas.height = img.height + padding * 2
 
       const ctx = canvas.getContext('2d')
-      if (!ctx) {
-        throw new Error('테스트 결과 이미지를 생성할 수 없습니다.')
-      }
+      if (!ctx) throw new Error('이미지 생성 실패')
 
       ctx.fillStyle = '#f7f8fa'
       ctx.fillRect(0, 0, canvas.width, canvas.height)
@@ -109,6 +121,7 @@ const UserQueryTestView: React.FC = () => {
 
   return (
     <>
+      {/* 재실행 Modal */}
       <UserQueryTestModal
         isOpen={isRerunModalOpen}
         projectId={String(test.project_id)}
@@ -116,7 +129,6 @@ const UserQueryTestView: React.FC = () => {
         initialCount={result.runCount}
         initialTimeout={result.timeout ?? 30}
         onClose={() => setRerunModalOpen(false)}
-        // 쿼리 실행 로직: 새 testId 반환
         onStart={async (newQuery, cnt, timeout) => {
           const res = await window.api.userQueryTest.run({
             projectId: Number(test.project_id),
@@ -124,10 +136,8 @@ const UserQueryTestView: React.FC = () => {
             runCount: cnt,
             timeout
           })
-
           return res.testId
         }}
-        // 실행 성공 후 네비게이션 처리
         onNavigate={(newTestId) => {
           setRerunModalOpen(false)
           navigate(`/main/test/${test.project_id}/user-query/${newTestId}`)
@@ -135,15 +145,14 @@ const UserQueryTestView: React.FC = () => {
       />
 
       <div className="view-container">
-        {/* 페이지 제목*/}
         <TestHeader
           title="사용자 쿼리 테스트"
           subtitle="테스트 결과를 확인해 보세요."
           onDownload={handleDownload}
-          onRerunTest={handleRerunTest}
+          onRerunTest={() => setRerunModalOpen(true)}
         />
 
-        {/*여기부터 캡처 영역 */}
+        {/* 캡처 영역 */}
         <div className="capture" ref={resultContainerRef}>
           <pre className="sql-code preRegular20">{query}</pre>
 
@@ -177,24 +186,25 @@ const UserQueryTestView: React.FC = () => {
           {/* 실행 계획 분석 */}
           <div className="section-gap">
             <h2 className="section-title preSemiBold20">쿼리 실행 계획 분석</h2>
+
             <div className="section-grid">
               <InfoCard
-                title={explain.planType}
-                content={`Estimated Rows: ${explain.estimatedRows}`}
+                title={planTypeMap[explain.planType] ?? `실행 계획 (${explain.planType})`}
+                content={`예측 행 수: ${explain.estimatedRows.toLocaleString()}`}
                 titleIcon={<img src={warningIcon} alt="warning" width={24} height={24} />}
               />
 
               {'actualRows' in explain && (
                 <InfoCard
-                  title="Actual Rows"
-                  content={String(explain.actualRows)}
+                  title="실제 처리된 행 수"
+                  content={explain.actualRows.toLocaleString()}
                   titleIcon={<img src={successIcon} alt="success" width={24} height={24} />}
                 />
               )}
 
               {'cost' in explain && typeof explain.cost !== 'number' && (
                 <InfoCard
-                  title="Total Cost"
+                  title="총 비용 (쿼리 비용)"
                   content={String(explain.cost.total)}
                   titleIcon={<img src={successIcon} alt="success" width={24} height={24} />}
                 />
@@ -202,15 +212,15 @@ const UserQueryTestView: React.FC = () => {
             </div>
           </div>
 
-          {/* 경고 표시 */}
+          {/* 한국어 경고 메시지 */}
           {warnings.length > 0 && (
             <div className="section-gap">
               <h2 className="section-title preSemiBold20">경고</h2>
               {warnings.map((w, i) => (
                 <InfoCard
                   key={i}
-                  title="Warning"
-                  content={w}
+                  title="경고"
+                  content={warningToKorean(w)}
                   titleIcon={<img src={warningIcon} alt="warning" width={24} height={24} />}
                 />
               ))}
@@ -223,7 +233,6 @@ const UserQueryTestView: React.FC = () => {
             <AIRecommendation list={[]} />
           </div>
         </div>
-        {/* 캡처 영역 끝 */}
       </div>
 
       {/* 스타일 */}
@@ -235,24 +244,19 @@ const UserQueryTestView: React.FC = () => {
           height: 100%;
           overflow-y: auto;
         }
-
         .section-gap {
           margin-bottom: 14px;
           background-color: var(--color-bg-card);
         }
-
         .section-title {
-          color: var(--color-text-strong);
           margin-bottom: 16px;
+          color: var(--color-text-strong);
         }
-
         .section-grid {
           display: flex;
           flex-direction: column;
           gap: 20px;
         }
-
-        /* SQL Code Box */
         .sql-code {
           margin: 0 0 15px 0;
           padding: 16px;
