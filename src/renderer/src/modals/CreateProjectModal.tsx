@@ -3,8 +3,10 @@ import InputField from '@renderer/components/InputField'
 import Modal from '@renderer/components/Modal'
 import PageTitle from '@renderer/components/PageTitle'
 import RadioButton from '@renderer/components/RadioButton'
+import { useProjectStore } from '@renderer/stores/projectStore'
 import { useToastStore } from '@renderer/stores/toastStore'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useDebounce } from 'use-debounce'
 
 interface CreateProjectModalProps {
   isOpen: boolean
@@ -23,6 +25,7 @@ export interface ProjectFormData {
   databaseName: string
 }
 
+
 const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose, onSubmit }) => {
   const [formData, setFormData] = useState<ProjectFormData>({
     projectName: '',
@@ -39,6 +42,27 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
   const showToast = useToastStore((s) => s.showToast)
   const [isConnectionTested, setIsConnectionTested] = useState(false)
   const [isTestingConnection, setIsTestingConnection] = useState(false)
+  const projects = useProjectStore((state) => state.projects)
+  const [nameError, setNameError] = useState<String | null>(null)
+  const [debouncedProjectName] = useDebounce(formData.projectName, 500)
+
+  useEffect(() => {
+    if (debouncedProjectName.trim() === '') {
+      setNameError(null)
+      return;
+    }
+
+    const isDuplicate = projects.some(
+      (p) => p.name.toLowerCase() === debouncedProjectName.trim().toLowerCase()
+    );
+
+    if (isDuplicate) {
+      setNameError('이미 존재하는 프로젝트명입니다.');
+    } else {
+      setNameError(null);
+    }
+  }, [debouncedProjectName, projects]);
+
 
   const validateRequiredFields = (): boolean => {
     if (!formData.projectName.trim()) {
@@ -103,6 +127,10 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
   }
 
   const handleInputChange = (field: keyof ProjectFormData, value: string): void => {
+    if (field === 'projectName') {
+      setNameError(null)
+    }
+
     // DB 정보 변경 시 연결 테스트 상태 초기화
     if (field !== 'projectName' && field !== 'description') {
       setIsConnectionTested(false)
@@ -115,6 +143,15 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
   }
 
   const handleSubmit = async (): Promise<void> => {
+    const isDuplicate = projects.some(
+      (p) => p.name.toLowerCase() === formData.projectName.trim().toLowerCase()
+    )
+
+    if (isDuplicate) {
+      setNameError('이미 존재하는 프로젝트명입니다.')
+      return
+    }
+
     if (!validateRequiredFields()) {
       return
     }
@@ -215,6 +252,12 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
             margin-right: 16px;
             margin-bottom: 10px;
           }
+          .input-error-message {
+            color: var(--color-red-500);
+            font-size: 12px;
+            margin-top: 4px;
+            height: 14px;
+          }
         `}
       </style>
       <Modal isOpen={isOpen} onClose={onClose}>
@@ -228,14 +271,17 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
         </div>
         <div className="create-project-modal-form-container">
           <div className="create-project-modal-input-group">
-            <InputField
-              title="프로젝트명"
-              placeholder="프로젝트명"
-              width={300}
-              required={true}
-              value={formData.projectName}
-              onChange={(value) => handleInputChange('projectName', value)}
-            />
+            <div>
+              <InputField
+                title="프로젝트명"
+                placeholder="프로젝트명"
+                width={300}
+                required={true}
+                value={formData.projectName}
+                onChange={(value) => handleInputChange('projectName', value)}
+              />
+              <div className="input-error-message">{nameError}</div>
+            </div>
             <InputField
               title="프로젝트 설명"
               placeholder="프로젝트 설명"
