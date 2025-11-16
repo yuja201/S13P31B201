@@ -97,9 +97,6 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
   }
 
   const handleConnectionTest = async (): Promise<void> => {
-    if (!validateRequiredFields()) {
-      return
-    }
 
     setIsTestingConnection(true)
 
@@ -203,6 +200,15 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
       showToast('프로젝트 생성에 실패했습니다.', 'error', '연결 실패')
     }
   }
+
+  const isTestButtonDisabled =
+    !formData.host.trim() ||
+    !formData.port.trim() ||
+    !formData.username.trim() ||
+    !formData.password.trim() ||
+    !formData.databaseName.trim() ||
+    isTestingConnection;
+
 
   return (
     <>
@@ -385,7 +391,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
           />
         </div>
         <div className="create-project-modal-button-container">
-          <Button variant="gray" onClick={handleConnectionTest} isLoading={isTestingConnection}>
+          <Button variant="gray" onClick={handleConnectionTest} isLoading={isTestingConnection} disabled={isTestButtonDisabled}>
             연결테스트
           </Button>
           <Button onClick={handleSubmit} disabled={!isConnectionTested}>
