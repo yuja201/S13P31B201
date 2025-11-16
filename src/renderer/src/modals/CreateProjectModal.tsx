@@ -43,12 +43,14 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
   const [isConnectionTested, setIsConnectionTested] = useState(false)
   const [isTestingConnection, setIsTestingConnection] = useState(false)
   const projects = useProjectStore((state) => state.projects)
-  const [nameError, setNameError] = useState<String | null>(null)
+  const [nameFeedback, setNameFeedback] = useState<string | null>(null)
+  const [isNameAvailable, setIsNameAvailable] = useState<boolean>(false)
   const [debouncedProjectName] = useDebounce(formData.projectName, 500)
 
   useEffect(() => {
     if (debouncedProjectName.trim() === '') {
-      setNameError(null)
+      setNameFeedback(null);
+      setIsNameAvailable(false);
       return;
     }
 
@@ -57,9 +59,11 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
     );
 
     if (isDuplicate) {
-      setNameError('이미 존재하는 프로젝트명입니다.');
+      setNameFeedback('이미 존재하는 프로젝트명입니다.');
+      setIsNameAvailable(false);
     } else {
-      setNameError(null);
+      setNameFeedback('사용 가능한 프로젝트명입니다.');
+      setIsNameAvailable(true);
     }
   }, [debouncedProjectName, projects]);
 
@@ -128,7 +132,8 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
 
   const handleInputChange = (field: keyof ProjectFormData, value: string): void => {
     if (field === 'projectName') {
-      setNameError(null)
+      setNameFeedback(null);
+      setIsNameAvailable(false);
     }
 
     // DB 정보 변경 시 연결 테스트 상태 초기화
@@ -143,22 +148,18 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
   }
 
   const handleSubmit = async (): Promise<void> => {
-    const isDuplicate = projects.some(
-      (p) => p.name.toLowerCase() === formData.projectName.trim().toLowerCase()
-    )
-
-    if (isDuplicate) {
-      setNameError('이미 존재하는 프로젝트명입니다.')
-      return
+    if (nameFeedback && !isNameAvailable) {
+      showToast('프로젝트명을 확인해주세요.', 'warning', '입력 오류');
+      return;
     }
 
     if (!validateRequiredFields()) {
-      return
+      return;
     }
 
     if (!isConnectionTested) {
-      showToast('연결 테스트를 먼저 진행해주세요.', 'error', '연결 실패')
-      return
+      showToast('연결 테스트를 먼저 진행해주세요.', 'error', '연결 실패');
+      return;
     }
 
     try {
@@ -253,10 +254,18 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
             margin-bottom: 10px;
           }
           .input-error-message {
-            color: var(--color-red-500);
+            color: red;
             font-size: 12px;
             margin-top: 4px;
             height: 14px;
+            margin-left: 4px;
+          }
+          .input-success-message {
+            color: green;
+            font-size: 12px;
+            margin-top: 4px;
+            height: 14px;
+            margin-left: 4px;
           }
         `}
       </style>
@@ -280,7 +289,9 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
                 value={formData.projectName}
                 onChange={(value) => handleInputChange('projectName', value)}
               />
-              <div className="input-error-message">{nameError}</div>
+              <div className={isNameAvailable ? 'input-success-message' : 'input-error-message'}>
+                {nameFeedback}
+              </div>
             </div>
             <InputField
               title="프로젝트 설명"
