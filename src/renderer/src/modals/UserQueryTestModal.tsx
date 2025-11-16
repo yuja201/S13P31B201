@@ -21,6 +21,7 @@ const UserQueryTestModal: React.FC<UserQueryTestModalProps> = ({
   isOpen,
   onClose,
   onStart,
+  projectId,
   initialQuery,
   initialCount,
   initialTimeout
@@ -38,14 +39,22 @@ const UserQueryTestModal: React.FC<UserQueryTestModalProps> = ({
     }
   }, [isOpen, initialQuery, initialCount, initialTimeout])
 
-  const handleValidate = (): void => {
+  const handleValidate = async (): Promise<void> => {
     if (!query.trim()) {
-      // TODO: 문법 검증 로직 추가
       showToast('SQL 쿼리를 입력해주세요.', 'warning', '문법 검증 실패')
       return
     }
-    console.log('[문법 검증 실행] query:', query)
-    showToast('문법 검증을 완료했습니다.', 'success', '검증 성공')
+
+    const result = await window.api.validateSQL({
+      projectId: Number(projectId),
+      query
+    })
+
+    if (result.valid) {
+      showToast('SQL 문법이 유효합니다.', 'success', '검증 성공')
+    } else {
+      showToast(result.error || 'SQL 문법 오류가 있습니다.', 'error', '검증 실패')
+    }
   }
 
   const handleStart = (): void => {

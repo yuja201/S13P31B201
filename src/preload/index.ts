@@ -196,7 +196,10 @@ const api = {
   // Index test operations
   indexTest: {
     analyze: (databaseId: number) => ipcRenderer.invoke('index:analyze', databaseId)
-  }
+  },
+
+  validateSQL: (payload: { projectId: number; query: string }) =>
+    ipcRenderer.invoke('validate-sql', payload)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

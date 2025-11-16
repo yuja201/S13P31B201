@@ -16,6 +16,7 @@ import './ipc/index-test-handlers'
 import './ipc/test-handler'
 import './ipc/user-query-test-handlers'
 import './ipc/tests-handlers'
+import './ipc/validate-sql'
 
 const logger = createLogger('Main')
 

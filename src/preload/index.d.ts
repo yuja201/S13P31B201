@@ -104,6 +104,11 @@ interface API {
     }>
   }
 
+  validateSQL: (payload: {
+    projectId: number
+    query: string
+  }) => Promise<{ valid: boolean; error?: string }>
+
   /* ======================= CONNECTION TEST ======================= */
   testConnection: (config: {
     dbType: 'MySQL' | 'PostgreSQL'
