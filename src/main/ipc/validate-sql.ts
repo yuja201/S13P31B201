@@ -1,8 +1,9 @@
 import { ipcMain } from 'electron'
 import mysql from 'mysql2/promise'
 import { Client as PGClient } from 'pg'
+
 import { getConnectionConfig } from '../services/user-query-test/get-connection-config'
-import { getDatabasesByProjectId } from '../database/databases'
+import { getDatabaseByProjectId } from '../database/databases'
 
 ipcMain.handle(
   'validate-sql',
@@ -13,14 +14,8 @@ ipcMain.handle(
     const { projectId, query } = payload
 
     // 1) 프로젝트에 연결된 DB 정보 조회
-    let dbRows
-    try {
-      dbRows = await getDatabasesByProjectId(projectId)
-    } catch (e) {
-      return { valid: false, type: 'connection', error: 'DB 정보 조회 실패' + e }
-    }
-
-    if (!dbRows || dbRows.length === 0) {
+    const dbInfo = getDatabaseByProjectId(projectId)
+    if (!dbInfo) {
       return {
         valid: false,
         type: 'connection',
@@ -28,9 +23,9 @@ ipcMain.handle(
       }
     }
 
-    const databaseName = dbRows[0].database // ⭐ 정확한 필드명만 알려주시면 변경합니다
+    const databaseName = dbInfo.database_name
 
-    // 2) DB 접속정보 구성
+    // 2) 기본 DB 접속 정보 불러오기
     let config
     try {
       config = await getConnectionConfig(projectId)
@@ -39,19 +34,21 @@ ipcMain.handle(
       return { valid: false, type: 'connection', error: err.message }
     }
 
-    // 3) 실제 DB 검증용 연결 구성 (DB 이름 포함)
-    const connectionConfig = {
+    // 3) DB 이름 포함해서 최종 연결 구성
+    const finalConfig = {
       host: config.host,
       port: config.port,
       user: config.username,
       password: config.password,
-      database: databaseName // ⭐ 핵심
+      database: databaseName
     }
 
-    // 4) MySQL 문법 검증
+    // ============================
+    //     MySQL 문법 검증
+    // ============================
     if (config.dbType === 'MySQL') {
       try {
-        const conn = await mysql.createConnection(connectionConfig)
+        const conn = await mysql.createConnection(finalConfig)
         try {
           await conn.query(`EXPLAIN ${query}`)
           return { valid: true }
@@ -67,9 +64,11 @@ ipcMain.handle(
       }
     }
 
-    // 5) PostgreSQL 문법 검증
+    // ============================
+    //   PostgreSQL 문법 검증
+    // ============================
     try {
-      const client = new PGClient(connectionConfig)
+      const client = new PGClient(finalConfig)
       await client.connect()
 
       try {
