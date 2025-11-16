@@ -330,6 +330,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
   const columnNames = columns.map((c) => `${quote}${c.columnName}${quote}`).join(', ')
   const CHUNK_SIZE = 500
   const MAX_AI_CONCURRENT = 2
+  let totalFailed = 0
 
   const directMode = mode === 'DIRECT_DB' && Boolean(connection)
   let directContext: DirectContext | null = null
@@ -471,15 +472,63 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
         }
 
         rows.push(`(${rowValues.join(', ')})`)
-        totalProcessed++
       }
 
+      // === DIRECT_DB bulk insert + fallback ===
       if (rows.length > 0) {
-        const sql = `INSERT INTO ${quote}${tableName}${quote} (${columnNames}) VALUES\n${rows.join(',\n')};\n`
+        const bulkSQL = `INSERT INTO ${quote}${tableName}${quote} (${columnNames}) VALUES\n${rows.join(',\n')};`
+
+        let successOnThisChunk = 0
+        let failedOnThisChunk = 0
+
         if (directMode && directContext) {
-          await directContext.execute(sql)
+          try {
+            // 1) bulk insert
+            await directContext.execute(bulkSQL)
+            successOnThisChunk = rows.length
+          } catch {
+            logger.warn(`[${tableName}] bulk insert 실패 → 행 단위 fallback 실행`)
+
+            // 2) fallback: row-by-row insert
+            for (let i = 0; i < rows.length; i++) {
+              const singleSQL = `INSERT INTO ${quote}${tableName}${quote} (${columnNames}) VALUES ${rows[i]};`
+
+              try {
+                await directContext.execute(singleSQL)
+                successOnThisChunk++
+              } catch (singleErr) {
+                failedOnThisChunk++
+
+                // UI-friendly message only
+                process.stdout.write(
+                  JSON.stringify({
+                    type: 'row-error',
+                    tableName
+                  }) + '\n'
+                )
+
+                // skipInvalidRows === false → 즉시 중단
+                if (task.skipInvalidRows === false) {
+                  throw singleErr
+                }
+              }
+            }
+          }
         }
-        await fs.promises.appendFile(sqlPath, sql, 'utf8')
+
+        totalProcessed += successOnThisChunk // 성공한 row만 증가
+        totalFailed += failedOnThisChunk // fallback에서 실패한 row
+
+        process.stdout.write(
+          JSON.stringify({
+            type: 'row-delta',
+            tableName,
+            success: successOnThisChunk,
+            fail: failedOnThisChunk
+          }) + '\n'
+        )
+
+        await fs.promises.appendFile(sqlPath, bulkSQL + '\n', 'utf8')
       }
 
       const chunkDuration = ((Date.now() - chunkStartTime) / 1000).toFixed(2)
@@ -526,7 +575,10 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
     process.stdout.write(
       JSON.stringify({
         type: 'table-complete',
-        tableName
+        tableName,
+        totalRows: recordCnt,
+        successRows: totalProcessed,
+        failedRows: totalFailed
       }) + '\n'
     )
 
