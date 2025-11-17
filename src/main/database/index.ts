@@ -7,6 +7,7 @@ import {
   insertDefaultDomainCategories,
   insertDefaultDomainData
 } from './schema'
+import { MigrationManager } from './migration-manager'
 
 let db: Database.Database | null = null
 
@@ -34,6 +35,15 @@ export function initDatabase(): Database.Database {
   // FK 제약조건 활성화
   db.pragma('foreign_keys = ON')
 
+  // meta 테이블 생성
+  db.exec(`
+  CREATE TABLE IF NOT EXISTS meta (
+    key TEXT PRIMARY KEY,
+    value TEXT
+  );
+  INSERT OR IGNORE INTO meta (key, value) VALUES ('schema_version', '1');
+`)
+
   // 데이터베이스 스키마 생성
   db.exec(createTablesSQL)
   try {
@@ -55,6 +65,11 @@ export function initDatabase(): Database.Database {
   // 도메인 종류 저장
   db.exec(insertDefaultDomainCategories)
   db.exec(insertDefaultDomainData)
+
+  // migration 실행
+  const migrationsPath = path.join(__dirname, 'migrations')
+  const migrationManager = new MigrationManager(db, migrationsPath)
+  migrationManager.runMigrations()
 
   return db
 }
