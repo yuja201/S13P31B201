@@ -5,7 +5,6 @@ import {
   fetchIndexDetails,
   fetchTableStats,
   fetchForeignKeys,
-  fetchColumnTypes,
   fetchColumnStats
 } from './pg-queries'
 import {
@@ -15,7 +14,6 @@ import {
   detectRedundantIndexes,
   detectMissingFkIndexes,
   detectOversizedIndexes,
-  detectInappropriateTypeIndexes,
   detectUnderindexedTables
 } from './pg-issue-detector'
 
@@ -28,7 +26,6 @@ export async function collectPostgreSQLIndexStats(
   const indexDetails = await fetchIndexDetails(client, schemaName)
   const tableStats = await fetchTableStats(client, schemaName)
   const foreignKeys = await fetchForeignKeys(client, schemaName)
-  const columnTypes = await fetchColumnTypes(client, schemaName)
   const columnStats = await fetchColumnStats(client, schemaName)
 
   // 2. 데이터 구조화
@@ -60,9 +57,6 @@ export async function collectPostgreSQLIndexStats(
     }
     tableIndexes.get(row.indexname)!.push(row)
   }
-
-  // 컬럼 타입 맵
-  const columnTypeMap = new Map(columnTypes.map((c) => [`${c.tablename}.${c.column_name}`, c]))
 
   // 컬럼 통계 맵
   const columnStatsMap = new Map(
@@ -136,15 +130,6 @@ export async function collectPostgreSQLIndexStats(
         nDistinct
       )
       if (columnOrderIssue) issues.push(columnOrderIssue)
-
-      // 부적절한 타입 이슈
-      const typeIssues = detectInappropriateTypeIndexes(
-        indexName,
-        tableName,
-        columns,
-        columnTypeMap
-      )
-      issues.push(...typeIssues)
 
       // 이 인덱스와 관련된 중복 이슈 찾기
       const relatedRedundantIssues = redundantIssues.filter((issue) =>
