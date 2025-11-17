@@ -6,12 +6,14 @@ interface MiniSearchBoxProps {
   placeholder?: string
   onSearch?: (value: string) => void
   onSearchClick?: () => void
+  maxLength?: number
 }
 
 const MiniSearchBox = ({
   placeholder = '프로젝트 검색',
   onSearch,
-  onSearchClick
+  onSearchClick,
+  maxLength
 }: MiniSearchBoxProps): ReactElement => {
   const [searchValue, setSearchValue] = useState('')
 
@@ -86,6 +88,7 @@ const MiniSearchBox = ({
           value={searchValue}
           onChange={handleChange}
           style={inputStyle}
+          maxLength={maxLength}
         />
         <button onClick={handleSearchClick} type="button" style={iconStyle}>
           <FiSearch size={20} color="#c0c0c0" />

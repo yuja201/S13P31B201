@@ -190,7 +190,8 @@ const api = {
 
   userQueryTest: {
     run: (payload: { projectId: number; query: string; runCount: number; timeout: number }) =>
-      ipcRenderer.invoke('userQueryTest:run', payload)
+      ipcRenderer.invoke('userQueryTest:run', payload),
+    AIGenerate: (payload) => ipcRenderer.invoke('userQueryTest:AIGenerate', payload)
   },
 
   // Index test operations

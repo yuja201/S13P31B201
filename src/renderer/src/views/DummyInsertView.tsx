@@ -13,15 +13,27 @@ import type { ColumnMetaData, DataSourceType, GenerationMode, GenerateRequest } 
 type InsertMode = 'sql' | 'db'
 
 interface ProgressMessage {
-  type: 'row-progress' | 'column-progress' | 'table-complete' | 'all-complete' | 'log' | 'error'
+  type:
+    | 'row-progress'
+    | 'column-progress'
+    | 'table-complete'
+    | 'all-complete'
+    | 'log'
+    | 'error'
+    | 'row-error'
+    | 'row-delta'
   progress?: number
   message?: string
   tableName?: string
   status?: 'success' | 'warning' | 'failure'
   totalCount?: number
-  insertedCount?: number
+  totalRows?: number
   successCount?: number
   failCount?: number
+  failedRows?: number
+  successRows?: number
+  successDelta?: number
+  failDelta?: number
 }
 
 const DummyInsertView: React.FC = () => {
@@ -57,6 +69,9 @@ const DummyInsertView: React.FC = () => {
   const { exportAllTables } = useGenerationStore()
   const { clearAll, clearSelectedTables } = useGenerationStore()
   const { refreshSchema } = useSchemaStore()
+  const [totalRows, setTotalRows] = useState(0)
+  const [successRows, setSuccessRows] = useState(0)
+  const [failedRows, setFailedRows] = useState(0)
 
   useEffect(() => {
     logEndRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -71,9 +86,22 @@ const DummyInsertView: React.FC = () => {
         setProgress(message.progress)
       }
 
+      if (message.type === 'row-delta') {
+        setSuccessRows((prev) => prev + (message.successDelta ?? 0))
+        setFailedRows((prev) => prev + (message.failDelta ?? 0))
+      }
+
       if (message.type === 'table-complete' && message.tableName) {
+        const hasFail = (message.failedRows ?? 0) > 0
+
+        setTotalRows((prev) => prev + (message.totalRows ?? 0))
+        setSuccessRows((prev) => prev + (message.successRows ?? 0))
+        setFailedRows((prev) => prev + (message.failedRows ?? 0))
+
         setTables((prev) =>
-          prev.map((t) => (t.name === message.tableName ? { ...t, status: 'success' } : t))
+          prev.map((t) =>
+            t.name === message.tableName ? { ...t, status: hasFail ? 'warning' : 'success' } : t
+          )
         )
       }
 
@@ -83,11 +111,16 @@ const DummyInsertView: React.FC = () => {
 
       if (message.type === 'all-complete') {
         setIsCompleted(true)
+
+        // 최종 행 개수 반영 (Worker가 계산해서 보내줌)
+        if (message.totalRows !== undefined) setTotalRows(message.totalRows)
+        if (message.successRows !== undefined) setSuccessRows(message.successRows)
+        if (message.failedRows !== undefined) setFailedRows(message.failedRows)
+
         const total = (message.successCount ?? 0) + (message.failCount ?? 0)
         setTotalCount(total)
         setInsertedCount(message.successCount ?? 0)
 
-        // DB 직접 삽입 모드는 스키마 새로고침
         if (mode === 'db' && selectedProject?.id) {
           refreshSchema(selectedProject.id).catch((error) => {
             window.api.logger.error('Failed to refresh schema after data insertion:', error)
@@ -316,15 +349,44 @@ const DummyInsertView: React.FC = () => {
                   wordBreak: 'break-word'
                 }}
               >
-                {errors.length > 0
-                  ? errors.map((e, i) => (
-                      <div key={i} style={{ color: 'var(--color-red)', marginBottom: 8 }}>
-                        {e}
-                      </div>
-                    ))
-                  : mode === 'sql'
-                    ? '모든 SQL 삽입문이 정상적으로 생성되었습니다.'
-                    : '모든 데이터가 정상적으로 삽입되었습니다.'}
+                <p style={{ marginBottom: 20 }}>
+                  총 {totalRows.toLocaleString()}개 중 {successRows.toLocaleString()}개 성공,{' '}
+                  {failedRows.toLocaleString()}개 실패
+                </p>
+                {errors.length > 0 && (
+                  <div
+                    style={{
+                      marginBottom: 20,
+                      backgroundColor: 'var(--color-gray-50)',
+                      borderLeft: '4px solid var(--color-red)',
+                      padding: '12px 16px',
+                      borderRadius: 8
+                    }}
+                  >
+                    <p
+                      style={{
+                        color: 'var(--color-red)',
+                        font: 'var(--preBold16)',
+                        marginBottom: 8
+                      }}
+                    >
+                      오류가 발생했습니다 ({errors.length}개)
+                    </p>
+
+                    <ul
+                      style={{
+                        margin: 0,
+                        paddingLeft: 20,
+                        color: 'var(--color-red)',
+                        font: 'var(--preRegular14)'
+                      }}
+                    >
+                      {errors.map((err, i) => (
+                        <li key={i}>{err}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </div>
 
               <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12 }}>

@@ -1,0 +1,35 @@
+pipeline {
+  agent any
+
+  triggers {
+      githubPush()
+  }
+
+  environment {
+      DEPLOY_HOST = "ubuntu@k13b201.p.ssafy.io"
+      DEPLOY_PATH = "/var/www/html"
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        git branch: 'master',
+            url: 'https://github.com/yuja201/here-is-dummy.git'
+      }
+    }
+
+    stage('Deploy HTML') {
+      steps {
+        sshagent(['deploy-key']) {
+          sh """
+            # 배포 경로가 없으면 생성 (실패 방지)
+            ssh ${DEPLOY_HOST} "mkdir -p ${DEPLOY_PATH}"
+
+            # 파일 업로드
+            scp -r ./src/web/* ${DEPLOY_HOST}:${DEPLOY_PATH}/
+          """
+        }
+      }
+    }
+  }
+}

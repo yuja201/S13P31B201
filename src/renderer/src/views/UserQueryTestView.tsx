@@ -8,8 +8,14 @@ import SummaryCards from '@renderer/components/SummaryCards'
 import ResponseTimeChart from '@renderer/components/ResponseTimeChart'
 import TestHeader from '@renderer/components/TestHeader'
 import UserQueryTestModal from '@renderer/modals/UserQueryTestModal'
+import { useToastStore } from '@renderer/stores/toastStore'
 
-import type { Test, UserQueryTestResultJson, ExplainResult } from '@shared/types'
+import type {
+  Test,
+  UserQueryTestResultJson,
+  ExplainResult,
+  AIRecommendationItem
+} from '@shared/types'
 
 const successIcon = new URL('@renderer/assets/imgs/success.svg', import.meta.url).href
 const warningIcon = new URL('@renderer/assets/imgs/warning.svg', import.meta.url).href
@@ -48,7 +54,10 @@ const UserQueryTestView: React.FC = () => {
   const navigate = useNavigate()
   const [test, setTest] = useState<Test | null>(null)
   const [isRerunModalOpen, setRerunModalOpen] = useState(false)
-
+  const showToast = useToastStore((s) => s.showToast)
+  const [aiList, setAiList] = useState<AIRecommendationItem[]>([])
+  const [aiRequested, setAiRequested] = useState(false)
+  const [aiLoading, setAiLoading] = useState(false)
   const resultContainerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -66,7 +75,7 @@ const UserQueryTestView: React.FC = () => {
   const warnings = result.warnings
   const query = result.query
 
-  /* 성능 점수 표시 색상 */
+  /* 성능 점수 UI */
   let perfIcon = successIcon
   let perfColor: 'green' | 'orange' | 'red' = 'green'
 
@@ -78,7 +87,28 @@ const UserQueryTestView: React.FC = () => {
     perfColor = 'red'
   }
 
-  /* 결과 캡처 다운로드 */
+  /* AI 추천 생성 요청 */
+  const handleAIGenerate = async (modelId: number): Promise<void> => {
+    try {
+      setAiRequested(true)
+      setAiLoading(true)
+
+      const res = await window.api.userQueryTest.AIGenerate({
+        projectId: test.project_id,
+        query,
+        modelId
+      })
+
+      setAiList(res.ai)
+    } catch (error) {
+      console.error(error)
+      showToast('AI 추천 생성 중 오류가 발생했습니다.', 'error', 'AI 오류')
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
+  /* 캡처 다운로드 */
   const handleDownload = async (): Promise<void> => {
     if (!resultContainerRef.current) return
 
@@ -230,7 +260,12 @@ const UserQueryTestView: React.FC = () => {
           {/* AI 추천 */}
           <div className="section-gap">
             <h2 className="section-title preSemiBold20">AI 개선 추천</h2>
-            <AIRecommendation list={[]} />
+            <AIRecommendation
+              list={aiList}
+              loading={aiLoading}
+              requested={aiRequested}
+              onGenerate={handleAIGenerate}
+            />
           </div>
         </div>
       </div>
