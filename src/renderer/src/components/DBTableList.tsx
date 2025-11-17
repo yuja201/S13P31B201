@@ -61,7 +61,7 @@ const DBTableList: React.FC<DBTableListProps> = ({
 
         {/* --- 검색창 --- */}
         <div className="search-bar">
-          <MiniSearchBox placeholder="테이블 검색" onSearch={setSearchQuery} />
+          <MiniSearchBox placeholder="테이블 검색" onSearch={setSearchQuery} maxLength={100} />
         </div>
 
         {/* --- 테이블 리스트 --- */}

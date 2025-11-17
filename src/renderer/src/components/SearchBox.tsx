@@ -8,6 +8,7 @@ interface SearchBarProps {
   onSearchClick?: () => void
   width?: string | number
   height?: string | number
+  maxLength?: number
 }
 
 const SearchBox = ({
@@ -15,7 +16,8 @@ const SearchBox = ({
   onSearch,
   onSearchClick,
   width = 675,
-  height = 60
+  height = 60,
+  maxLength = 50
 }: SearchBarProps): ReactElement => {
   const [searchValue, setSearchValue] = useState('')
 
@@ -109,6 +111,7 @@ const SearchBox = ({
           placeholder={placeholder}
           value={searchValue}
           onChange={handleChange}
+          maxLength={maxLength}
           style={inputStyle}
         />
 

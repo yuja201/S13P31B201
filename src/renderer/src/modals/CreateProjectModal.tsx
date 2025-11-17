@@ -302,6 +302,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
                 placeholder="프로젝트명"
                 width={300}
                 required={true}
+                maxLength={50}
                 value={formData.projectName}
                 onChange={(value) => handleInputChange('projectName', value)}
               />
@@ -313,6 +314,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
               title="프로젝트 설명"
               placeholder="프로젝트 설명"
               width={645}
+              maxLength={300}
               value={formData.description}
               onChange={(value) => handleInputChange('description', value)}
             />
@@ -357,6 +359,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
               title="호스트"
               placeholder="127.0.0.1"
               width={300}
+              maxLength={100}
               required={true}
               value={formData.host}
               onChange={(value) => handleInputChange('host', value)}
@@ -365,6 +368,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
               title="포트"
               placeholder="3306"
               width={300}
+              maxLength={10}
               required={true}
               value={formData.port}
               onChange={(value) => handleInputChange('port', value)}
@@ -375,6 +379,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
               title="사용자명"
               placeholder="user"
               width={300}
+              maxLength={50}
               required={true}
               value={formData.username}
               onChange={(value) => handleInputChange('username', value)}
@@ -383,6 +388,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
               title="비밀번호"
               placeholder="password"
               width={300}
+              maxLength={100}
               required={true}
               value={formData.password}
               onChange={(value) => handleInputChange('password', value)}
@@ -394,6 +400,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
             placeholder="sakila"
             width={300}
             required={true}
+            maxLength={100}
             value={formData.databaseName}
             onChange={(value) => handleInputChange('databaseName', value)}
           />
