@@ -11,7 +11,8 @@ import { insertIntoTests, getTestById, updateTestResult } from '../database/test
 import type {
   ExplainResult,
   PostgresExplainResult,
-  UserQueryTestResultJson
+  UserQueryTestResultJson,
+  Test
 } from '../../shared/types'
 
 // --------------------------------------------------
@@ -85,6 +86,18 @@ ipcMain.handle('userQueryTest:run', async (_, payload: UserQueryTestRunPayload) 
     const stats = calculateLatencyStats(executionTimes)
     const warnings = generateWarnings(explainResult)
 
+    // 등급 결정 로직
+    let grade: Test['grade'] = 'good'
+    if (stats.avg >= 100 && stats.avg < 300) {
+      grade = 'warning'
+    } else if (stats.avg >= 300) {
+      grade = 'critical'
+    }
+
+    if (warnings.length > 0 && grade === 'good') {
+      grade = 'warning'
+    }
+
     const resultJson: UserQueryTestResultJson = {
       query,
       runCount: safeRunCount,
@@ -99,6 +112,7 @@ ipcMain.handle('userQueryTest:run', async (_, payload: UserQueryTestRunPayload) 
     const testId = insertIntoTests({
       project_id: projectId,
       type: 'QUERY',
+      grade: grade,
       summary: query,
       result: JSON.stringify(resultJson),
       response_time: stats.avg,
