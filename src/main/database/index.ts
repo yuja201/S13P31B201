@@ -8,6 +8,7 @@ import {
   insertDefaultDomainData
 } from './schema'
 import { MigrationManager } from './migration-manager'
+import fs from 'node:fs'
 
 let db: Database.Database | null = null
 
@@ -66,10 +67,31 @@ export function initDatabase(): Database.Database {
   db.exec(insertDefaultDomainCategories)
   db.exec(insertDefaultDomainData)
 
-  // migration 실행
-  const migrationsPath = path.join(__dirname, 'migrations')
-  const migrationManager = new MigrationManager(db, migrationsPath)
-  migrationManager.runMigrations()
+  // migration 실행 경로 자동 분기
+  let migrationsPath: string
+
+  if (!app.isPackaged) {
+    // dev 환경 — src 직접 읽음
+    migrationsPath = path.join(process.cwd(), 'src', 'main', 'database', 'migrations')
+  } else {
+    // build 환경 — electron-builder가 복사한 폴더
+    migrationsPath = path.join(process.resourcesPath, 'migrations')
+  }
+
+  if (!fs.existsSync(migrationsPath)) {
+    console.warn('[Migration] migrations folder not found:', migrationsPath)
+  } else {
+    const migrationManager = new MigrationManager(db, migrationsPath)
+    migrationManager.runMigrations()
+  }
+
+  // 폴더 존재 여부 확인 (안전)
+  if (!fs.existsSync(migrationsPath)) {
+    console.warn('[Migration] migrations folder not found:', migrationsPath)
+  } else {
+    const migrationManager = new MigrationManager(db, migrationsPath)
+    migrationManager.runMigrations()
+  }
 
   return db
 }

@@ -75,6 +75,15 @@
       "out/**",
       "node_modules/**"
     ],
+    "extraResources": [
+      {
+        "from": "src/main/database/migrations",
+        "to": "migrations",
+        "filter": [
+          "*.sql"
+        ]
+      }
+    ],
     "directories": {
       "output": "dist",
       "buildResources": "build"

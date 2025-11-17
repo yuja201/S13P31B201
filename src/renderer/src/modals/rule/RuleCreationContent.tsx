@@ -49,6 +49,7 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
   const [ensureUnique, setEnsureUnique] = useState(false)
   const isUniqueColumn = useMemo(() => column.constraints.includes('UNIQUE'), [column])
   const addRule = useRuleStore((state) => state.addRule)
+  const [locale, setLocale] = useState<'en' | 'ko'>('en')
 
   const handleDomainChange = useCallback(
     (domain: { id: number; name: string }) => {
@@ -100,7 +101,8 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
       if (selectedSource === 'FAKER') {
         const result = await window.api.rule.createFaker({
           name: settingName,
-          domain: selectedDomain!.id
+          domain: selectedDomain!.id,
+          locale: locale
         })
         addRule(result)
 
@@ -181,7 +183,8 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
         />
         {column.checkConstraint && (
           <div className="check-constraint-notice">
-            ※ 참고: 이 컬럼에는 <span>{formatCheckConstraint(column.checkConstraint)}</span> 제약 조건이 있습니다.
+            ※ 참고: 이 컬럼에는 <span>{formatCheckConstraint(column.checkConstraint)}</span> 제약
+            조건이 있습니다.
           </div>
         )}
         <br />
@@ -238,6 +241,29 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
           columnType={columnType}
           onChange={handleDomainChange}
         />
+      </div>
+      {/* Faker Locale 선택 추가 */}
+      <div style={{ marginTop: '12px' }}>
+        <div className="preSemiBold14" style={{ marginBottom: '6px' }}>
+          Locale <span style={{ color: '#ED3F27' }}>*</span>
+        </div>
+        <select
+          value={locale}
+          onChange={(e) => setLocale(e.target.value as 'en' | 'ko')}
+          style={{
+            width: '100%',
+            height: '42px',
+            border: '1px solid #c9d8eb',
+            borderRadius: '10px',
+            padding: '0 16px',
+            fontSize: '15px',
+            fontFamily: 'var(--font-family)',
+            backgroundColor: 'var(--color-white)'
+          }}
+        >
+          <option value="en">English</option>
+          <option value="ko">한국어</option>
+        </select>
       </div>
       {(selectedSource === 'FAKER' || selectedSource === 'AI') && isUniqueColumn && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
