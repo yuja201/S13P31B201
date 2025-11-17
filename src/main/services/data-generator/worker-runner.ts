@@ -60,7 +60,7 @@ function createColumnStream(
         columnName: col.columnName,
         recordCnt,
         metaData: meta,
-        domainName: rule.domain_name,
+        rule,
         schema
       })
     }

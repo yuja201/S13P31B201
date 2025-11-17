@@ -188,6 +188,7 @@ export interface AIGenResult {
 export interface FakerRuleInput {
   name: string
   domain: number
+  locale?: string | null
 }
 
 export interface AIRuleInput {

@@ -44,6 +44,7 @@ export interface Rule {
   category_name: string
   model_id: number | null
   prompt: string | null
+  locale: string | null
   created_at: number
   updated_at: number
 }
@@ -73,6 +74,7 @@ export interface RuleInput {
   domain: number
   model_id?: number | null
   prompt?: string | null
+  locale?: string | null
 }
 
 // 레코드 업데이트 (id 제외 모두 선택)

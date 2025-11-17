@@ -1,7 +1,12 @@
-import { faker, Faker } from '@faker-js/faker'
 import { fakerMapper } from '../../utils/faker-mapper'
 import type { FakerMetaData } from '@shared/types'
 import type { Table, Column as SchemaColumn } from '../../database/types'
+import { Faker, fakerEN, fakerKO } from '@faker-js/faker'
+
+const LOCALE_FAKERS = {
+  en: fakerEN,
+  ko: fakerKO
+} as const
 
 /**
  * Faker 생성 요청 파라미터
@@ -12,7 +17,11 @@ export interface FakerGenerateRequest {
   columnName: string
   recordCnt: number
   metaData: FakerMetaData
-  domainName: string
+  rule: {
+    id: number
+    locale?: string
+    domain_name: string
+  }
   schema: Table[]
 }
 
@@ -74,7 +83,7 @@ export async function* generateFakeStream({
   columnName,
   recordCnt,
   schema,
-  domainName,
+  rule,
   metaData
 }: FakerGenerateRequest): AsyncGenerator<string, void, unknown> {
   // 스키마에서 테이블/컬럼 찾기
@@ -84,14 +93,20 @@ export async function* generateFakeStream({
   const sqlType = column?.type ?? 'VARCHAR(255)'
   const { min, max, maxLength } = column ? extractSimpleConstraints(sqlType, column) : {}
 
+  // ⭐ locale 적용된 faker 인스턴스 생성 (주석 변경 없음)
+  const locale = rule.locale ?? 'en'
+  const faker = new Faker({
+    locale: LOCALE_FAKERS[locale]
+  })
+
   // faker 경로 매핑
-  const fakerPath = fakerMapper[domainName]
+  const fakerPath = fakerMapper[rule.domain_name] // ⭐ domainName → rule.domainName
   if (!fakerPath) {
-    throw new Error(`No faker mapping for domain: ${domainName}`)
+    throw new Error(`No faker mapping for domain: ${rule.domain_name}`)
   }
 
   const [category, method] = fakerPath.split('.') as [keyof Faker, string]
-  const fakerCategory = faker[category]
+  const fakerCategory = faker[category] // ⭐ locale 적용된 faker 사용
   const fn = (fakerCategory as Record<string, unknown>)[method]
 
   if (typeof fn !== 'function') {
