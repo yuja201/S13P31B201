@@ -169,7 +169,23 @@ const TestHistoryView: React.FC = () => {
                     </td>
                     <td>{test.summary || '요약 없음'}</td>
                     <td>{resultSummary}</td>
-                    <td>{new Date(test.created_at * 1000).toLocaleString()}</td>
+                    <td>
+                      {(() => {
+                        const dateStr = new Date(test.created_at * 1000).toLocaleString('ko-KR', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit'
+                        });
+                        return dateStr.endsWith('.') ? dateStr.slice(0, -1) : dateStr;
+                      })()}
+                      <br />
+                      {new Date(test.created_at * 1000).toLocaleString('ko-KR', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false
+                      })}
+                    </td>
                     <td>
                       {IconComponent && IconColor && <IconComponent color={IconColor} size={24}
                       />}
