@@ -39,22 +39,8 @@ function createColumnStream(
   const { projectId, table, schema, database, rules } = task
   const { tableName } = table
 
-  console.log('[COLUMN-META]', {
-    tableName,
-    columnName: col.columnName,
-    dataSource: col.dataSource,
-    metaData: col.metaData
-  })
-  console.log('[RULES]', rules)
-
   const dataSource = col.dataSource as DataSourceType
-  console.log('[STREAM-CREATE]', {
-    tableName,
-    columnName: col.columnName,
-    dataSource: col.dataSource,
-    metaData: col.metaData,
-    matchedRule: rules.find((r) => r.id === (col.metaData as any)?.ruleId)
-  })
+
   switch (dataSource) {
     case 'FAKER': {
       if (!col.metaData || (col.metaData as FakerMetaData).ruleId == null) {
