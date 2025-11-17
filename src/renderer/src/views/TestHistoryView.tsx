@@ -40,7 +40,8 @@ const TestHistoryView: React.FC = () => {
   }, [location])
 
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 10
+  const itemsPerPage = 8
+
 
   const totalItems = tests.length
   const totalPages = Math.ceil(totalItems / itemsPerPage)
@@ -219,13 +220,24 @@ const TestHistoryView: React.FC = () => {
           overflow-x: auto;
           margin-top: 32px;
           margin-bottom: 20px; 
+          height: 670px;
         }
         .column-table {
           width: 100%;
           border-collapse: collapse;
           border-top: 1px solid var(--color-gray-200);
           table-layout: fixed;
-          height:670px;
+        }
+
+        .column-table tbody {
+          display: block;
+          width: 100%;
+          overflow-y: hidden;
+        }
+        .column-table tr {
+          display: table; /* display: table을 사용해 너비 계산을 유지 */
+          width: 100%;
+          table-layout: fixed;
         }
 
         .column-table th {
@@ -240,11 +252,14 @@ const TestHistoryView: React.FC = () => {
         .column-table td {
           padding: 16px;
           text-align: center;
-          vertical-align: text-top;
+          vertical-align: middle;
           border-bottom: 1px solid var(--color-gray-200);
           background-color: var(--color-white); 
           transition: background-color 0.2s ease;
           word-break: break-word;
+        }
+        .column-table tbody tr {
+          height: 67px; 
         }
 
         .column-table th:nth-child(1),
