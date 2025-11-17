@@ -164,7 +164,6 @@ const TestHistoryView: React.FC = () => {
             display: flex;
             flex-direction: column;
             height: 100%;
-            padding: 20px;
           }
           .empty-state-container {
             flex-grow: 1;
@@ -266,7 +265,6 @@ const TestHistoryView: React.FC = () => {
           display: flex;
           flex-direction: column;
           height: 100%;
-          padding: 20px;
         }
         .table-scroll-wrapper {
           flex-grow: 1; 

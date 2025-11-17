@@ -192,13 +192,14 @@ const InfoView: React.FC = () => {
             width: 100%;
             display: flex;
             justify-content: center;
+            max-width:700px;
+            align-items: center;
           }
 
           .info-view-container {
             width: 100%;
-            max-width: 900px;
-            padding: 20px;
             margin: 0 auto;
+            
           }
 
           .info-view-header {
@@ -267,6 +268,7 @@ const InfoView: React.FC = () => {
                 placeholder="프로젝트명"
                 required
                 value={formData.projectName}
+                width={300}
                 onChange={(v) => handleInputChange('projectName', v)}
               />
               <InputField
