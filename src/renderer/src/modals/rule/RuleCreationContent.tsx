@@ -243,28 +243,30 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
         />
       </div>
       {/* Faker Locale 선택 추가 */}
-      <div style={{ marginTop: '12px' }}>
-        <div className="preSemiBold14" style={{ marginBottom: '6px' }}>
-          Locale <span style={{ color: '#ED3F27' }}>*</span>
+      {selectedSource === 'FAKER' && (
+        <div style={{ marginTop: '12px' }}>
+          <div className="preSemiBold14" style={{ marginBottom: '6px' }}>
+            언어 <span style={{ color: '#ED3F27' }}>*</span>
+          </div>
+          <select
+            value={locale}
+            onChange={(e) => setLocale(e.target.value as 'en' | 'ko')}
+            style={{
+              width: '100%',
+              height: '42px',
+              border: '1px solid #c9d8eb',
+              borderRadius: '10px',
+              padding: '0 16px',
+              fontSize: '15px',
+              fontFamily: 'var(--font-family)',
+              backgroundColor: 'var(--color-white)'
+            }}
+          >
+            <option value="en">English</option>
+            <option value="ko">한국어</option>
+          </select>
         </div>
-        <select
-          value={locale}
-          onChange={(e) => setLocale(e.target.value as 'en' | 'ko')}
-          style={{
-            width: '100%',
-            height: '42px',
-            border: '1px solid #c9d8eb',
-            borderRadius: '10px',
-            padding: '0 16px',
-            fontSize: '15px',
-            fontFamily: 'var(--font-family)',
-            backgroundColor: 'var(--color-white)'
-          }}
-        >
-          <option value="en">English</option>
-          <option value="ko">한국어</option>
-        </select>
-      </div>
+      )}
       {(selectedSource === 'FAKER' || selectedSource === 'AI') && isUniqueColumn && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
           <Checkbox
