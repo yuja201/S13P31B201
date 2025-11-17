@@ -42,7 +42,6 @@ const TestHistoryView: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 8
 
-
   const totalItems = tests.length
   const totalPages = Math.ceil(totalItems / itemsPerPage)
 
@@ -61,6 +60,14 @@ const TestHistoryView: React.FC = () => {
   const handleStartTest = (): void => {
     if (projectId) {
       navigate(`/main/test/${projectId}`)
+    }
+  }
+
+  const handleRowClick = (test: Test): void => {
+    if (test.type === 'QUERY') {
+      navigate(`/main/test/${test.project_id}/user-query/${test.id}`)
+    } else if (test.type === 'INDEX') {
+      navigate(`/main/test/${test.project_id}/index`)
     }
   }
 
@@ -162,10 +169,13 @@ const TestHistoryView: React.FC = () => {
                 }
 
                 return (
-                  <tr key={test.id}>
+                  <tr
+                    key={test.id}
+                    onClick={() => handleRowClick(test)}
+                    className="clickable-row"
+                  >
                     <td>
-                      <span className={`badge badge-${test.type.toLowerCase()}`}>{test.type
-                      }</span>
+                      <span className={`badge badge-${test.type.toLowerCase()}`}>{test.type}</span>
                     </td>
                     <td>{test.summary || '요약 없음'}</td>
                     <td>{resultSummary}</td>
@@ -175,8 +185,8 @@ const TestHistoryView: React.FC = () => {
                           year: 'numeric',
                           month: '2-digit',
                           day: '2-digit'
-                        });
-                        return dateStr.endsWith('.') ? dateStr.slice(0, -1) : dateStr;
+                        })
+                        return dateStr.endsWith('.') ? dateStr.slice(0, -1) : dateStr
                       })()}
                       <br />
                       {new Date(test.created_at * 1000).toLocaleString('ko-KR', {
@@ -187,8 +197,7 @@ const TestHistoryView: React.FC = () => {
                       })}
                     </td>
                     <td>
-                      {IconComponent && IconColor && <IconComponent color={IconColor} size={24}
-                      />}
+                      {IconComponent && IconColor && <IconComponent color={IconColor} size={24} />}
                     </td>
                   </tr>
                 )
@@ -276,6 +285,13 @@ const TestHistoryView: React.FC = () => {
         }
         .column-table tbody tr {
           height: 67px; 
+        }
+
+        .clickable-row:hover {
+          cursor: pointer;
+        }
+        .clickable-row:hover td {
+          background-color: var(--color-light-blue); 
         }
 
         .column-table th:nth-child(1),
