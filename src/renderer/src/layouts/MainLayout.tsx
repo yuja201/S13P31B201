@@ -14,7 +14,7 @@ const MainLayout: React.FC = () => {
 
   useEffect(() => {
     if (projectId) {
-      ;(async () => {
+      ; (async () => {
         try {
           await selectProjectById(projectId)
         } catch (error) {
@@ -50,6 +50,12 @@ const MainLayout: React.FC = () => {
         display: flex;
         min-height: 100vh;
         background-color: var(--color-background);
+        
+      }
+      @media (min-width: 1620px) {
+        .layout {
+          justify-content: center;
+        }
       }
 
       /* 사이드바 */
@@ -70,7 +76,7 @@ const MainLayout: React.FC = () => {
         overflow-y: auto;
         background-color: var(--color-background);
         padding: 80px;
-        min-width: 1340px;
+        min-width: 1180px;
       }
 
       @media (min-height: 1000px) {
