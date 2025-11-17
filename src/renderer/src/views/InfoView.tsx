@@ -344,7 +344,7 @@ const InfoView: React.FC = () => {
             placeholder="sakila"
             width={300}
             required={true}
-            maxLength={50}
+            maxLength={100}
             value={formData.databaseName}
             onChange={(value) => handleInputChange('databaseName', value)}
           />
