@@ -588,7 +588,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
       success: true,
       directInserted: directMode ? true : undefined
     }
-    console.log(JSON.stringify(result))
+    console.log('\n' + JSON.stringify(result) + '\n')
     return result
   } catch (err) {
     if (directContext) {

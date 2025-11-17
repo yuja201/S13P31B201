@@ -157,17 +157,19 @@ export async function runDataGenerator(
     child.on('close', (code) => {
       running.delete(child)
       if (code === 0) {
-        const resultLine = stdout
-          .split('\n')
-          .find((line) => line.startsWith('{') && line.includes('"success"'))
-        if (resultLine) {
-          results.push(JSON.parse(resultLine))
+        // stdout 안에서 success 포함 JSON 객체 전부 추출
+        const matches = stdout.match(/\{[^}]*"success"[^}]*\}/g)
+
+        if (matches && matches.length > 0) {
+          // 가장 마지막 JSON이 최종 결과 JSON
+          const finalJson = matches[matches.length - 1]
+          results.push(JSON.parse(finalJson))
         } else {
           results.push({
             success: false,
             tableName: table.tableName,
             sqlPath: '',
-            error: 'Worker finished without returning a result payload.'
+            error: 'Worker finished without a valid result JSON.'
           })
         }
       } else {
