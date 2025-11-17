@@ -196,8 +196,6 @@ const InfoView: React.FC = () => {
 
           .info-view-container {
             width: 100%;
-            max-width: 900px;
-            padding: 20px;
             margin: 0 auto;
           }
 
