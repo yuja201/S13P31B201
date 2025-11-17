@@ -145,6 +145,16 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
   }
 
   const handleSubmit = async (): Promise<void> => {
+    const trimmedName = formData.projectName.trim()
+    const isDuplicateOnSubmit = projects.some(
+      (p) => p.name.toLowerCase() === trimmedName.toLowerCase()
+    )
+
+    if (isDuplicateOnSubmit) {
+      showToast('이미 존재하는 프로젝트명입니다.', 'warning', '입력 오류')
+      return
+    }
+
     if (nameFeedback && !isNameAvailable) {
       showToast('프로젝트명을 확인해주세요.', 'warning', '입력 오류');
       return;
