@@ -2,7 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react'
 import PageTitle from '@renderer/components/PageTitle'
 import { IoMdCheckmarkCircleOutline, IoMdCloseCircleOutline } from 'react-icons/io'
 import { PiWarningBold } from 'react-icons/pi'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import Button from '@renderer/components/Button'
 import YujaWorkingImage from '../assets/imgs/yuja_working.png'
 import type { Test } from '@shared/types'
@@ -19,6 +19,7 @@ const TestHistoryView: React.FC = () => {
 
   const navigate = useNavigate()
   const { projectId } = useParams<{ projectId: string }>()
+  const location = useLocation()
 
   const [tests, setTests] = useState<Test[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -36,7 +37,7 @@ const TestHistoryView: React.FC = () => {
       }
     }
     fetchTests()
-  }, [])
+  }, [location])
 
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
@@ -48,7 +49,7 @@ const TestHistoryView: React.FC = () => {
     const startIndex = (currentPage - 1) * itemsPerPage
     const endIndex = startIndex + itemsPerPage
     return tests.slice(startIndex, endIndex)
-  }, [currentPage, itemsPerPage])
+  }, [currentPage, itemsPerPage, tests])
 
   const handlePageChange = (page: number): void => {
     if (page >= 1 && page <= totalPages) {
