@@ -13,6 +13,7 @@ interface InputFieldProps {
   size?: 'md' | 'sm'
   password?: boolean
   className?: string
+  maxLength?: number
 }
 
 const InputField = ({
@@ -26,7 +27,8 @@ const InputField = ({
   onChange,
   size = 'md',
   password = false,
-  className = ''
+  className = '',
+  maxLength
 }: InputFieldProps): ReactElement => {
   const [inputValue, setInputValue] = useState(value || '')
 
@@ -105,6 +107,7 @@ const InputField = ({
           className={`input-field-input ${className}`}
           placeholder={placeholder}
           value={inputValue}
+          maxLength={maxLength}
           onChange={handleChange}
           style={{
             height: inputHeight,
