@@ -75,19 +75,13 @@ const MainLayout: React.FC = () => {
         flex-direction: column;
         overflow-y: auto;
         background-color: var(--color-background);
-        padding: 80px;
+        padding: 100px 80px;
         min-width: 1180px;
       }
 
       @media (min-height: 1000px) {
         .main-content {
           padding: 120px 80px;
-        }
-      }
-
-      @media (max-width: 768px) {
-        .main-content {
-          padding: 40px 20px;
         }
       }
 

@@ -5,7 +5,7 @@ interface InputFieldProps {
   title: string
   placeholder: string
   description?: string
-  width: number | string
+  width?: number | string
   required?: boolean
   titleBold?: boolean
   value?: string
