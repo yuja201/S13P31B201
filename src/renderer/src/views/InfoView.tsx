@@ -87,7 +87,6 @@ const InfoView: React.FC = () => {
     setIsTestingConnection(true)
 
     try {
-      // 연결 테스트
       const result = await window.api.testConnection({
         dbType: formData.dbType,
         host: formData.host,
@@ -114,7 +113,6 @@ const InfoView: React.FC = () => {
   }
 
   const handleInputChange = (field: keyof ProjectInfo, value: string): void => {
-    // DB 정보 변경 시 연결 테스트 상태 초기화
     if (field !== 'projectName' && field !== 'description') {
       setIsConnectionTested(false)
     }
@@ -139,14 +137,12 @@ const InfoView: React.FC = () => {
     }
 
     try {
-      // 프로젝트 정보 업데이트
       const updatedProject = await window.api.project.update({
         id: selectedProject.id,
         name: formData.projectName,
         description: formData.description
       })
 
-      // 데이터베이스 연결 정보 업데이트
       let updatedDatabase = selectedProject.database
       if (selectedProject.database) {
         const dbmsId = formData.dbType === 'MySQL' ? 1 : 2
@@ -161,13 +157,11 @@ const InfoView: React.FC = () => {
         })
       }
 
-      // DBMS 정보 가져오기
       let updatedDbms = selectedProject.dbms
       if (updatedDatabase) {
         updatedDbms = await window.api.dbms.getById(updatedDatabase.dbms_id)
       }
 
-      // Zustand Store 업데이트
       if (updatedProject) {
         const updatedProjectWithDetails = {
           ...updatedProject,
@@ -183,7 +177,6 @@ const InfoView: React.FC = () => {
         }
       }
 
-      // SchemaView로 이동
       navigate(`/main/schema/${selectedProject.id}`)
     } catch (error) {
       console.error(error)
@@ -195,168 +188,191 @@ const InfoView: React.FC = () => {
     <>
       <style>
         {`
+          .info-view-wrapper {
+            width: 100%;
+            display: flex;
+            justify-content: center;
+          }
+
+          .info-view-container {
+            width: 100%;
+            max-width: 900px;
+            padding: 20px;
+            margin: 0 auto;
+          }
+
           .info-view-header {
             margin-bottom: 40px;
           }
+
           .info-view-form-container {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 32px;
           }
+
           .info-view-input-group {
             display: flex;
             flex-direction: column;
             gap: 20px;
           }
+
           .info-view-dbms-section {
-            margin-bottom: 20px;
+            margin-bottom: 12px;
             font-size: 16px;
+            font-weight: 500;
           }
+
           .info-view-radio-group {
             display: flex;
-            gap: 20px;
+            gap: 24px;
           }
+
           .info-view-row-group {
             display: flex;
-            gap: 50px;
+            gap: 24px;
+            width: 100%;
           }
+
+          .info-view-row-group > * {
+            flex: 1;
+            min-width: 0;
+          }
+
           .info-view-button-container {
             display: flex;
             justify-content: flex-end;
-            gap: 20px;
-            margin-top: 20px;
+            gap: 16px;
+            margin-top: 56px;
           }
         `}
       </style>
 
-      <div>
-        <div className="info-view-header">
-          <PageTitle
-            title="프로젝트 정보"
-            description="데이터베이스 프로젝트의 정보를 확인하고 수정하세요."
-          />
-        </div>
+      <div className="info-view-wrapper">
+        <div className="info-view-container">
 
-        <div className="info-view-form-container">
-          <div className="info-view-input-group">
-            <InputField
-              title="프로젝트명"
-              placeholder="프로젝트명"
-              width={300}
-              required={true}
-              maxLength={50}
-              value={formData.projectName}
-              onChange={(value) => handleInputChange('projectName', value)}
-            />
-            <InputField
-              title="프로젝트 설명"
-              placeholder="프로젝트 설명"
-              width={650}
-              maxLength={300}
-              value={formData.description}
-              onChange={(value) => handleInputChange('description', value)}
+          <div className="info-view-header">
+            <PageTitle
+              title="프로젝트 정보"
+              description="데이터베이스 프로젝트의 정보를 확인하고 수정하세요."
             />
           </div>
 
-          <div>
-            <p className="info-view-dbms-section">DBMS</p>
-            <div className="info-view-radio-group">
-              <RadioButton
-                label="MySQL"
-                name="DBMS"
-                value="MySQL"
-                checked={selected === 'MySQL'}
-                onChange={(e) => {
-                  setSelected(e.target.value)
-                  setFormData((prev) => ({
-                    ...prev,
-                    dbType: 'MySQL',
-                    port: '3306',
-                    username: 'root'
-                  }))
-                  setIsConnectionTested(false)
-                }}
+          <div className="info-view-form-container">
+
+            {/* 프로젝트명 + 설명 */}
+            <div className="info-view-input-group">
+              <InputField
+                title="프로젝트명"
+                placeholder="프로젝트명"
+                required
+                value={formData.projectName}
+                onChange={(v) => handleInputChange('projectName', v)}
               />
-              <RadioButton
-                label="PostgreSQL"
-                name="DBMS"
-                value="PostgreSQL"
-                checked={selected === 'PostgreSQL'}
-                onChange={(e) => {
-                  setSelected(e.target.value)
-                  setFormData((prev) => ({
-                    ...prev,
-                    dbType: 'PostgreSQL',
-                    port: '5432',
-                    username: 'postgres'
-                  }))
-                  setIsConnectionTested(false)
-                }}
+              <InputField
+                title="프로젝트 설명"
+                placeholder="프로젝트 설명"
+                value={formData.description}
+                onChange={(v) => handleInputChange('description', v)}
               />
             </div>
+
+            {/* DBMS 선택 */}
+            <div>
+              <p className="info-view-dbms-section">DBMS</p>
+              <div className="info-view-radio-group">
+                <RadioButton
+                  label="MySQL"
+                  name="DBMS"
+                  value="MySQL"
+                  checked={selected === 'MySQL'}
+                  onChange={(e) => {
+                    setSelected(e.target.value)
+                    setFormData((prev) => ({
+                      ...prev,
+                      dbType: 'MySQL',
+                      port: '3306',
+                      username: 'root'
+                    }))
+                    setIsConnectionTested(false)
+                  }}
+                />
+                <RadioButton
+                  label="PostgreSQL"
+                  name="DBMS"
+                  value="PostgreSQL"
+                  checked={selected === 'PostgreSQL'}
+                  onChange={(e) => {
+                    setSelected(e.target.value)
+                    setFormData((prev) => ({
+                      ...prev,
+                      dbType: 'PostgreSQL',
+                      port: '5432',
+                      username: 'postgres'
+                    }))
+                    setIsConnectionTested(false)
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* 호스트 + 포트 */}
+            <div className="info-view-row-group">
+              <InputField
+                title="호스트"
+                placeholder="127.0.0.1"
+                required
+                value={formData.host}
+                onChange={(v) => handleInputChange('host', v)}
+              />
+              <InputField
+                title="포트"
+                placeholder="3306"
+                required
+                value={formData.port}
+                onChange={(v) => handleInputChange('port', v)}
+              />
+            </div>
+
+            {/* 사용자명 + 비밀번호 */}
+            <div className="info-view-row-group">
+              <InputField
+                title="사용자명"
+                placeholder="user"
+                required
+                value={formData.username}
+                onChange={(v) => handleInputChange('username', v)}
+              />
+              <InputField
+                title="비밀번호"
+                placeholder="password"
+                required
+                value={formData.password}
+                password
+                onChange={(v) => handleInputChange('password', v)}
+              />
+            </div>
+
+            {/* DB 이름 */}
+            <InputField
+              title="데이터베이스명"
+              placeholder="sakila"
+              required
+              value={formData.databaseName}
+              onChange={(v) => handleInputChange('databaseName', v)}
+            />
           </div>
 
-          <div className="info-view-row-group">
-            <InputField
-              title="호스트"
-              placeholder="127.0.0.1"
-              width={300}
-              required={true}
-              maxLength={100}
-              value={formData.host}
-              onChange={(value) => handleInputChange('host', value)}
-            />
-            <InputField
-              title="포트"
-              placeholder="3306"
-              width={300}
-              maxLength={10}
-              required={true}
-              value={formData.port}
-              onChange={(value) => handleInputChange('port', value)}
-            />
+          {/* 하단 버튼 */}
+          <div className="info-view-button-container">
+            <Button variant="gray" onClick={handleConnectionTest} isLoading={isTestingConnection}>
+              연결테스트
+            </Button>
+            <Button onClick={handleSubmit} disabled={!isConnectionTested}>
+              다음
+            </Button>
           </div>
 
-          <div className="info-view-row-group">
-            <InputField
-              title="사용자명"
-              placeholder="user"
-              width={300}
-              maxLength={50}
-              required={true}
-              value={formData.username}
-              onChange={(value) => handleInputChange('username', value)}
-            />
-            <InputField
-              title="비밀번호"
-              placeholder="password"
-              width={300}
-              maxLength={100}
-              required={true}
-              value={formData.password}
-              onChange={(value) => handleInputChange('password', value)}
-              password={true}
-            />
-          </div>
-
-          <InputField
-            title="데이터베이스명"
-            placeholder="sakila"
-            width={300}
-            required={true}
-            maxLength={100}
-            value={formData.databaseName}
-            onChange={(value) => handleInputChange('databaseName', value)}
-          />
-        </div>
-
-        <div className="info-view-button-container">
-          <Button variant="gray" onClick={handleConnectionTest} isLoading={isTestingConnection}>
-            연결테스트
-          </Button>
-          <Button onClick={handleSubmit} disabled={!isConnectionTested}>
-            다음
-          </Button>
         </div>
       </div>
     </>
