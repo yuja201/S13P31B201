@@ -38,8 +38,23 @@ function createColumnStream(
 ): AsyncGenerator<string | null | undefined> {
   const { projectId, table, schema, database, rules } = task
   const { tableName } = table
-  const dataSource = col.dataSource as DataSourceType
 
+  console.log('[COLUMN-META]', {
+    tableName,
+    columnName: col.columnName,
+    dataSource: col.dataSource,
+    metaData: col.metaData
+  })
+  console.log('[RULES]', rules)
+
+  const dataSource = col.dataSource as DataSourceType
+  console.log('[STREAM-CREATE]', {
+    tableName,
+    columnName: col.columnName,
+    dataSource: col.dataSource,
+    metaData: col.metaData,
+    matchedRule: rules.find((r) => r.id === (col.metaData as any)?.ruleId)
+  })
   switch (dataSource) {
     case 'FAKER': {
       if (!col.metaData || (col.metaData as FakerMetaData).ruleId == null) {
@@ -60,7 +75,8 @@ function createColumnStream(
         columnName: col.columnName,
         recordCnt,
         metaData: meta,
-        rule,
+        domainName: rule.domain_name,
+        locale: rule.locale ?? 'en',
         schema
       })
     }
@@ -190,7 +206,9 @@ function convertValue(
 
   // 문자열화 (숫자/불리언 등 들어올 수 있음)
   let s = typeof raw === 'string' ? raw : String(raw)
-
+  if (!type || type.includes('char') || type.includes('text')) {
+    return `'${s.replace(/'/g, "''")}'`
+  }
   // === A안: FILE 소스일 때만 CSV 따옴표 제거 ===
   if (dataSource === 'FILE' && s.length >= 2 && s[0] === '"' && s[s.length - 1] === '"') {
     // CSV에서 "" → " 로 복원

@@ -115,6 +115,7 @@ export interface WorkerTask {
     id: number
     domain_name: string
     model_id: number | null
+    locale: string | null
   }>
   mode?: GenerationMode
   connection?: {

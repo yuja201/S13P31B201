@@ -63,7 +63,8 @@ export async function runDataGenerator(
     .map((rule) => ({
       id: rule.id,
       domain_name: rule.domain_name,
-      model_id: rule.model_id
+      model_id: rule.model_id,
+      locale: rule.locale
     }))
 
   const databaseInfo = {
