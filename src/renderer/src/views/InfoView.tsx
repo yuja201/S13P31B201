@@ -224,7 +224,8 @@ const InfoView: React.FC = () => {
             display: flex;
             justify-content: flex-end;
             gap: 20px;
-            margin-top: 20px;
+            margin-top: 32px;
+            width: 650px;
           }
         `}
       </style>
