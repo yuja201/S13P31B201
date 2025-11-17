@@ -6,7 +6,7 @@ import { runPostgresQueryMultiple } from '../services/user-query-test/postgres-r
 import { runMySQLQueryMultiple } from '../services/user-query-test/mysql-run'
 import { calculateLatencyStats } from '../services/user-query-test/stats'
 import { UserQueryAIService } from '../services/user-query-test/ai-service'
-import { insertIntoTests } from '../database/tests'
+import { insertIntoTests, getTestById, updateTestResult } from '../database/tests'
 
 import type {
   ExplainResult,
@@ -113,7 +113,7 @@ ipcMain.handle('userQueryTest:run', async (_, payload: UserQueryTestRunPayload) 
 })
 
 ipcMain.handle('userQueryTest:AIGenerate', async (_event, payload) => {
-  const { projectId, query, modelId } = payload
+  const { testId, projectId, query, modelId } = payload
 
   try {
     // 1) 프로젝트 DB 접속 정보
@@ -129,6 +129,15 @@ ipcMain.handle('userQueryTest:AIGenerate', async (_event, payload) => {
       query,
       modelId
     })
+
+    // resultJson 업데이트
+    const test = getTestById(testId)
+    if (!test) throw new Error('Test not found')
+
+    const parsed = JSON.parse(test.result)
+    parsed.ai = result.ai // ai 필드 추가
+
+    updateTestResult(testId, JSON.stringify(parsed))
 
     return result
   } catch (error) {
