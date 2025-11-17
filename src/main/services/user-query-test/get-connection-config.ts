@@ -1,4 +1,4 @@
-import { getDatabaseById } from '../../database/databases'
+import { getDatabaseByProjectId } from '../../database/databases'
 import { getDBMSById } from '../../database/dbms'
 
 export interface ConnectionConfig {
@@ -10,8 +10,8 @@ export interface ConnectionConfig {
   database: string
 }
 
-export async function getConnectionConfig(projectId: number): Promise<ConnectionConfig> {
-  const database = getDatabaseById(projectId)
+export function getConnectionConfig(projectId: number): ConnectionConfig {
+  const database = getDatabaseByProjectId(projectId)
   if (!database) throw new Error(`Database not found for project ${projectId}`)
 
   const dbms = getDBMSById(database.dbms_id)
