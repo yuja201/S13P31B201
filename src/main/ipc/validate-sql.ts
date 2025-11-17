@@ -75,6 +75,64 @@ const connectionError = (shortMessage: string, error: string, type: string): Val
 })
 
 /* =========================================================
+    SAFE COMMENT REMOVAL (문자열 보존)
+========================================================= */
+function safeRemoveComments(sql: string): string {
+  let out = ''
+  let inString = false
+  let quote = ''
+
+  for (let i = 0; i < sql.length; i++) {
+    const ch = sql[i]
+    const next = sql[i + 1]
+
+    if (!inString && (ch === "'" || ch === '"')) {
+      inString = true
+      quote = ch
+      out += ch
+      continue
+    }
+
+    if (inString && ch === quote) {
+      inString = false
+      quote = ''
+      out += ch
+      continue
+    }
+
+    if (inString) {
+      out += ch
+      continue
+    }
+
+    // -- comment
+    if (ch === '-' && next === '-') {
+      while (i < sql.length && sql[i] !== '\n') i++
+      continue
+    }
+
+    // /* block comment */
+    if (ch === '/' && next === '*') {
+      i += 2
+      while (i < sql.length && !(sql[i] === '*' && sql[i + 1] === '/')) i++
+      i++
+      continue
+    }
+
+    out += ch
+  }
+
+  return out
+}
+
+/* =========================================================
+    REMOVE ONLY TRAILING SEMICOLON (문자열 보호)
+========================================================= */
+function removeTrailingSemicolon(sql: string): string {
+  return sql.trim().replace(/;+\s*$/, '')
+}
+
+/* =========================================================
     MAIN HANDLER
 ========================================================= */
 ipcMain.handle(
@@ -118,18 +176,21 @@ ipcMain.handle(
     /* -----------------------------------------------
         3) CLEAN SQL (주석/세미콜론 제거)
     ------------------------------------------------ */
-    const removedComments = query.replace(/--.*$/gm, '').replace(/\/\*[\s\S]*?\*\//g, '')
-
-    const cleanedQuery = removedComments.replace(/;/g, '').trim()
+    const noComments = safeRemoveComments(query)
+    const cleanedQuery = removeTrailingSemicolon(noComments)
 
     /* -----------------------------------------------
         4) PARSER VALIDATION
     ------------------------------------------------ */
     const parser = new Parser()
+    const parserOptions = {
+      database: config.dbType === 'MySQL' ? 'mysql' : 'postgresql'
+    } as const
+
     let astParsed: AST | AST[]
 
     try {
-      astParsed = parser.astify(cleanedQuery)
+      astParsed = parser.astify(cleanedQuery, parserOptions)
 
       // 다중 SQL 문장 금지
       if (Array.isArray(astParsed)) {
@@ -190,16 +251,15 @@ ipcMain.handle(
       const client = new PGClient(finalConfig)
       await client.connect()
 
-      const stmtName = `validate_${Date.now()}_${Math.random().toString(36).slice(2)}`
+      const stmt = `validate_${Date.now()}_${Math.random().toString(36).slice(2)}`
 
       try {
-        await client.query(`PREPARE ${stmtName} AS ${cleanedQuery}`)
-        await client.query(`DEALLOCATE ${stmtName}`)
+        await client.query(`PREPARE ${stmt} AS ${cleanedQuery}`)
+        await client.query(`DEALLOCATE ${stmt}`)
         return { valid: true }
       } catch (e: unknown) {
         const message = e instanceof Error ? e.message : String(e)
-        await client.query(`DEALLOCATE ${stmtName}`).catch(() => {})
-
+        await client.query(`DEALLOCATE ${stmt}`).catch(() => {})
         return syntaxError('PostgreSQL 구문 오류입니다.', message, 'postgres-syntax')
       } finally {
         await client.end()

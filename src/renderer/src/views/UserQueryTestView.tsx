@@ -35,18 +35,38 @@ const planTypeMap: Record<string, string> = {
   Sort: '정렬 수행 (Sort)'
 }
 
-/* 경고 메시지를 한국어로 변환 */
-const warningToKorean = (w: string): string => {
-  if (w.includes('Full table scan'))
-    return '전체 테이블 스캔이 감지되었습니다. WHERE 조건 인덱스 최적화를 고려하세요.'
-  if (w.includes('significantly exceed'))
-    return '실제 처리된 행 수가 예측보다 크게 높습니다. ANALYZE를 실행하여 통계를 최신화하는 것을 추천드립니다.'
-  if (w.includes('cost is extremely high'))
-    return '쿼리 비용이 매우 높습니다. 인덱스 최적화 또는 조건 재구성을 고려하세요.'
-  if (w.includes('large number of rows were scanned'))
-    return '인덱스 스캔이 사용되었지만 많은 행이 스캔되었습니다. 인덱스 선택도를 확인하세요.'
+/* =========================================================
+    WARNING MESSAGE TRANSLATOR (Regex 기반 + 미번역 로깅)
+========================================================= */
 
-  return w
+const warningPatterns: Array<{ regex: RegExp; translation: string }> = [
+  {
+    regex: /full table scan/i,
+    translation: '전체 테이블 스캔이 감지되었습니다. WHERE 조건에 적절한 인덱스 추가를 고려하세요.'
+  },
+  {
+    regex: /significantly exceed|actual rows.*greater/i,
+    translation:
+      '실제 처리된 행 수가 예측보다 크게 높습니다. ANALYZE 실행을 고려해 통계를 최신화하세요.'
+  },
+  {
+    regex: /cost.*extremely high|very high cost/i,
+    translation: '쿼리 비용이 매우 높습니다. 인덱스 최적화 또는 조건 재구성을 고려하세요.'
+  },
+  {
+    regex: /large number of rows were scanned|inefficient index/i,
+    translation: '인덱스 스캔이 사용되었지만 스캔된 행이 많습니다. 인덱스 선택도를 확인하세요.'
+  }
+]
+
+const warningToKorean = (msg: string): string => {
+  for (const p of warningPatterns) {
+    if (p.regex.test(msg)) return p.translation
+  }
+
+  console.warn('%c[미번역 경고 메시지 감지]', 'color: orange; font-weight: bold', msg)
+
+  return msg
 }
 
 const UserQueryTestView: React.FC = () => {
