@@ -210,6 +210,7 @@ export interface Test {
   project_id: number
   project_name: string
   type: string
+  grade: 'good' | 'warning' | 'critical' | null
   summary: string | null
   result: string
   response_time: number | null

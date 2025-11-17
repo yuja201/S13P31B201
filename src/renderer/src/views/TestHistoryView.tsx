@@ -1,123 +1,53 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import PageTitle from '@renderer/components/PageTitle'
 import { IoMdCheckmarkCircleOutline, IoMdCloseCircleOutline } from 'react-icons/io'
 import { PiWarningBold } from 'react-icons/pi'
 import { useNavigate, useParams } from 'react-router-dom'
 import Button from '@renderer/components/Button'
 import YujaWorkingImage from '../assets/imgs/yuja_working.png'
-
-interface TestHistoryItem {
-  status: 'success' | 'fail' | 'warning'
-  testName: string
-  type: 'QUERY' | 'INDEX'
-  timestamp: string
-  summary: string
-}
-
-const mockHistoryData: TestHistoryItem[] = [
-  {
-    status: 'success',
-    testName: '주문 생성 시나리오',
-    type: 'QUERY',
-    timestamp: '2023-10-27 14:30:15',
-    summary: '평균 응답 시간: 25.3ms'
-  },
-  {
-    status: 'fail',
-    testName: '사용자 테이블 인덱스 분석',
-    type: 'INDEX',
-    timestamp: '2023-10-27 14:28:10',
-    summary: '인덱스 스캔 비율: 85%'
-  },
-  {
-    status: 'warning',
-    testName: '데이터 유효성 검사',
-    type: 'QUERY',
-    timestamp: '2023-10-27 14:25:00',
-    summary: '일부 데이터 불일치 발견'
-  },
-  {
-    status: 'success',
-    testName: '주문 생성 시나리오',
-    type: 'QUERY',
-    timestamp: '2023-10-27 14:30:15',
-    summary: '평균 응답 시간: 25.3ms'
-  },
-  {
-    status: 'success',
-    testName: '주문 생성 dgdfgdgdfgdgdf시나리오',
-    type: 'QUERY',
-    timestamp: '2023-10-27 14:30:15',
-    summary: '평균 응답 시간: 25.3ms'
-  },
-  {
-    status: 'success',
-    testName: '주문 생성 시나리오',
-    type: 'QUERY',
-    timestamp: '2023-10-27 14:30:15',
-    summary: '평균 응답 시간: 25.3ms'
-  },
-  {
-    status: 'success',
-    testName: '주문 생성 시나리오',
-    type: 'QUERY',
-    timestamp: '2023-10-27 14:30:15',
-    summary: '평균 응답 시간: 25.3ms'
-  },
-  {
-    status: 'fail',
-    testName: '사용자 테이블 인덱스 분석',
-    type: 'INDEX',
-    timestamp: '2023-10-27 14:28:10',
-    summary: '인덱스 스캔 비율: 85%'
-  },
-  {
-    status: 'fail',
-    testName: '사용자 테이블 인덱스 분석',
-    type: 'INDEX',
-    timestamp: '2023-10-27 14:28:10',
-    summary: '인덱스 스캔 비율: 85%'
-  },
-  {
-    status: 'fail',
-    testName: '사용자 테이블 인덱스 분석',
-    type: 'INDEX',
-    timestamp: '2023-10-27 14:28:10',
-    summary: '인덱스 스캔 비율: 85%'
-  },
-  {
-    status: 'fail',
-    testName: '사용자 테이블 인덱스 분석',
-    type: 'INDEX',
-    timestamp: '2023-10-27 14:28:10',
-    summary: '인덱스 스캔 비율: 85%'
-  }
-]
+import type { Test } from '@shared/types'
 
 const TestHistoryView: React.FC = () => {
   const title = '테스트 히스토리'
   const description = '이전에 진행된 테스트 이력을 확인하세요'
 
-  const statusConfig = {
-    success: { icon: IoMdCheckmarkCircleOutline, color: '#4caf50' },
-    fail: { icon: IoMdCloseCircleOutline, color: '#e57373' },
-    warning: { icon: PiWarningBold, color: '#fbc02d' }
+  const gradeConfig = {
+    good: { icon: IoMdCheckmarkCircleOutline, color: '#4caf50', label: 'Good' },
+    warning: { icon: PiWarningBold, color: '#fbc02d', label: 'Warning' },
+    critical: { icon: IoMdCloseCircleOutline, color: '#e57373', label: 'Critical' }
   }
 
   const navigate = useNavigate()
   const { projectId } = useParams<{ projectId: string }>()
 
-  // Pagination
+  const [tests, setTests] = useState<Test[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchTests = async () => {
+      try {
+        setIsLoading(true)
+        const testResults = await window.api.test.getAll()
+        setTests(testResults)
+      } catch (error) {
+        console.error('Failed to fetch test history:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchTests()
+  }, [])
+
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 10
 
-  const totalItems = mockHistoryData.length
+  const totalItems = tests.length
   const totalPages = Math.ceil(totalItems / itemsPerPage)
 
   const currentItems = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage
     const endIndex = startIndex + itemsPerPage
-    return mockHistoryData.slice(startIndex, endIndex)
+    return tests.slice(startIndex, endIndex)
   }, [currentPage, itemsPerPage])
 
   const handlePageChange = (page: number): void => {
@@ -130,6 +60,10 @@ const TestHistoryView: React.FC = () => {
     if (projectId) {
       navigate(`/main/test/${projectId}`)
     }
+  }
+
+  if (isLoading) {
+    return <div>테스트 기록을 불러오는 중...</div>
   }
 
   if (totalItems === 0) {
@@ -213,19 +147,30 @@ const TestHistoryView: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {currentItems.map((item, index) => {
-                const IconComponent = statusConfig[item.status].icon
-                const IconColor = statusConfig[item.status].color
+              {currentItems.map((test) => {
+                const gradeInfo = test.grade ? gradeConfig[test.grade] : null
+                const IconComponent = gradeInfo?.icon
+                const IconColor = gradeInfo?.color
+
+                let resultSummary = 'N/A'
+                if (test.type === 'QUERY' && test.response_time !== null) {
+                  resultSummary = `응답 시간: ${test.response_time.toFixed(2)}ms`
+                } else if (test.type === 'INDEX' && test.index_ratio !== null) {
+                  resultSummary = `인덱스 사용률: ${test.index_ratio.toFixed(1)}%`
+                }
+
                 return (
-                  <tr key={index}>
+                  <tr key={test.id}>
                     <td>
-                      <span className={`badge badge-${item.type.toLowerCase()}`}>{item.type}</span>
+                      <span className={`badge badge-${test.type.toLowerCase()}`}>{test.type
+                      }</span>
                     </td>
-                    <td>{item.testName}</td>
-                    <td>{item.summary}</td>
-                    <td>{item.timestamp}</td>
+                    <td>{test.summary || '요약 없음'}</td>
+                    <td>{resultSummary}</td>
+                    <td>{new Date(test.created_at * 1000).toLocaleString()}</td>
                     <td>
-                      <IconComponent color={IconColor} size={24} />
+                      {IconComponent && IconColor && <IconComponent color={IconColor} size={24}
+                      />}
                     </td>
                   </tr>
                 )

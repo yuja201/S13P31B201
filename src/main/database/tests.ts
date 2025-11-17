@@ -19,6 +19,7 @@ export function getAllTests(): Test[] {
       t.project_id,
       p.name AS project_name,
       t.type,
+      t.grade,
       t.summary,
       t.result,
       t.response_time,
@@ -42,6 +43,7 @@ export function getTestById(id: number): Test | undefined {
       t.project_id,
       p.name AS project_name,
       t.type,
+      t.grade,
       t.summary,
       t.result,
       t.response_time,
@@ -62,13 +64,14 @@ export function createTest(data: TestInput): Test {
   const now = Math.floor(Date.now() / 1000)
 
   const stmt = db.prepare(`
-    INSERT INTO tests (project_id, type, summary, result, response_time, index_ratio, created_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO tests (project_id, type, grade, summary, result, response_time, index_ratio, created_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `)
 
   const result = stmt.run(
     data.project_id,
     data.type,
+    data.grade ?? null,
     data.summary ?? null,
     data.result,
     data.response_time ?? null,
