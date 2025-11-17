@@ -107,10 +107,10 @@ const TestCard: React.FC<TestCardProps> = ({ title, description, metrics, onStar
           flex-direction: column;
           align-items: center;
           justify-content: center;
-          width: 110px;
-          height: 110px;
+          width: 130px;
+          height: 130px;
           flex-shrink: 0;
-          border: 1px solid var(--color-gray-blue);
+          border: 2px solid var(--color-gray-blue);
           border-radius: 50%;
           text-align: center;
           box-sizing: border-box;

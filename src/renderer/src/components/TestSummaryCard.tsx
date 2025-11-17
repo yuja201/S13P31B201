@@ -31,6 +31,7 @@ const TestSummaryCard: React.FC<TestSummaryCardProps> = ({
   const color = positive ? '#10b981' : '#ef4444'
 
   const gradientId = `stats-card-gradient-${title.replace(/\s+/g, '-')}`
+
   return (
     <>
       <div className="stats-card">
@@ -70,11 +71,9 @@ const TestSummaryCard: React.FC<TestSummaryCardProps> = ({
                     <stop offset="100%" stopColor={color} stopOpacity={0} />
                   </linearGradient>
                 </defs>
-
                 <XAxis dataKey="name" hide />
-                <YAxis hide />
+                <YAxis hide={true} domain={[0, 'dataMax']} padding={{ top: 10, bottom: 10 }} />{' '}
                 <Tooltip cursor={false} contentStyle={{ display: 'none' }} />
-
                 <Area
                   type="monotone"
                   dataKey="value"
@@ -82,7 +81,6 @@ const TestSummaryCard: React.FC<TestSummaryCardProps> = ({
                   fill={`url(#${gradientId})`}
                   fillOpacity={1}
                 />
-
                 <Line
                   type="monotone"
                   dataKey="value"
@@ -114,7 +112,6 @@ const TestSummaryCard: React.FC<TestSummaryCardProps> = ({
           gap: 24px;
         }
 
-        /* 상단 텍스트 */
         .stats-card__title {
           font: var(--preSemiBold16);
           color: var(--color-black);
@@ -126,7 +123,6 @@ const TestSummaryCard: React.FC<TestSummaryCardProps> = ({
           margin-top: 2px;
         }
 
-        /* 하단 (좌우 2열) */
         .stats-card__bottom {
           display: flex;
           justify-content: space-between;
@@ -135,7 +131,6 @@ const TestSummaryCard: React.FC<TestSummaryCardProps> = ({
           gap: 24px;
         }
 
-        /* 왼쪽 내용 */
         .stats-card__content {
           display: flex;
           flex-direction: column;
@@ -169,7 +164,6 @@ const TestSummaryCard: React.FC<TestSummaryCardProps> = ({
           color: #ef4444;
         }
 
-        /* 오른쪽 그래프 */
         .stats-card__chart {
           flex: 2;
           height: 100%;
