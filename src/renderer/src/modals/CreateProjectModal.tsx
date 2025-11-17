@@ -269,20 +269,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
             margin-right: 16px;
             margin-bottom: 10px;
           }
-          .input-error-message {
-            color: red;
-            font-size: 12px;
-            margin-top: 4px;
-            height: 14px;
-            margin-left: 4px;
-          }
-          .input-success-message {
-            color: green;
-            font-size: 12px;
-            margin-top: 4px;
-            height: 14px;
-            margin-left: 4px;
-          }
+          
         `}
       </style>
       <Modal isOpen={isOpen} onClose={onClose}>
@@ -296,20 +283,19 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
         </div>
         <div className="create-project-modal-form-container">
           <div className="create-project-modal-input-group">
-            <div>
-              <InputField
-                title="프로젝트명"
-                placeholder="프로젝트명"
-                width={300}
-                required={true}
-                maxLength={50}
-                value={formData.projectName}
-                onChange={(value) => handleInputChange('projectName', value)}
-              />
-              <div className={isNameAvailable ? 'input-success-message' : 'input-error-message'}>
-                {nameFeedback}
-              </div>
-            </div>
+            <InputField
+              title="프로젝트명"
+              placeholder="프로젝트명"
+              width={300}
+              required={true}
+              maxLength={50}
+              value={formData.projectName}
+              onChange={(value) => handleInputChange('projectName', value)}
+              description={nameFeedback || ' '}
+              descriptionClassName={
+                isNameAvailable ? 'input-success-message' : 'input-error-message'
+              }
+            />
             <InputField
               title="프로젝트 설명"
               placeholder="프로젝트 설명"
@@ -417,5 +403,4 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
     </>
   )
 }
-
 export default CreateProjectModal

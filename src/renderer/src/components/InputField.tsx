@@ -5,6 +5,7 @@ interface InputFieldProps {
   title: string
   placeholder: string
   description?: string
+  descriptionClassName?: string
   width?: number | string
   required?: boolean
   titleBold?: boolean
@@ -20,6 +21,7 @@ const InputField = ({
   title,
   placeholder,
   description,
+  descriptionClassName,
   width,
   required = false,
   titleBold = false,
@@ -89,11 +91,28 @@ const InputField = ({
             font-weight: var(--fw-regular);
           }
 
+          .input-footer {
+            display: flex;
+            justify-content: space-between; 
+            align-items: center;
+            margin-top: 4px; 
+          }
+
           .input-field-description {
-            font-size: 12px;
-            font-family: var(--font-family);
-            font-weight: var(--fw-regular);
+            font: var(--preMedium12);
             color: var(--color-dark-gray);
+          }
+          .char-count {
+            font-size: 12px;
+            color: var(--color-dark-gray);
+            text-align: right;
+            margin-left: auto;
+          }
+          .input-error-message {
+            color: red;
+          }
+          .input-success-message {
+            color: green;
           }
         `}
       </style>
@@ -114,7 +133,20 @@ const InputField = ({
             fontSize: inputFontSize
           }}
         />
-        {description && <div className="input-field-description">{description}</div>}
+        {(description || maxLength) && (
+          <div className="input-footer">
+            {description && (
+              <div className={`input-field-description ${descriptionClassName || ''}`}>
+                {description}
+              </div>
+            )}
+            {maxLength && (
+              <div className="char-count">
+                {inputValue.length}/{maxLength}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </>
   )
