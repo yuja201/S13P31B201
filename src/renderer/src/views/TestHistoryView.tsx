@@ -144,7 +144,7 @@ const TestHistoryView: React.FC = () => {
                 <th>테스트명</th>
                 <th>결과 요약</th>
                 <th>테스트시간</th>
-                <th>상태</th>
+                <th>결과</th>
               </tr>
             </thead>
             <tbody>
