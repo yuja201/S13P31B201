@@ -85,7 +85,8 @@ const api = {
     create: (data: TestInput): Promise<Test> => ipcRenderer.invoke('db:test:create', data),
     getAll: (): Promise<Test[]> => ipcRenderer.invoke('db:test:getAll'),
     getById: (id: number): Promise<Test | undefined> => ipcRenderer.invoke('db:test:getById', id),
-    getDashboardData: () => ipcRenderer.invoke('tests:get-dashboard-data')
+    getDashboardData: (projectId: number) =>
+      ipcRenderer.invoke('tests:get-dashboard-data', projectId)
   },
 
   // Database connection test

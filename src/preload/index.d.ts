@@ -78,7 +78,7 @@ interface API {
     create: (data: TestInput) => Promise<Test>
     getAll: () => Promise<Test[]>
     getById: (id: number) => Promise<Test | undefined>
-    getDashboardData: () => Promise<DashboardData>
+    getDashboardData: (projectId: number) => Promise<DashboardData>
   }
 
   /* ======================= TESTS (단건 조회용) ======================= */

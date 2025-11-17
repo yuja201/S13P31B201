@@ -140,116 +140,140 @@ export function deleteTest(id: number): boolean {
 /**
  * 최근 7일간 사용자 쿼리 테스트: 일별 평균 응답 시간
  */
-export function getWeeklyQueryStats(): DailyQueryStat[] {
+export function getWeeklyQueryStats(projectId: number): DailyQueryStat[] {
   const db = getDatabase()
   const stmt = db.prepare(`
+    WITH RECURSIVE last7(date) AS (
+      SELECT date('now', 'localtime', '-6 days')
+      UNION ALL
+      SELECT date(date, '+1 day')
+      FROM last7
+      WHERE date < date('now', 'localtime')
+    )
     SELECT
-      date(t.created_at, 'unixepoch') AS date,
-      AVG(t.response_time) AS avg_response_time
-    FROM tests t
-    WHERE t.type = 'QUERY'
-      AND t.created_at >= strftime('%s', 'now', '-7 days')
-    GROUP BY date
-    ORDER BY date
+      last7.date AS date,
+      COALESCE(AVG(t.response_time), 0) AS avg_response_time
+    FROM last7
+    LEFT JOIN tests t
+      ON last7.date = date(t.created_at, 'unixepoch', 'localtime')
+      AND t.type = 'QUERY'
+      AND t.project_id = ?
+    GROUP BY last7.date
+    ORDER BY last7.date;
   `)
-  return stmt.all() as DailyQueryStat[]
+  return stmt.all(projectId) as DailyQueryStat[]
 }
 
 /**
  * 최근 7일간 인덱스 테스트: 일별 평균 인덱스 사용율
  */
-export function getWeeklyIndexStats(): DailyIndexStat[] {
+export function getWeeklyIndexStats(projectId: number): DailyIndexStat[] {
   const db = getDatabase()
   const stmt = db.prepare(`
+    WITH RECURSIVE last7(date) AS (
+      SELECT date('now', 'localtime', '-6 days')
+      UNION ALL
+      SELECT date(date, '+1 day')
+      FROM last7
+      WHERE date < date('now', 'localtime')
+    )
     SELECT
-      date(t.created_at, 'unixepoch') AS date,
-      AVG(t.index_ratio) AS avg_index_ratio
-    FROM tests t
-    WHERE t.type = 'INDEX'
-      AND t.created_at >= strftime('%s', 'now', '-7 days')
-    GROUP BY date
-    ORDER BY date
+      last7.date AS date,
+      COALESCE(AVG(t.index_ratio), 0) AS avg_index_ratio
+    FROM last7
+    LEFT JOIN tests t
+      ON last7.date = date(t.created_at, 'unixepoch', 'localtime')
+      AND t.type = 'INDEX'
+      AND t.project_id = ?
+    GROUP BY last7.date
+    ORDER BY last7.date;
   `)
-  return stmt.all() as DailyIndexStat[]
+  return stmt.all(projectId) as DailyIndexStat[]
 }
 
 /**
  * 사용자 쿼리 테스트 전체 평균 응답
  */
-export function getQuerySummary(): TestSummary {
+export function getQuerySummary(projectId: number): TestSummary {
   const db = getDatabase()
   const stmt = db.prepare(`
     SELECT
       COUNT(*) AS count,
-      AVG(response_time) AS avg_value
+      COALESCE(AVG(response_time), 0) AS avg_value
     FROM tests
     WHERE type = 'QUERY'
+      AND project_id = ?
   `)
-  return stmt.get() as TestSummary
+  return stmt.get(projectId) as TestSummary
 }
 
 /**
  * 인덱스 테스트 전체 평균 인덱스 사용율
  */
-export function getIndexSummary(): TestSummary {
+export function getIndexSummary(projectId: number): TestSummary {
   const db = getDatabase()
   const stmt = db.prepare(`
     SELECT
       COUNT(*) AS count,
-      AVG(index_ratio) AS avg_value
+      COALESCE(AVG(index_ratio), 0) AS avg_value
     FROM tests
     WHERE type = 'INDEX'
+      AND project_id = ?
   `)
-  return stmt.get() as TestSummary
+  return stmt.get(projectId) as TestSummary
 }
 
 /**
  * 이번 주 총 테스트 수
  */
-export function getThisWeekTestCount(): number {
+export function getThisWeekTestCount(projectId: number): number {
   const db = getDatabase()
   const stmt = db.prepare(`
     SELECT COUNT(*) AS count
     FROM tests
-    WHERE created_at >= strftime('%s', 'now', 'weekday 1', '-0 days')
+    WHERE project_id = ?
+      AND created_at >= strftime('%s','now','localtime','weekday 1','-7 days')
   `)
 
-  const row = stmt.get() as { count: number }
-  return row.count as number
+  const row = stmt.get(projectId) as { count: number }
+  return row.count
 }
 
 /**
  * 지난주 대비 이번 주 증가율
  * (지난주=0이면 100%로 처리)
  */
-export function getWeeklyGrowthRate(): number {
+export function getWeeklyGrowthRate(projectId: number): number {
   const db = getDatabase()
 
-  // 이번 주
-  const thisWeekRow = db
-    .prepare(
-      `
-    SELECT COUNT(*) AS count
-    FROM tests
-    WHERE created_at >= strftime('%s', 'now', 'weekday 1', '-0 days')
-  `
-    )
-    .get() as { count: number }
+  // 이번 주 (월요일 00:00 이후)
+  const thisWeek = (
+    db
+      .prepare(
+        `
+      SELECT COUNT(*) AS count
+      FROM tests
+      WHERE project_id = ?
+        AND created_at >= strftime('%s','now','localtime','weekday 1','-7 days')
+    `
+      )
+      .get(projectId) as { count: number }
+  ).count
 
-  const thisWeek = thisWeekRow.count
-
-  // 지난 주
-  const lastWeekRow = db
-    .prepare(
-      `
-    SELECT COUNT(*) AS count
-    FROM tests
-    WHERE created_at >= strftime('%s', 'now', 'weekday 1', '-7 days')
-      AND created_at <  strftime('%s', 'now', 'weekday 1')
-  `
-    )
-    .get() as { count: number }
-  const lastWeek = lastWeekRow.count
+  // 지난 주 (지난주 월요일 00:00 ~ 이번 주 월요일 00:00)
+  const lastWeek = (
+    db
+      .prepare(
+        `
+        SELECT COUNT(*) AS count
+        FROM tests
+        WHERE project_id = ?
+          AND created_at >= strftime('%s','now','localtime','weekday 1','-14 days')
+          AND created_at <  strftime('%s','now','localtime','weekday 1','-7 days')
+    `
+      )
+      .get(projectId) as { count: number }
+  ).count
 
   if (lastWeek === 0) {
     return thisWeek > 0 ? 100 : 0
@@ -265,7 +289,7 @@ export function insertIntoTests(data: TestInput): number {
 /**
  * 사용자 쿼리: 평균 응답 시간 변화율
  */
-export function getQueryWeeklyChangeRate(): number {
+export function getQueryWeeklyChangeRate(projectId: number): number {
   const db = getDatabase()
 
   const thisWeek = (
@@ -275,10 +299,11 @@ export function getQueryWeeklyChangeRate(): number {
       SELECT AVG(response_time) AS avg_value
       FROM tests
       WHERE type = 'QUERY'
-        AND created_at >= strftime('%s', 'now', 'weekday 1', '-0 days')
+        AND project_id = ?
+        AND created_at >= strftime('%s','now','localtime','weekday 1','-7 days')
     `
       )
-      .get() as { avg_value: number | null }
+      .get(projectId) as { avg_value: number | null }
   ).avg_value
 
   const lastWeek = (
@@ -288,11 +313,12 @@ export function getQueryWeeklyChangeRate(): number {
       SELECT AVG(response_time) AS avg_value
       FROM tests
       WHERE type = 'QUERY'
-        AND created_at >= strftime('%s', 'now', 'weekday 1', '-7 days')
-        AND created_at <  strftime('%s', 'now', 'weekday 1')
+        AND project_id = ?
+        AND created_at >= strftime('%s','now','localtime','weekday 1','-14 days')
+        AND created_at <  strftime('%s','now','localtime','weekday 1','-7 days')
     `
       )
-      .get() as { avg_value: number | null }
+      .get(projectId) as { avg_value: number | null }
   ).avg_value
 
   if (lastWeek === null || lastWeek === 0) return thisWeek ? 100 : 0
@@ -302,9 +328,10 @@ export function getQueryWeeklyChangeRate(): number {
 /**
  * 인덱스 테스트: 평균 인덱스 사용율 변화율
  */
-export function getIndexWeeklyChangeRate(): number {
+export function getIndexWeeklyChangeRate(projectId: number): number {
   const db = getDatabase()
 
+  // 이번 주 평균 (월요일 00:00 이후)
   const thisWeek = (
     db
       .prepare(
@@ -312,12 +339,14 @@ export function getIndexWeeklyChangeRate(): number {
       SELECT AVG(index_ratio) AS avg_value
       FROM tests
       WHERE type = 'INDEX'
-        AND created_at >= strftime('%s', 'now', 'weekday 1', '-0 days')
+        AND project_id = ?
+        AND created_at >= strftime('%s','now','localtime','weekday 1','-7 days')
     `
       )
-      .get() as { avg_value: number | null }
+      .get(projectId) as { avg_value: number | null }
   ).avg_value
 
+  // 지난 주 평균 (지난 주 월요일 00:00 ~ 이번 주 월요일 00:00)
   const lastWeek = (
     db
       .prepare(
@@ -325,11 +354,12 @@ export function getIndexWeeklyChangeRate(): number {
       SELECT AVG(index_ratio) AS avg_value
       FROM tests
       WHERE type = 'INDEX'
-        AND created_at >= strftime('%s', 'now', 'weekday 1', '-7 days')
-        AND created_at <  strftime('%s', 'now', 'weekday 1')
+        AND project_id = ?
+        AND created_at >= strftime('%s','now','localtime','weekday 1','-14 days')
+        AND created_at <  strftime('%s','now','localtime','weekday 1','-7 days')
     `
       )
-      .get() as { avg_value: number | null }
+      .get(projectId) as { avg_value: number | null }
   ).avg_value
 
   if (lastWeek === null || lastWeek === 0) return thisWeek ? 100 : 0
@@ -339,18 +369,27 @@ export function getIndexWeeklyChangeRate(): number {
 /**
  * 최근 7일간 총 테스트 개수
  */
-export function getWeeklyTotalTestStats(): { date: string; count: number }[] {
+export function getWeeklyTotalTestStats(projectId: number): { date: string; count: number }[] {
   const db = getDatabase()
   const stmt = db.prepare(`
+    WITH RECURSIVE last7(date) AS (
+      SELECT date('now', 'localtime', '-6 days')
+      UNION ALL
+      SELECT date(date, '+1 day')
+      FROM last7
+      WHERE date < date('now', 'localtime')
+    )
     SELECT
-      date(created_at, 'unixepoch') AS date,
-      COUNT(*) AS count
-    FROM tests
-    WHERE created_at >= strftime('%s', 'now', '-7 days')
-    GROUP BY date
-    ORDER BY date
+      last7.date AS date,
+      COUNT(t.id) AS count
+    FROM last7
+    LEFT JOIN tests t
+      ON last7.date = date(t.created_at, 'unixepoch', 'localtime')
+      AND t.project_id = ?
+    GROUP BY last7.date
+    ORDER BY last7.date;
   `)
-  return stmt.all() as { date: string; count: number }[]
+  return stmt.all(projectId) as { date: string; count: number }[]
 }
 
 /**

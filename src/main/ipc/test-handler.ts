@@ -13,7 +13,10 @@ import {
 
 ipcMain.handle(
   'tests:get-dashboard-data',
-  async (): Promise<{
+  async (
+    _event,
+    projectId: number
+  ): Promise<{
     thisWeek: number
     growthRate: number
     weeklyQueryStats: ReturnType<typeof getWeeklyQueryStats>
@@ -25,15 +28,15 @@ ipcMain.handle(
     weeklyTotalStats: ReturnType<typeof getWeeklyTotalTestStats>
   }> => {
     return {
-      thisWeek: getThisWeekTestCount(),
-      growthRate: getWeeklyGrowthRate(),
-      weeklyQueryStats: getWeeklyQueryStats(),
-      weeklyIndexStats: getWeeklyIndexStats(),
-      querySummary: getQuerySummary(),
-      indexSummary: getIndexSummary(),
-      queryChangeRate: getQueryWeeklyChangeRate(),
-      indexChangeRate: getIndexWeeklyChangeRate(),
-      weeklyTotalStats: getWeeklyTotalTestStats()
+      thisWeek: getThisWeekTestCount(projectId),
+      growthRate: getWeeklyGrowthRate(projectId),
+      weeklyQueryStats: getWeeklyQueryStats(projectId),
+      weeklyIndexStats: getWeeklyIndexStats(projectId),
+      querySummary: getQuerySummary(projectId),
+      indexSummary: getIndexSummary(projectId),
+      queryChangeRate: getQueryWeeklyChangeRate(projectId),
+      indexChangeRate: getIndexWeeklyChangeRate(projectId),
+      weeklyTotalStats: getWeeklyTotalTestStats(projectId)
     }
   }
 )
