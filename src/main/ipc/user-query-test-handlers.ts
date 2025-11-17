@@ -94,10 +94,6 @@ ipcMain.handle('userQueryTest:run', async (_, payload: UserQueryTestRunPayload) 
       grade = 'critical'
     }
 
-    if (warnings.length > 0 && grade === 'good') {
-      grade = 'warning'
-    }
-
     const resultJson: UserQueryTestResultJson = {
       query,
       runCount: safeRunCount,
