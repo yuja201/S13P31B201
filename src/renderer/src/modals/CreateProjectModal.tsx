@@ -3,8 +3,10 @@ import InputField from '@renderer/components/InputField'
 import Modal from '@renderer/components/Modal'
 import PageTitle from '@renderer/components/PageTitle'
 import RadioButton from '@renderer/components/RadioButton'
+import { useProjectStore } from '@renderer/stores/projectStore'
 import { useToastStore } from '@renderer/stores/toastStore'
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
+import { useDebounce } from 'use-debounce'
 
 interface CreateProjectModalProps {
   isOpen: boolean
@@ -23,6 +25,7 @@ export interface ProjectFormData {
   databaseName: string
 }
 
+
 const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose, onSubmit }) => {
   const [formData, setFormData] = useState<ProjectFormData>({
     projectName: '',
@@ -39,6 +42,31 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
   const showToast = useToastStore((s) => s.showToast)
   const [isConnectionTested, setIsConnectionTested] = useState(false)
   const [isTestingConnection, setIsTestingConnection] = useState(false)
+  const projects = useProjectStore((state) => state.projects)
+  const [nameFeedback, setNameFeedback] = useState<string | null>(null)
+  const [isNameAvailable, setIsNameAvailable] = useState<boolean>(false)
+  const [debouncedProjectName] = useDebounce(formData.projectName, 500)
+
+  useEffect(() => {
+    if (debouncedProjectName.trim() === '') {
+      setNameFeedback(null);
+      setIsNameAvailable(false);
+      return;
+    }
+
+    const isDuplicate = projects.some(
+      (p) => p.name.toLowerCase() === debouncedProjectName.trim().toLowerCase()
+    );
+
+    if (isDuplicate) {
+      setNameFeedback('이미 존재하는 프로젝트명입니다.');
+      setIsNameAvailable(false);
+    } else {
+      setNameFeedback('사용 가능한 프로젝트명입니다.');
+      setIsNameAvailable(true);
+    }
+  }, [debouncedProjectName, projects]);
+
 
   const validateRequiredFields = (): boolean => {
     if (!formData.projectName.trim()) {
@@ -69,9 +97,6 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
   }
 
   const handleConnectionTest = async (): Promise<void> => {
-    if (!validateRequiredFields()) {
-      return
-    }
 
     setIsTestingConnection(true)
 
@@ -103,6 +128,11 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
   }
 
   const handleInputChange = (field: keyof ProjectFormData, value: string): void => {
+    if (field === 'projectName') {
+      setNameFeedback(null);
+      setIsNameAvailable(false);
+    }
+
     // DB 정보 변경 시 연결 테스트 상태 초기화
     if (field !== 'projectName' && field !== 'description') {
       setIsConnectionTested(false)
@@ -115,13 +145,28 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
   }
 
   const handleSubmit = async (): Promise<void> => {
-    if (!validateRequiredFields()) {
+    const trimmedName = formData.projectName.trim()
+    const isDuplicateOnSubmit = projects.some(
+      (p) => p.name.toLowerCase() === trimmedName.toLowerCase()
+    )
+
+    if (isDuplicateOnSubmit) {
+      showToast('이미 존재하는 프로젝트명입니다.', 'warning', '입력 오류')
       return
     }
 
+    if (nameFeedback && !isNameAvailable) {
+      showToast('프로젝트명을 확인해주세요.', 'warning', '입력 오류');
+      return;
+    }
+
+    if (!validateRequiredFields()) {
+      return;
+    }
+
     if (!isConnectionTested) {
-      showToast('연결 테스트를 먼저 진행해주세요.', 'error', '연결 실패')
-      return
+      showToast('연결 테스트를 먼저 진행해주세요.', 'error', '연결 실패');
+      return;
     }
 
     try {
@@ -165,6 +210,15 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
       showToast('프로젝트 생성에 실패했습니다.', 'error', '연결 실패')
     }
   }
+
+  const isTestButtonDisabled =
+    !formData.host.trim() ||
+    !formData.port.trim() ||
+    !formData.username.trim() ||
+    !formData.password.trim() ||
+    !formData.databaseName.trim() ||
+    isTestingConnection;
+
 
   return (
     <>
@@ -215,6 +269,20 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
             margin-right: 16px;
             margin-bottom: 10px;
           }
+          .input-error-message {
+            color: red;
+            font-size: 12px;
+            margin-top: 4px;
+            height: 14px;
+            margin-left: 4px;
+          }
+          .input-success-message {
+            color: green;
+            font-size: 12px;
+            margin-top: 4px;
+            height: 14px;
+            margin-left: 4px;
+          }
         `}
       </style>
       <Modal isOpen={isOpen} onClose={onClose}>
@@ -228,14 +296,19 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
         </div>
         <div className="create-project-modal-form-container">
           <div className="create-project-modal-input-group">
-            <InputField
-              title="프로젝트명"
-              placeholder="프로젝트명"
-              width={300}
-              required={true}
-              value={formData.projectName}
-              onChange={(value) => handleInputChange('projectName', value)}
-            />
+            <div>
+              <InputField
+                title="프로젝트명"
+                placeholder="프로젝트명"
+                width={300}
+                required={true}
+                value={formData.projectName}
+                onChange={(value) => handleInputChange('projectName', value)}
+              />
+              <div className={isNameAvailable ? 'input-success-message' : 'input-error-message'}>
+                {nameFeedback}
+              </div>
+            </div>
             <InputField
               title="프로젝트 설명"
               placeholder="프로젝트 설명"
@@ -258,7 +331,6 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
                     ...prev,
                     dbType: 'MySQL',
                     port: '3306',
-                    username: 'root'
                   }))
                   setIsConnectionTested(false)
                 }}
@@ -274,7 +346,6 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
                     ...prev,
                     dbType: 'PostgreSQL',
                     port: '5432',
-                    username: 'postgres'
                   }))
                   setIsConnectionTested(false)
                 }}
@@ -328,7 +399,7 @@ const CreateProjectModal: React.FC<CreateProjectModalProps> = ({ isOpen, onClose
           />
         </div>
         <div className="create-project-modal-button-container">
-          <Button variant="gray" onClick={handleConnectionTest} isLoading={isTestingConnection}>
+          <Button variant="gray" onClick={handleConnectionTest} isLoading={isTestingConnection} disabled={isTestButtonDisabled}>
             연결테스트
           </Button>
           <Button onClick={handleSubmit} disabled={!isConnectionTested}>
