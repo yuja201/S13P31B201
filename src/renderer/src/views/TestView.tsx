@@ -31,19 +31,55 @@ const TestView: React.FC = () => {
     return arr
   }
 
-  // 주간 그래프 정규화
+  // 주간 그래프 정규화 (여유 공간 추가)
   const normalizeDaily = (
     days: string[],
     map: Record<string, number>
-  ): { name: string; value: number }[] =>
-    days.map((day) => ({
+  ): { name: string; value: number }[] => {
+    const rawData = days.map((day) => ({
       name: day,
       value: formatNumber(map[day] ?? 0)
     }))
 
+    const values = rawData.map((d) => d.value)
+    const min = Math.min(...values)
+    const max = Math.max(...values)
+
+    // 모든 값이 같으면 중간값 반환
+    if (max === min) {
+      return rawData.map((d) => ({ ...d, value: 50 }))
+    }
+
+    // 0~100 범위로 정규화하되, 상하 10%씩 여유 공간 확보
+    return rawData.map((d) => ({
+      ...d,
+      value: 10 + ((d.value - min) / (max - min)) * 80
+    }))
+  }
+
+  // 0~100 스케일 정규화 (여유 공간 추가)
+  const normalizeGraph = (
+    data: { name: string; value: number }[]
+  ): { name: string; value: number }[] => {
+    const values = data.map((d) => d.value)
+    const min = Math.min(...values)
+    const max = Math.max(...values)
+
+    // 모든 값이 같으면 중간값 반환
+    if (max === min) {
+      return data.map((d) => ({ ...d, value: 50 }))
+    }
+
+    // 0~100 범위로 정규화하되, 상하 10%씩 여유 공간 확보
+    return data.map((d) => ({
+      ...d,
+      value: 10 + ((d.value - min) / (max - min)) * 80
+    }))
+  }
+
   // 대시보드 데이터 로드
   const loadDashboardData = useCallback(async () => {
-    const data = await window.api.test.getDashboardData()
+    const data = await window.api.test.getDashboardData(Number(projectId))
     setDashboard(data)
   }, [])
 
@@ -67,14 +103,16 @@ const TestView: React.FC = () => {
   dashboard.weeklyQueryStats.forEach((d) => {
     queryMap[d.date] = d.avg_response_time ?? 0
   })
-  const weeklyQueryGraph = normalizeDaily(days, queryMap)
+  const weeklyQueryGraphRaw = normalizeDaily(days, queryMap)
+  const weeklyQueryGraph = normalizeGraph(weeklyQueryGraphRaw)
 
   // 인덱스 사용율 그래프
   const indexMap: Record<string, number> = {}
   dashboard.weeklyIndexStats.forEach((d) => {
     indexMap[d.date] = d.avg_index_ratio ?? 0
   })
-  const weeklyIndexGraph = normalizeDaily(days, indexMap)
+  const weeklyIndexGraphRaw = normalizeDaily(days, indexMap)
+  const weeklyIndexGraph = normalizeGraph(weeklyIndexGraphRaw)
 
   const totalTests = dashboard.querySummary.count + dashboard.indexSummary.count
 
@@ -131,7 +169,7 @@ const TestView: React.FC = () => {
             title="인덱스 사용율"
             subtitle="인덱스 테스트"
             total={formatNumber(dashboard.indexSummary.avg_value)}
-            currentWeek={weeklyIndexGraph.at(-1)?.value ?? 0}
+            currentWeek={formatNumber(indexMap[days.at(-1)!] ?? 0)}
             changePercent={formatNumber(dashboard.indexChangeRate)}
             data={weeklyIndexGraph}
             positive
@@ -144,7 +182,7 @@ const TestView: React.FC = () => {
             title="평균 응답 시간"
             subtitle="사용자 쿼리 테스트"
             total={formatNumber(dashboard.querySummary.avg_value)}
-            currentWeek={weeklyQueryGraph.at(-1)?.value ?? 0}
+            currentWeek={formatNumber(queryMap[days.at(-1)!] ?? 0)}
             changePercent={formatNumber(dashboard.queryChangeRate)}
             data={weeklyQueryGraph}
             positive
@@ -159,19 +197,6 @@ const TestView: React.FC = () => {
       <section className="test-card-section">
         <div className="aligned-grid test-card-grid">
           <TestCard
-            title="사용자 쿼리 테스트"
-            description="사용자 쿼리 성능 분석 및 최적화 방안을 제안"
-            metrics={[
-              { label: '테스트 수', value: dashboard.querySummary.count },
-              {
-                label: '평균 응답',
-                value: `${formatNumber(dashboard.querySummary.avg_value)} ms`
-              }
-            ]}
-            onStart={() => setQueryModalOpen(true)}
-          />
-
-          <TestCard
             title="인덱스 테스트"
             description="데이터베이스 인덱스 분석 및 최적화 방안을 제안"
             metrics={[
@@ -182,6 +207,19 @@ const TestView: React.FC = () => {
               }
             ]}
             onStart={() => navigate(`/main/test/${projectId}/index`)}
+          />
+
+          <TestCard
+            title="사용자 쿼리 테스트"
+            description="사용자 쿼리 성능 분석 및 최적화 방안을 제안"
+            metrics={[
+              { label: '테스트 수', value: dashboard.querySummary.count },
+              {
+                label: '평균 응답',
+                value: `${formatNumber(dashboard.querySummary.avg_value)} ms`
+              }
+            ]}
+            onStart={() => setQueryModalOpen(true)}
           />
         </div>
       </section>
