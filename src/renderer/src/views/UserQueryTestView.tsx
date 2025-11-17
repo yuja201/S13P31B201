@@ -114,6 +114,7 @@ const UserQueryTestView: React.FC = () => {
       setAiLoading(true)
 
       const res = await window.api.userQueryTest.AIGenerate({
+        testId: test.id,
         projectId: test.project_id,
         query,
         modelId

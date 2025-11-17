@@ -95,6 +95,7 @@ interface API {
       timeout: number
     }) => Promise<{ testId: number }>
     AIGenerate: (payload: {
+      testId: number
       projectId: number
       query: string
       modelId?: number | null
