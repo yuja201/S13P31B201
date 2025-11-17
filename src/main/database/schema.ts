@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS tests (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   project_id INTEGER NOT NULL,
   type TEXT CHECK(type IN ('QUERY', 'INDEX')) NOT NULL,
+  grade TEXT CHECK(grade IN('good', 'warning', 'critical')),
   summary TEXT,
   created_at NUMERIC NOT NULL DEFAULT (strftime('%s', 'now')),
   result TEXT NOT NULL,
