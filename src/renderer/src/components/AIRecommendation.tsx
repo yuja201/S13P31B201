@@ -9,15 +9,13 @@ interface AIRecommendationProps {
   loading: boolean
   requested: boolean
   onGenerate?: (modelId: number) => void
-  onRegenerate?: () => void
 }
 
 const AIRecommendation: React.FC<AIRecommendationProps> = ({
   list = [],
   loading,
   requested,
-  onGenerate,
-  onRegenerate
+  onGenerate
 }) => {
   const [isAISettingOpen, setAISettingOpen] = useState(false)
 
@@ -130,7 +128,7 @@ const AIRecommendation: React.FC<AIRecommendationProps> = ({
           <div className="ai-section-grid">
             <div className="ai-header">
               <p className="ai-count">응답 {list.length}개</p>
-              <button className="ai-regenerate-button" onClick={onRegenerate}>
+              <button className="ai-regenerate-button" onClick={() => setAISettingOpen(true)}>
                 AI 응답 재생성
               </button>
             </div>
