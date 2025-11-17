@@ -87,11 +87,27 @@ const UserQueryTestModal: React.FC<UserQueryTestModalProps> = ({
     setIsLoading(true)
 
     try {
+      // ==========================
+      // 1) 실행 전에 문법 검증
+      // ==========================
+      const validate = await window.api.validateSQL({
+        projectId: Number(projectId),
+        query
+      })
+
+      if (!validate.valid) {
+        showToast(validate.error || 'SQL 문법 오류가 있습니다.', 'error', '문법 검증 실패')
+        return // ★ 문법 오류 → 테스트 실행 안 함
+      }
+
+      // ==========================
+      // 2) 문법 OK → 테스트 실행
+      // ==========================
       const newTestId = await onStart(query, runCount, timeout)
       onNavigate(newTestId)
     } catch (error) {
       const err = error as Error
-      showToast(err.message || '쿼리 재실행 중 오류가 발생했습니다.', 'error', '재실행 실패')
+      showToast(err.message || '쿼리 실행 중 오류가 발생했습니다.', 'error', '실행 실패')
     } finally {
       setIsLoading(false)
     }
