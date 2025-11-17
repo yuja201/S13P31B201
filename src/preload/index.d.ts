@@ -95,6 +95,7 @@ interface API {
       timeout: number
     }) => Promise<{ testId: number }>
     AIGenerate: (payload: {
+      testId: number
       projectId: number
       query: string
       modelId?: number | null
@@ -112,6 +113,11 @@ interface API {
       error?: string
     }>
   }
+
+  validateSQL: (payload: {
+    projectId: number
+    query: string
+  }) => Promise<{ valid: boolean; error?: string }>
 
   /* ======================= CONNECTION TEST ======================= */
   testConnection: (config: {

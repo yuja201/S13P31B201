@@ -352,3 +352,16 @@ export function getWeeklyTotalTestStats(): { date: string; count: number }[] {
   `)
   return stmt.all() as { date: string; count: number }[]
 }
+
+/**
+ * AI 개선 업데이트
+ */
+export function updateTestResult(id: number, result: string): void {
+  const db = getDatabase()
+  const stmt = db.prepare(`
+    UPDATE tests
+    SET result = ?
+    WHERE id = ?
+  `)
+  stmt.run(result, id)
+}
