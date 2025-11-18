@@ -192,8 +192,8 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
     return Object.values(columnConfigs).some((c) => c.dataSource === 'FILE')
   }, [columnConfigs])
 
-  const uniqueRefWarning = useMemo(() => {
-    for (const colConfig of Object.values(columnConfigs)) {
+  const uniqueRefWarningColumnName = useMemo(() => {
+    for (const [columnName, colConfig] of Object.entries(columnConfigs)) {
       if (
         colConfig.dataSource === 'REFERENCE' &&
         colConfig.metaData.kind === 'reference' &&
@@ -202,7 +202,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
         colConfig.metaData.refColCount !== undefined &&
         rows > colConfig.metaData.refColCount
       ) {
-        return `⚠️ '${colConfig.metaData.refTable}' 테이블의 '${colConfig.metaData.refColumn}' 컬럼은 고유값이 ${colConfig.metaData.refColCount}개 뿐입니다. 생성할 행의 수를 줄여주세요.`
+        return columnName
       }
     }
     return null
@@ -213,11 +213,17 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
     if (hasMissing && warningMessage) {
       warnings.push(warningMessage)
     }
-    if (uniqueRefWarning) {
-      warnings.push(uniqueRefWarning)
+    if (uniqueRefWarningColumnName) {
+      const colConfig = columnConfigs[uniqueRefWarningColumnName]
+      if (colConfig && colConfig.metaData.kind === 'reference') {
+        warnings.push(
+          `⚠️ '${colConfig.metaData.refTable}' 테이블의 '${colConfig.metaData.refColumn}' 컬럼은
+      고유값이 ${colConfig.metaData.refColCount}개 뿐입니다. 생성할 행의 수를 ${colConfig.metaData.refColCount}개 이하로 줄여주세요.`
+        )
+      }
     }
     return warnings
-  }, [hasMissing, warningMessage, uniqueRefWarning])
+  }, [hasMissing, warningMessage, uniqueRefWarningColumnName, columnConfigs])
 
 
   return (
@@ -307,10 +313,13 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
                   const hasSetting = col.setting && col.setting !== '-'
                   const isEditableSetting = col.generation !== 'Auto Increment'
                   const isMissing = missingColumns?.includes(col.name)
+                  const isUniqueRefWarningColumn = col.name === uniqueRefWarningColumnName
 
                   const rowClassName = [
                     col.generation && col.generation !== '-' ? 'has-generation-method' : '',
-                    isMissing ? 'missing-rule' : ''
+                    isMissing ? 'missing-rule' : '',
+                    // [추가] 오류 컬럼일 경우 클래스 추가
+                    isUniqueRefWarningColumn ? 'unique-ref-warning-row' : ''
                   ]
                     .filter(Boolean)
                     .join(' ')
@@ -521,7 +530,12 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
         .column-table tr.has-generation-method td {
           background-color: var(--color-light-blue); 
         }
-        .column-table tr.missing-rule td {
+
+        .column-table tr.missing-rule td, 
+        .column-table tr.unique-ref-warning-row td {
+              background-color: #FFFBEB;
+        }
+
           background-color: #FFFBEB;
         }
 
