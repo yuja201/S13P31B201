@@ -24,6 +24,7 @@ export type ColumnDetail = {
   isForeignKey: boolean
   foreignKeys: ForeignKey[] | null
   previewValue?: unknown
+  isEnum: boolean
 }
 
 // 테이블 전체 정보 타입
@@ -35,6 +36,16 @@ export type TableInfo = {
   columnDetails: ColumnDetail[]
 }
 
+const parseCheckInValues = (checkConstraint: string): string[] => {
+  const match = checkConstraint.match(/\(([^)]+)\)/);
+  if (!match) return [];
+
+  const valuesMatch = match[1].match(/(?:'([^']*)'|\"([^\"]*)\"|([^,]+))/g);
+  if (!valuesMatch) return [];
+
+  return valuesMatch.map((v) => v.trim().replace(/['"]/g, ''));
+};
+
 // Store의 Column 타입을 View의 ColumnDetail 타입으로 변환
 const convertColumn = (col: Column, table: Table): ColumnDetail => {
   const constraints: string[] = []
@@ -45,7 +56,13 @@ const convertColumn = (col: Column, table: Table): ColumnDetail => {
   if (col.default) constraints.push('DEFAULT')
   if (col.check) constraints.push('CHECK')
 
-  const enumValues = Array.isArray(col.enum) ? col.enum : []
+  let enumValues = Array.isArray(col.enum) ? col.enum : []
+  const isCheckIn = col.check && /IN\s*\(/i.test(col.check);
+
+  if (isCheckIn) {
+    enumValues = parseCheckInValues(col.check!);
+  }
+
   const hasEnumValues = enumValues.length > 0
   const isEnum = hasEnumValues || col.type.toLowerCase().startsWith('enum')
 
@@ -78,7 +95,8 @@ const convertColumn = (col: Column, table: Table): ColumnDetail => {
     checkConstraint: col.check || null,
     enumList: hasEnumValues ? enumValues : null,
     isForeignKey,
-    foreignKeys: columnForeignKeys
+    foreignKeys: columnForeignKeys,
+    isEnum: isEnum
   }
 }
 
@@ -172,10 +190,8 @@ const CreateDummyView: React.FC = () => {
     return new Map(validationResults.map((v) => [v.table.name, v.isReady]))
   }, [validationResults])
 
-  // 선택된 테이블이 없으면 false
   const hasSelectedTables = selectedTables.size > 0
 
-  // 각 테이블에 최소 1개 이상 생성 규칙 존재하는지 확인
   const hasAnyRule = validationResults.some((v) => {
     const config = generationTables[v.table.name]
     return config && Object.keys(config.columns).length > 0
@@ -210,7 +226,7 @@ const CreateDummyView: React.FC = () => {
 
   const handleGenerateData = (): void => {
     if (selectedTables.size === 0) return
-    if (!allReady) return // 불완전한 테이블 있으면 차단
+    if (!allReady) return
 
     const payload = Array.from(selectedTables).map((name) => {
       const t = tables.find((tbl) => tbl.name === name)!
