@@ -7,8 +7,8 @@ type PageTitleProps = {
 }
 
 const PageTitle: React.FC<PageTitleProps> = ({ title, description, size = 'large' }) => {
-  const titleClass = size === 'small' ? 'preSemiBold24' : 'preBold32'
-  const descClass = size === 'small' ? 'preRegular16' : 'preLight20'
+  const titleClass = size === 'small' ? 'preSemiBold24' : 'preBold30'
+  const descClass = size === 'small' ? 'preRegular16' : 'preLight16'
 
   const descriptionLines = description ? description.split('\n') : []
 

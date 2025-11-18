@@ -1,0 +1,1 @@
+ALTER TABLE tests ADD COLUMN grade TEXT CHECK(grade IN('good', 'warning', 'critical'))
