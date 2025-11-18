@@ -183,8 +183,7 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
         />
         {column.checkConstraint && (
           <div className="check-constraint-notice">
-            ※ 참고: 이 컬럼에는 <span>{formatCheckConstraint(column.checkConstraint)}</span> 라는
-            CHECK 제약이 있습니다.
+            ※ 참고: 이 컬럼에는 <span>{formatCheckConstraint(column.checkConstraint)}</span> CHECK 제약이 있습니다.
           </div>
         )}
         <br />

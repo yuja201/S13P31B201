@@ -194,58 +194,56 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
 
       {/* 제목 */}
       <div className="rule-select__header">
-                  <PageTitle
-                    title={`생성 규칙 선택 - ${columnName}`}
-                    description={
-                      isPk
-                        ? 'PK 컬럼은 고유한 값을 생성하는 규칙만 사용할 수 있습니다.'
-                        : '고정값을 입력하거나 생성한 규칙을 적용해보세요.'
-                    }
-                    size="small"
-                  />
-                  {column.checkConstraint && (
-                    <div className="check-constraint-notice">
-                      ※ 참고: 이 컬럼에는 <span>{formatCheckConstraint(column.checkConstraint)}</span> 라는
-                      CHECK 제약이 있습니다.
-                    </div>
-                  )}
-                  <hr className="rule-select__divider" />
-                </div>
-          
-                {/* 고정값 입력 */}
-                {!isPk && (
-                  <div className="rule-select__section">
-                    <div className="relative">
-                      <InputField
-                        title="고정값 입력"
-                        placeholder="예: 홍길동, 20, 0.0, TRUE"
-                        width="100%"
-                        titleBold
-                        size="md"
-                        value={fixedValue}
-                        onChange={handleFixedValueChange}
-                        className={
-                          isCheckValid === false
-                            ? 'input-error'
-                            : isCheckValid === true
-                              ? 'input-success'
-                              : ''
-                        }
-                      />
-                      {column.checkConstraint && (
-                        <div
-                          className={`check-validation-message ${
-                            isCheckValid === true ? 'success' : isCheckValid === false ? 'error' : 'hidden'
-                          }`}
-                        >
-                          {isCheckValid === true && '✓ 제약 조건을 만족합니다.'}
-                          {isCheckValid === false &&
-                            `✗ ${formatCheckConstraint(column.checkConstraint)}을(를) 위반합니다.`}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
+        <PageTitle
+          title={`생성 규칙 선택 - ${columnName}`}
+          description={
+            isPk
+              ? 'PK 컬럼은 고유한 값을 생성하는 규칙만 사용할 수 있습니다.'
+              : '고정값을 입력하거나 생성한 규칙을 적용해보세요.'
+          }
+          size="small"
+        />
+        {column.checkConstraint && (
+          <div className="check-constraint-notice">
+            ※ 참고: 이 컬럼에는 <span>{formatCheckConstraint(column.checkConstraint)}</span> CHECK 제약이 있습니다.
+          </div>
+        )}
+        <hr className="rule-select__divider" />
+      </div>
+
+      {/* 고정값 입력 */}
+      {!isPk && (
+        <div className="rule-select__section">
+          <div className="relative">
+            <InputField
+              title="고정값 입력"
+              placeholder="예: 홍길동, 20, 0.0, TRUE"
+              width="100%"
+              titleBold
+              size="md"
+              value={fixedValue}
+              onChange={handleFixedValueChange}
+              className={
+                isCheckValid === false
+                  ? 'input-error'
+                  : isCheckValid === true
+                    ? 'input-success'
+                    : ''
+              }
+            />
+            {column.checkConstraint && (
+              <div
+                className={`check-validation-message ${isCheckValid === true ? 'success' : isCheckValid === false ? 'error' : 'hidden'
+                  }`}
+              >
+                {isCheckValid === true && '✓ 제약 조건을 만족합니다.'}
+                {isCheckValid === false &&
+                  `✗ ${formatCheckConstraint(column.checkConstraint)}을(를) 위반합니다.`}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
       {/* 이전 설정 */}
       <div className="rule-select__section">
         <div className="rule-select__section-header">
