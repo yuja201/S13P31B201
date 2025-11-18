@@ -208,6 +208,18 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
     return null
   }, [columnConfigs, rows])
 
+  const allWarnings = useMemo(() => {
+    const warnings: string[] = []
+    if (hasMissing && warningMessage) {
+      warnings.push(warningMessage)
+    }
+    if (uniqueRefWarning) {
+      warnings.push(uniqueRefWarning)
+    }
+    return warnings
+  }, [hasMissing, warningMessage, uniqueRefWarning])
+
+
   return (
     <>
       <div className="table-detail-container shadow">
@@ -383,17 +395,20 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
             </table>
           </div>
           {/* 데이터 생성 버튼 위 경고문 */}
-          {hasMissing && warningMessage && (
-            <div className="validation-warning">{warningMessage}</div>
+          {allWarnings.length > 0 && (
+            <div className="validation-warning">
+              {allWarnings.map((warning, index) => (
+                <div key={index}>{warning}</div>
+              ))}
+            </div>
           )}
-          {uniqueRefWarning && <div className="validation-warning">{uniqueRefWarning}</div>}
 
           <Button
             variant="blue"
             size="md"
             style={{ width: '100%', marginTop: '8px', padding: '12px' }}
             onClick={onGenerateData}
-            disabled={!isAllReady || !!uniqueRefWarning}
+            disabled={!isAllReady || allWarnings.length > 0}
           >
             데이터 생성
           </Button>

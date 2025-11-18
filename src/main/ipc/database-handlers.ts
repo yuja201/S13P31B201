@@ -303,7 +303,15 @@ ipcMain.handle(
       let count = 0
 
       if (dbmsName === 'MySQL') {
-        const connection = await (await import('mysql2/promise')).createConnection(config)
+        const connection = await (
+          await import('mysql2/promise')
+        ).createConnection({
+          host: config.host,
+          port: config.port,
+          user: config.username,
+          password: config.password,
+          database: config.database
+        })
         try {
           const [rows] = await connection.execute(
             `SELECT COUNT(DISTINCT \`${column}\`) as count FROM \`${table}\``
@@ -315,7 +323,13 @@ ipcMain.handle(
       } else {
         // PostgreSQL
         const { Client } = await import('pg')
-        const client = new Client(config)
+        const client = new Client({
+          host: config.host,
+          port: config.port,
+          user: config.username,
+          password: config.password,
+          database: config.database
+        })
         await client.connect()
         try {
           const res = await client.query(
