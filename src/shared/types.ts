@@ -265,7 +265,7 @@ export interface UserQueryTestResultJson {
   }
   explain: ExplainResult
   warnings: string[]
-  ai: AIRecommendationItem[]
+  ai?: AIRecommendationItem[]
 }
 
 /* ============================================================
