@@ -209,7 +209,7 @@ export interface Test {
   id: number
   project_id: number
   project_name: string
-  type: string
+  type: 'QUERY' | 'INDEX'
   grade: 'good' | 'warning' | 'critical' | null
   summary: string | null
   result: string

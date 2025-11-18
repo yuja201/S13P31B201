@@ -23,21 +23,25 @@ const TestHistoryView: React.FC = () => {
 
   const [tests, setTests] = useState<Test[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    const fetchTests = async () => {
+    const fetchTests = async (): Promise<void> => {
       try {
         setIsLoading(true)
+        setError(null)
         const testResults = await window.api.test.getAll()
-        setTests(testResults)
-      } catch (error) {
-        console.error('Failed to fetch test history:', error)
+        const filteredTests = testResults.filter((test) => String(test.project_id) === projectId)
+        setTests(filteredTests)
+      } catch (err) {
+        setError('테스트 기록을 불러오는데 실패했습니다.')
+        console.error('Failed to fetch test history:', err)
       } finally {
         setIsLoading(false)
       }
     }
     fetchTests()
-  }, [location])
+  }, [location.pathname, projectId])
 
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 8
@@ -73,6 +77,10 @@ const TestHistoryView: React.FC = () => {
 
   if (isLoading) {
     return <div>테스트 기록을 불러오는 중...</div>
+  }
+
+  if (error) {
+    return <div>{error}</div>
   }
 
   if (totalItems === 0) {
@@ -169,11 +177,7 @@ const TestHistoryView: React.FC = () => {
                 }
 
                 return (
-                  <tr
-                    key={test.id}
-                    onClick={() => handleRowClick(test)}
-                    className="clickable-row"
-                  >
+                  <tr key={test.id} onClick={() => handleRowClick(test)} className="clickable-row">
                     <td>
                       <span className={`badge badge-${test.type.toLowerCase()}`}>{test.type}</span>
                     </td>
