@@ -1,49 +1,72 @@
-import log from 'electron-log'
-import { app } from 'electron'
-import path from 'path'
+import type { LogFunctions } from 'electron-log'
 
-/**
- * electron-log 설정
- */
-function configureLogger(): void {
-  const userDataPath = app.getPath('userData')
-  const logPath = path.join(userDataPath, 'logs')
+// Define a common logger interface that matches the core functions
+interface ILogger extends Pick<LogFunctions, 'debug' | 'info' | 'warn' | 'error' | 'verbose'> {}
 
-  log.transports.file.resolvePathFn = () => path.join(logPath, 'logs.log')
-  log.transports.file.level = 'info'
-  log.transports.file.maxSize = 10 * 1024 * 1024 // 10MB
-  log.transports.file.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] [{level}] {text}'
+// Check if we are in a plain Node.js process (like a worker)
+const isWorker = typeof process.type === 'undefined'
 
-  // 개발용 콘솔
-  log.transports.console.level = process.env.NODE_ENV === 'development' ? 'debug' : 'info'
-  log.transports.console.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] [{level}] {text}'
+let log: ILogger & { transports?: unknown; errorHandler?: unknown }
+let configureLogger: () => void
+let createLogger: (namespace: string) => ILogger
 
-  // hook 추가
-  log.errorHandler.startCatching({
-    showDialog: false,
-    onError: (error) => {
-      log.error('Uncaught error:', error)
-    }
+if (isWorker) {
+  // --- Worker-safe logger implementation ---
+  const createSimpleLogger = (namespace: string): ILogger => ({
+    debug: (...args: unknown[]) => console.debug(`[${namespace}]`, ...args),
+    info: (...args: unknown[]) => console.info(`[${namespace}]`, ...args),
+    warn: (...args: unknown[]) => console.warn(`[${namespace}]`, ...args),
+    error: (...args: unknown[]) => console.error(`[${namespace}]`, ...args),
+    verbose: (...args: unknown[]) => console.log(`[${namespace}]`, ...args)
   })
-}
 
-/**
- * 네임스페이스 기반 로거 생성
- */
-function createLogger(namespace: string): {
-  debug: (...args: unknown[]) => void
-  info: (...args: unknown[]) => void
-  warn: (...args: unknown[]) => void
-  error: (...args: unknown[]) => void
-  verbose: (...args: unknown[]) => void
-} {
-  return {
-    debug: (...args: unknown[]) => log.debug(`[${namespace}]`, ...args),
-    info: (...args: unknown[]) => log.info(`[${namespace}]`, ...args),
-    warn: (...args: unknown[]) => log.warn(`[${namespace}]`, ...args),
-    error: (...args: unknown[]) => log.error(`[${namespace}]`, ...args),
-    verbose: (...args: unknown[]) => log.verbose(`[${namespace}]`, ...args)
+  log = createSimpleLogger('default')
+  configureLogger = (): void => {
+    /* no-op in worker */
   }
+  createLogger = createSimpleLogger
+} else {
+  // --- Electron-specific logger implementation ---
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const electronLog = require('electron-log')
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { app } = require('electron')
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const path = require('path')
+
+  const configureElectronLogger = (): void => {
+    const userDataPath = app.getPath('userData')
+    const logPath = path.join(userDataPath, 'logs')
+
+    electronLog.transports.file.resolvePathFn = () => path.join(logPath, 'logs.log')
+    electronLog.transports.file.level = 'info'
+    electronLog.transports.file.maxSize = 10 * 1024 * 1024 // 10MB
+    electronLog.transports.file.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] [{level}] {text}'
+
+    electronLog.transports.console.level = process.env.NODE_ENV === 'development' ? 'debug' : 'info'
+    electronLog.transports.console.format = '[{y}-{m}-{d} {h}:{i}:{s}.{ms}] [{level}] {text}'
+
+    electronLog.errorHandler.startCatching({
+      showDialog: false,
+      onError: (error: Error) => {
+        electronLog.error('Uncaught error:', error)
+      }
+    })
+  }
+
+  const createElectronLogger = (namespace: string): ILogger => {
+    return {
+      debug: (...args: unknown[]) => electronLog.debug(`[${namespace}]`, ...args),
+      info: (...args: unknown[]) => electronLog.info(`[${namespace}]`, ...args),
+      warn: (...args: unknown[]) => electronLog.warn(`[${namespace}]`, ...args),
+      error: (...args: unknown[]) => electronLog.error(`[${namespace}]`, ...args),
+      verbose: (...args: unknown[]) => electronLog.verbose(`[${namespace}]`, ...args)
+    }
+  }
+
+  log = electronLog
+  configureLogger = configureElectronLogger
+  createLogger = createElectronLogger
 }
 
 export { log, configureLogger, createLogger }
