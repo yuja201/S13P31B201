@@ -543,11 +543,9 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
 
         .column-table tr.missing-rule td, 
         .column-table tr.unique-ref-warning-row td {
-              background-color: #FFFBEB;
-        }
-
           background-color: #FFFBEB;
         }
+
 
         .generation-method-cell {
           color: var(--color-main-blue); 

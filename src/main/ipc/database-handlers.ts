@@ -302,6 +302,11 @@ ipcMain.handle(
       const dbmsName = config.dbType
       let count = 0
 
+      const isValidIdentifier = (name: string) => /^[A-Za-z0-9_]+$/.test(name)
+      if (!isValidIdentifier(table) || !isValidIdentifier(column)) {
+        throw new Error(`Invalid table or column name: ${table}, ${column}`)
+      }
+
       if (dbmsName === 'MySQL') {
         const connection = await (
           await import('mysql2/promise')
@@ -320,7 +325,7 @@ ipcMain.handle(
         } finally {
           await connection.end()
         }
-      } else {
+      } else if (dbmsName === 'PostgreSQL') {
         // PostgreSQL
         const { Client } = await import('pg')
         const client = new Client({
@@ -339,6 +344,8 @@ ipcMain.handle(
         } finally {
           await client.end()
         }
+      } else {
+        throw new Error(`Unsupported database type: ${dbmsName}`)
       }
       return { count }
     } catch (error) {
