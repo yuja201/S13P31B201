@@ -45,14 +45,19 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
   const [apiToken, setApiToken] = useState('')
   const [prompt, setPrompt] = useState('')
   const [selectedModel, setSelectedModel] = useState('1')
-  const [selectedDomain, setSelectedDomain] = useState<{ id: number; name: string } | null>(null)
+  const [selectedDomain, setSelectedDomain] = useState<{
+    id: number
+    name: string
+    locales: string[]
+  } | null>(null)
+
   const [ensureUnique, setEnsureUnique] = useState(false)
   const isUniqueColumn = useMemo(() => column.constraints.includes('UNIQUE'), [column])
   const addRule = useRuleStore((state) => state.addRule)
   const [locale, setLocale] = useState<'en' | 'ko'>('en')
 
   const handleDomainChange = useCallback(
-    (domain: { id: number; name: string }) => {
+    (domain: { id: number; name: string; locales: string[] }) => {
       setSelectedDomain(domain)
     },
     [setSelectedDomain]
@@ -169,6 +174,17 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
     }
   }, [selectedModel, selectedSource])
 
+  // 도메인 선택 시 locale 자동으로 설정
+  useEffect(() => {
+    if (selectedDomain?.locales?.length) {
+      // 도메인의 첫 번째 locale을 선택
+      setLocale(selectedDomain.locales[0] as 'en' | 'ko')
+    } else {
+      // 도메인 없으면 기본값 English
+      setLocale('en')
+    }
+  }, [selectedDomain])
+
   return (
     <div className="rule-create">
       {/* 상단 타입 표시 */}
@@ -249,8 +265,10 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
             언어 <span style={{ color: '#ED3F27' }}>*</span>
           </div>
           <select
-            value={locale}
-            onChange={(e) => setLocale(e.target.value as 'en' | 'ko')}
+            value={selectedDomain ? locale : 'placeholder'}
+            onChange={(e) => {
+              if (selectedDomain) setLocale(e.target.value as 'en' | 'ko')
+            }}
             style={{
               width: '100%',
               height: '42px',
@@ -262,8 +280,19 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
               backgroundColor: 'var(--color-white)'
             }}
           >
-            <option value="en">English</option>
-            <option value="ko">한국어</option>
+            {/* placeholder만 표시 */}
+            {!selectedDomain && (
+              <option value="placeholder" disabled>
+                도메인을 먼저 선택해주세요
+              </option>
+            )}
+
+            {/* 도메인 선택 후에만 locale 옵션 표시 */}
+            {selectedDomain?.locales?.map((lc) => (
+              <option key={lc} value={lc}>
+                {lc === 'en' ? 'English' : lc === 'ko' ? '한국어' : lc}
+              </option>
+            ))}
           </select>
         </div>
       )}

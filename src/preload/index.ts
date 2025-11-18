@@ -15,12 +15,17 @@ import type {
   RuleInput,
   RuleUpdate,
   DatabaseSchema,
-  DomainCategory,
   Test,
   TestInput
 } from '../main/database/types'
 
-import { FakerRuleInput, AIRuleInput, GenerateRequest, GenerationResult } from '@shared/types'
+import {
+  FakerRuleInput,
+  AIRuleInput,
+  GenerateRequest,
+  GenerationResult,
+  DomainCategory
+} from '@shared/types'
 
 // Custom APIs for renderer
 const api = {

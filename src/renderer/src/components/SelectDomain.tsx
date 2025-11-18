@@ -2,13 +2,13 @@ import React, { useEffect, useState } from 'react'
 import SimpleCard from '@renderer/components/SimpleCard'
 import { mapColumnToLogicalType } from '@renderer/utils/logicalTypeMap'
 import { useProjectStore } from '@renderer/stores/projectStore'
-import type { DomainCategory, Domain } from '@main/database/types'
+import type { DomainCategory, Domain } from 'src/shared/types'
 import Loading from '@renderer/components/LoadingSpinner'
 
 interface SelectDomainProps {
   source: 'FAKER' | 'AI'
   columnType: string
-  onChange: (domain: { id: number; name: string }) => void
+  onChange: (domain: { id: number; name: string; locales: string[] }) => void
 }
 
 const SelectDomain: React.FC<SelectDomainProps> = ({ source, columnType, onChange }) => {
@@ -43,9 +43,9 @@ const SelectDomain: React.FC<SelectDomainProps> = ({ source, columnType, onChang
   }, [columnType, dbms])
 
   /** 도메인 선택 핸들러 */
-  const handleSelect = (id: number, name: string): void => {
+  const handleSelect = (id: number, name: string, locales: string[]): void => {
     setSelected(id)
-    onChange({ id, name })
+    onChange({ id, name, locales })
   }
 
   /** Faker 제외 처리 */
@@ -85,7 +85,7 @@ const SelectDomain: React.FC<SelectDomainProps> = ({ source, columnType, onChang
                         description={item.description}
                         size="sm"
                         selected={selected === item.id}
-                        onSelect={() => handleSelect(item.id, item.name)}
+                        onSelect={() => handleSelect(item.id, item.name, item.locales)}
                       />
                     ))}
                   </div>

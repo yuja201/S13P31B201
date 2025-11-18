@@ -321,3 +321,16 @@ export interface AIRecommendationItem {
   suggestion: string
   exampleSQL: string | null
 }
+
+export interface Domain {
+  id: number
+  name: string
+  description: string
+  logical_type: string
+  locales: string[]
+}
+
+export interface DomainCategory {
+  category: string
+  items: Domain[]
+}

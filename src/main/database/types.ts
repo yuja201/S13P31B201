@@ -162,18 +162,19 @@ export interface DatabaseSchema {
 }
 
 // 도메인 관련
-export interface DomainCategory {
+export interface DomainCategoryRow {
   category: string
-  items: Domain[]
+  items: DomainRow[]
 }
 
-export interface Domain {
+export interface DomainRow {
   id: number
   name: string
   description: string
   logical_type: string
   category_id: number
   category_name: string
+  locales: string
 }
 
 // 인덱스 분석 관련
