@@ -67,6 +67,7 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
   const showToast = useToastStore((s) => s.showToast)
 
   const isPk = useMemo(() => column.constraints.includes('PK'), [column.constraints])
+  const isUnique = useMemo(() => column.constraints.includes('UNIQUE'), [column.constraints])
 
   const handleSelectRule = (rule: Rule): void => {
     // 선택한 rule을 부모로 전달
@@ -212,7 +213,7 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
       </div>
 
       {/* 고정값 입력 */}
-      {!isPk && (
+      {!isPk && !isUnique && (
         <div className="rule-select__section">
           <div className="relative">
             <InputField
@@ -279,7 +280,7 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
         <Button variant="gray" onClick={onCancel}>
           취소
         </Button>
-        {!isPk && (
+        {!isPk && !isUnique && (
           <Button variant="orange" onClick={handleConfirmFixed} disabled={isCheckValid === false}>
             확인
           </Button>
