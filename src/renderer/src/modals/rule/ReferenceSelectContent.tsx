@@ -35,6 +35,7 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
   const schemaRef = useMemo(() => column.foreignKeys?.[0], [column.foreignKeys])
   const referencedTableName = schemaRef?.referenced_table || ''
   const referencedColumnName = schemaRef?.referenced_column || ''
+  const [refColCount, setRefColCount] = useState<number | null>(null);
 
   const [strategy, setStrategy] = useState<ReferenceStrategy>(() => {
     if (
@@ -138,6 +139,21 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
     setValidationState('idle')
   }, [searchValue])
 
+  useEffect(() => {
+    if (databaseId && referencedTableName && referencedColumnName) {
+      window.api.schema.getUniqueValueCount({
+        databaseId,
+        table: referencedTableName,
+        column: referencedColumnName
+      }).then(result => {
+        setRefColCount(result.count);
+      }).catch(err => {
+        console.error('Failed to get unique value count:', err);
+      });
+    }
+  }, [databaseId, referencedTableName, referencedColumnName]);
+
+
   // 저장 로직
   const handleSave = (): void => {
     if (strategy === 'RANDOM_SAMPLE') {
@@ -156,7 +172,8 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
           refColumn: referencedColumnName,
           previewValue: samplePreview.value,
           fixedValue: samplePreview.value,
-          ensureUnique: isUnique
+          ensureUnique: isUnique,
+          refColCount: refColCount
         }
       })
     } else {

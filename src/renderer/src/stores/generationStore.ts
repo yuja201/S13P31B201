@@ -39,6 +39,7 @@ export type ReferenceMetaData = {
   ensureUnique?: boolean
   previewValue?: string | number
   fixedValue?: string
+  refColCount?: number | null
 }
 
 export type DefaultMetaData = {
@@ -259,7 +260,8 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
           ensureUnique: rule.metaData.ensureUnique,
           previewValue: rule.metaData.previewValue,
           fixedValue:
-            rule.metaData.fixedValue != null ? String(rule.metaData.fixedValue) : undefined
+            rule.metaData.fixedValue != null ? String(rule.metaData.fixedValue) : undefined,
+          refColCount: rule.metaData.refColCount
         }
         break
       }

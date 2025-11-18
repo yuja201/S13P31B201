@@ -39,6 +39,7 @@ export interface RuleSelection {
     refColumn?: string
     previewValue?: string
     ensureUnique?: boolean
+    refColCount?: number | null
   }
 }
 

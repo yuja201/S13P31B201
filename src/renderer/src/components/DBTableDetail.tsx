@@ -83,9 +83,18 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
 
   const handleRuleConfirm = (result: RuleResult): void => {
     if (!selectedColumn) return
+
+    setColumnRule(table.name, selectedColumn.name, {
+      columnName: selectedColumn.name,
+      dataSource: result.dataSource,
+      metaData: result.metaData
+    })
+
     onColumnUpdate(selectedColumn.name, result.generation, result.setting)
     closeRuleModal()
+
   }
+
 
   // ----------------------------
   // Input handlers
@@ -163,7 +172,11 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
             break
           case 'REFERENCE':
             generation = '참조'
-            setting = col.setting
+            if (config.metaData.kind === 'reference') {
+              setting = `${config.metaData.refTable}.${config.metaData.refColumn}`
+            } else {
+              setting = col.setting
+            }
             break
         }
 
@@ -178,6 +191,22 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
     // 이 테이블의 컬럼 중 하나라도 FILE 데이터소스를 사용하면 파일모드로 판단
     return Object.values(columnConfigs).some((c) => c.dataSource === 'FILE')
   }, [columnConfigs])
+
+  const uniqueRefWarning = useMemo(() => {
+    for (const colConfig of Object.values(columnConfigs)) {
+      if (
+        colConfig.dataSource === 'REFERENCE' &&
+        colConfig.metaData.kind === 'reference' &&
+        colConfig.metaData.ensureUnique &&
+        colConfig.metaData.refColCount !== null &&
+        colConfig.metaData.refColCount !== undefined &&
+        rows > colConfig.metaData.refColCount
+      ) {
+        return `⚠️ '${colConfig.metaData.refTable}' 테이블의 '${colConfig.metaData.refColumn}' 컬럼은 고유값이 ${colConfig.metaData.refColCount}개 뿐입니다. 생성할 행의 수를 줄여주세요.`
+      }
+    }
+    return null
+  }, [columnConfigs, rows])
 
   return (
     <>
@@ -357,13 +386,14 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
           {hasMissing && warningMessage && (
             <div className="validation-warning">{warningMessage}</div>
           )}
+          {uniqueRefWarning && <div className="validation-warning">{uniqueRefWarning}</div>}
 
           <Button
             variant="blue"
             size="md"
             style={{ width: '100%', marginTop: '8px', padding: '12px' }}
             onClick={onGenerateData}
-            disabled={!isAllReady}
+            disabled={!isAllReady || !!uniqueRefWarning}
           >
             데이터 생성
           </Button>

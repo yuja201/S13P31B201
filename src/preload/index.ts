@@ -130,7 +130,13 @@ const api = {
       value: string
       checkConstraint: string
       columnName: string
-    }): Promise<boolean> => ipcRenderer.invoke('schema:validate-check-constraint', args)
+    }): Promise<boolean> => ipcRenderer.invoke('schema:validate-check-constraint', args),
+
+    getUniqueValueCount: (params: {
+      databaseId: number
+      table: string
+      column: string
+    }): Promise<{ count: number }> => ipcRenderer.invoke('schema:getUniqueValueCount', params)
   },
 
   file: {
