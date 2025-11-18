@@ -45,7 +45,11 @@ export class MigrationManager {
     let currentVersion = this.getCurrentVersion()
 
     for (const file of files) {
-      const version = Number(file.split('_')[0])
+      const match = file.match(/^(\d+)_/)
+      if (!match) {
+        throw new Error(`Invalid migration file name: ${file}`)
+      }
+      const version = Number(match[1])
       if (version <= currentVersion) continue
 
       const filePath = path.join(this.migrationsPath, file)

@@ -91,11 +91,6 @@ export async function* generateFakeStream({
   const sqlType = column?.type ?? 'VARCHAR(255)'
   const { min, max, maxLength } = column ? extractSimpleConstraints(sqlType, column) : {}
 
-  // locale 적용된 faker 인스턴스 생성
-  console.log('locale 값:', locale)
-  console.log('LOCALE_FAKERS keys:', Object.keys(LOCALE_FAKERS))
-  console.log('LOCALE_FAKERS[locale]:', LOCALE_FAKERS[locale])
-
   const localeKey = locale ?? 'en'
   const faker = LOCALE_FAKERS[localeKey] ?? LOCALE_FAKERS.en
   // faker 경로 매핑

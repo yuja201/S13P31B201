@@ -78,13 +78,6 @@ export function initDatabase(): Database.Database {
     migrationsPath = path.join(process.resourcesPath, 'migrations')
   }
 
-  if (!fs.existsSync(migrationsPath)) {
-    console.warn('[Migration] migrations folder not found:', migrationsPath)
-  } else {
-    const migrationManager = new MigrationManager(db, migrationsPath)
-    migrationManager.runMigrations()
-  }
-
   // 폴더 존재 여부 확인 (안전)
   if (!fs.existsSync(migrationsPath)) {
     console.warn('[Migration] migrations folder not found:', migrationsPath)

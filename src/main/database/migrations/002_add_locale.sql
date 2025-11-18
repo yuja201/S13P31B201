@@ -1,1 +1,1 @@
-ALTER TABLE rules ADD COLUMN locale TEXT DEFAULT 'en';
+ALTER TABLE rules ADD COLUMN locale TEXT;

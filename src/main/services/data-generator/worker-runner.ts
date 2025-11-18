@@ -192,9 +192,7 @@ function convertValue(
 
   // 문자열화 (숫자/불리언 등 들어올 수 있음)
   let s = typeof raw === 'string' ? raw : String(raw)
-  if (!type || type.includes('char') || type.includes('text')) {
-    return `'${s.replace(/'/g, "''")}'`
-  }
+
   // === A안: FILE 소스일 때만 CSV 따옴표 제거 ===
   if (dataSource === 'FILE' && s.length >= 2 && s[0] === '"' && s[s.length - 1] === '"') {
     // CSV에서 "" → " 로 복원
@@ -204,6 +202,10 @@ function convertValue(
   // 명시적 NULL 문자열 처리
   if (s.trim().toUpperCase() === 'NULL') {
     return notNull ? INVALID : 'NULL'
+  }
+
+  if (!type || type.includes('char') || type.includes('text')) {
+    return `'${s.replace(/'/g, "''")}'`
   }
 
   // DB 함수 패스스루: now()

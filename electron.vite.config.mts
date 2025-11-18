@@ -4,8 +4,6 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   main: {
-    publicDir: resolve(__dirname, 'src/main/database/migrations'),
-
     plugins: [externalizeDepsPlugin()],
     resolve: {
       alias: {
