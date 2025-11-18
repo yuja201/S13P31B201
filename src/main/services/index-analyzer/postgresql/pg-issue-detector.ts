@@ -276,38 +276,6 @@ export function detectOversizedIndexes(
 }
 
 /**
- * 부적절한 컬럼 타입에 인덱스 탐지
- */
-export function detectInappropriateTypeIndexes(
-  indexName: string,
-  tableName: string,
-  columns: IndexColumn[],
-  columnTypes: Map<string, { data_type: string; udt_name: string }>
-): IndexIssue[] {
-  const issues: IndexIssue[] = []
-
-  for (const col of columns) {
-    const typeInfo = columnTypes.get(`${tableName}.${col.column_name}`)
-    if (!typeInfo) continue
-
-    const { data_type } = typeInfo
-
-    // TEXT 타입에 B-tree 인덱스
-    if (data_type === 'text' && col.index_type === 'btree') {
-      issues.push({
-        severity: 'recommended',
-        category: 'inappropriate_type',
-        description: `인덱스 '${indexName}'가 TEXT 타입에 B-tree를 사용합니다.`,
-        recommendation: `GIN 또는 GiST 인덱스를 도입을 고려해보세요.`,
-        suggestedSQL: `CREATE INDEX ${indexName}_gin ON ${tableName} USING GIN (to_tsvector('english', ${col.column_name}));`
-      })
-    }
-  }
-
-  return issues
-}
-
-/**
  * 대형 테이블 인덱스 부족 탐지
  */
 export function detectUnderindexedTables(
