@@ -37,14 +37,15 @@ export type TableInfo = {
 }
 
 const parseCheckInValues = (checkConstraint: string): string[] => {
-  const match = checkConstraint.match(/\(([^)]+)\)/);
-  if (!match) return [];
+  const inMatch = checkConstraint.match(/IN\s*\(([^)]+)\)/i);
+  if (!inMatch || !inMatch[1]) return [];
 
-  const valuesMatch = match[1].match(/(?:'([^']*)'|\"([^\"]*)\"|([^,]+))/g);
-  if (!valuesMatch) return [];
+  const valuesString = inMatch[1];
+  const values = valuesString.split(',').map(v => v.trim().replace(/['"]/g, ''));
 
-  return valuesMatch.map((v) => v.trim().replace(/['"]/g, ''));
+  return values;
 };
+
 
 // Store의 Column 타입을 View의 ColumnDetail 타입으로 변환
 const convertColumn = (col: Column, table: Table): ColumnDetail => {

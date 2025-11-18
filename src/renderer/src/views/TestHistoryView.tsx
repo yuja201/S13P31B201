@@ -249,7 +249,7 @@ const TestHistoryView: React.FC = () => {
           overflow-x: auto;
           margin-top: 32px;
           margin-bottom: 20px; 
-          height: 670px;
+          height: 700px;
         }
         .column-table {
           width: 100%;
