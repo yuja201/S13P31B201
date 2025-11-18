@@ -204,10 +204,6 @@ function convertValue(
     return notNull ? INVALID : 'NULL'
   }
 
-  if (!type || type.includes('char') || type.includes('text')) {
-    return `'${s.replace(/'/g, "''")}'`
-  }
-
   // DB 함수 패스스루: now()
   if (/^\s*now\s*\(\s*\)\s*$/i.test(s)) return 'now()'
 
@@ -267,6 +263,10 @@ function convertValue(
     } catch {
       return INVALID
     }
+  }
+
+  if (!type || type.includes('char') || type.includes('text')) {
+    return `'${s.replace(/'/g, "''")}'`
   }
 
   // 일반 문자열
