@@ -272,6 +272,7 @@ export interface Test {
   project_id: number
   project_name: string
   type: 'QUERY' | 'INDEX'
+  grade: 'good' | 'warning' | 'critical' | null
   summary: string | null
   result: string
   response_time: number | null
@@ -282,6 +283,7 @@ export interface Test {
 export interface TestInput {
   project_id: number
   type: 'QUERY' | 'INDEX'
+  grade: 'good' | 'warning' | 'critical' | null
   summary?: string | null
   result: string
   response_time?: number | null

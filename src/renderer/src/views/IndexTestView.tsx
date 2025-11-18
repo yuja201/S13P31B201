@@ -108,9 +108,17 @@ const IndexTestView: React.FC = () => {
       const healthRatio =
         analysisResult.totalIndexes > 0 ? (healthyIndexes / analysisResult.totalIndexes) * 100 : 0
 
+      let grade: 'good' | 'warning' | 'critical' = 'critical'
+      if (healthRatio >= 80) {
+        grade = 'good'
+      } else if (healthRatio >= 30) {
+        grade = 'warning'
+
+      }
       const testData = {
         project_id: selectedProject.id,
         type: 'INDEX' as const,
+        grade: grade,
         summary: '인덱스 테스트',
         result: JSON.stringify(analysisResult),
         index_ratio: healthRatio,
@@ -180,29 +188,29 @@ const IndexTestView: React.FC = () => {
             {(index.indexSizeBytes ||
               index.scanCount !== undefined ||
               index.selectivity !== undefined) && (
-              <div className="issue-section no-border">
-                {index.indexSizeBytes && (
-                  <div className="issue-detail">
-                    <span className="detail-label">크기</span>
-                    <span className="detail-value">
-                      {(index.indexSizeBytes / 1024 / 1024).toFixed(2)}MB
-                    </span>
-                  </div>
-                )}
-                {index.scanCount !== undefined && (
-                  <div className="issue-detail">
-                    <span className="detail-label">스캔</span>
-                    <span className="detail-value">{index.scanCount.toLocaleString()}회</span>
-                  </div>
-                )}
-                {index.selectivity !== undefined && (
-                  <div className="issue-detail">
-                    <span className="detail-label">선택도</span>
-                    <span className="detail-value">{index.selectivity.toFixed(2)}%</span>
-                  </div>
-                )}
-              </div>
-            )}
+                <div className="issue-section no-border">
+                  {index.indexSizeBytes && (
+                    <div className="issue-detail">
+                      <span className="detail-label">크기</span>
+                      <span className="detail-value">
+                        {(index.indexSizeBytes / 1024 / 1024).toFixed(2)}MB
+                      </span>
+                    </div>
+                  )}
+                  {index.scanCount !== undefined && (
+                    <div className="issue-detail">
+                      <span className="detail-label">스캔</span>
+                      <span className="detail-value">{index.scanCount.toLocaleString()}회</span>
+                    </div>
+                  )}
+                  {index.selectivity !== undefined && (
+                    <div className="issue-detail">
+                      <span className="detail-label">선택도</span>
+                      <span className="detail-value">{index.selectivity.toFixed(2)}%</span>
+                    </div>
+                  )}
+                </div>
+              )}
 
             {(issue.impact || issue.relatedIndexName) && (
               <div className="issue-section no-border">

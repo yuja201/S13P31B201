@@ -1,124 +1,59 @@
-import React, { useState, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import PageTitle from '@renderer/components/PageTitle'
 import { IoMdCheckmarkCircleOutline, IoMdCloseCircleOutline } from 'react-icons/io'
 import { PiWarningBold } from 'react-icons/pi'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import Button from '@renderer/components/Button'
 import YujaWorkingImage from '../assets/imgs/yuja_working.png'
-
-interface TestHistoryItem {
-  status: 'success' | 'fail' | 'warning'
-  testName: string
-  type: 'QUERY' | 'INDEX'
-  timestamp: string
-  summary: string
-}
-
-const mockHistoryData: TestHistoryItem[] = [
-  {
-    status: 'success',
-    testName: '주문 생성 시나리오',
-    type: 'QUERY',
-    timestamp: '2023-10-27 14:30:15',
-    summary: '평균 응답 시간: 25.3ms'
-  },
-  {
-    status: 'fail',
-    testName: '사용자 테이블 인덱스 분석',
-    type: 'INDEX',
-    timestamp: '2023-10-27 14:28:10',
-    summary: '인덱스 스캔 비율: 85%'
-  },
-  {
-    status: 'warning',
-    testName: '데이터 유효성 검사',
-    type: 'QUERY',
-    timestamp: '2023-10-27 14:25:00',
-    summary: '일부 데이터 불일치 발견'
-  },
-  {
-    status: 'success',
-    testName: '주문 생성 시나리오',
-    type: 'QUERY',
-    timestamp: '2023-10-27 14:30:15',
-    summary: '평균 응답 시간: 25.3ms'
-  },
-  {
-    status: 'success',
-    testName: '주문 생성 dgdfgdgdfgdgdf시나리오',
-    type: 'QUERY',
-    timestamp: '2023-10-27 14:30:15',
-    summary: '평균 응답 시간: 25.3ms'
-  },
-  {
-    status: 'success',
-    testName: '주문 생성 시나리오',
-    type: 'QUERY',
-    timestamp: '2023-10-27 14:30:15',
-    summary: '평균 응답 시간: 25.3ms'
-  },
-  {
-    status: 'success',
-    testName: '주문 생성 시나리오',
-    type: 'QUERY',
-    timestamp: '2023-10-27 14:30:15',
-    summary: '평균 응답 시간: 25.3ms'
-  },
-  {
-    status: 'fail',
-    testName: '사용자 테이블 인덱스 분석',
-    type: 'INDEX',
-    timestamp: '2023-10-27 14:28:10',
-    summary: '인덱스 스캔 비율: 85%'
-  },
-  {
-    status: 'fail',
-    testName: '사용자 테이블 인덱스 분석',
-    type: 'INDEX',
-    timestamp: '2023-10-27 14:28:10',
-    summary: '인덱스 스캔 비율: 85%'
-  },
-  {
-    status: 'fail',
-    testName: '사용자 테이블 인덱스 분석',
-    type: 'INDEX',
-    timestamp: '2023-10-27 14:28:10',
-    summary: '인덱스 스캔 비율: 85%'
-  },
-  {
-    status: 'fail',
-    testName: '사용자 테이블 인덱스 분석',
-    type: 'INDEX',
-    timestamp: '2023-10-27 14:28:10',
-    summary: '인덱스 스캔 비율: 85%'
-  }
-]
+import type { Test } from '@shared/types'
 
 const TestHistoryView: React.FC = () => {
   const title = '테스트 히스토리'
   const description = '이전에 진행된 테스트 이력을 확인하세요'
 
-  const statusConfig = {
-    success: { icon: IoMdCheckmarkCircleOutline, color: '#4caf50' },
-    fail: { icon: IoMdCloseCircleOutline, color: '#e57373' },
-    warning: { icon: PiWarningBold, color: '#fbc02d' }
+  const gradeConfig = {
+    good: { icon: IoMdCheckmarkCircleOutline, color: '#4caf50', label: 'Good' },
+    warning: { icon: PiWarningBold, color: '#fbc02d', label: 'Warning' },
+    critical: { icon: IoMdCloseCircleOutline, color: '#e57373', label: 'Critical' }
   }
 
   const navigate = useNavigate()
   const { projectId } = useParams<{ projectId: string }>()
+  const location = useLocation()
 
-  // Pagination
+  const [tests, setTests] = useState<Test[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    const fetchTests = async (): Promise<void> => {
+      try {
+        setIsLoading(true)
+        setError(null)
+        const testResults = await window.api.test.getAll()
+        const filteredTests = testResults.filter((test) => String(test.project_id) === projectId)
+        setTests(filteredTests)
+      } catch (err) {
+        setError('테스트 기록을 불러오는데 실패했습니다.')
+        console.error('Failed to fetch test history:', err)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+    fetchTests()
+  }, [location.pathname, projectId])
+
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 10
+  const itemsPerPage = 8
 
-  const totalItems = mockHistoryData.length
+  const totalItems = tests.length
   const totalPages = Math.ceil(totalItems / itemsPerPage)
 
   const currentItems = useMemo(() => {
     const startIndex = (currentPage - 1) * itemsPerPage
     const endIndex = startIndex + itemsPerPage
-    return mockHistoryData.slice(startIndex, endIndex)
-  }, [currentPage, itemsPerPage])
+    return tests.slice(startIndex, endIndex)
+  }, [currentPage, itemsPerPage, tests])
 
   const handlePageChange = (page: number): void => {
     if (page >= 1 && page <= totalPages) {
@@ -130,6 +65,22 @@ const TestHistoryView: React.FC = () => {
     if (projectId) {
       navigate(`/main/test/${projectId}`)
     }
+  }
+
+  const handleRowClick = (test: Test): void => {
+    if (test.type === 'QUERY') {
+      navigate(`/main/test/${test.project_id}/user-query/${test.id}`)
+    } else if (test.type === 'INDEX') {
+      navigate(`/main/test/${test.project_id}/index`)
+    }
+  }
+
+  if (isLoading) {
+    return <div>테스트 기록을 불러오는 중...</div>
+  }
+
+  if (error) {
+    return <div>{error}</div>
   }
 
   if (totalItems === 0) {
@@ -209,23 +160,48 @@ const TestHistoryView: React.FC = () => {
                 <th>테스트명</th>
                 <th>결과 요약</th>
                 <th>테스트시간</th>
-                <th>상태</th>
+                <th>결과</th>
               </tr>
             </thead>
             <tbody>
-              {currentItems.map((item, index) => {
-                const IconComponent = statusConfig[item.status].icon
-                const IconColor = statusConfig[item.status].color
+              {currentItems.map((test) => {
+                const gradeInfo = test.grade ? gradeConfig[test.grade] : null
+                const IconComponent = gradeInfo?.icon
+                const IconColor = gradeInfo?.color
+
+                let resultSummary = 'N/A'
+                if (test.type === 'QUERY' && test.response_time !== null) {
+                  resultSummary = `응답 시간: ${test.response_time.toFixed(2)}ms`
+                } else if (test.type === 'INDEX' && test.index_ratio !== null) {
+                  resultSummary = `인덱스 사용률: ${test.index_ratio.toFixed(1)}%`
+                }
+
                 return (
-                  <tr key={index}>
+                  <tr key={test.id} onClick={() => handleRowClick(test)} className="clickable-row">
                     <td>
-                      <span className={`badge badge-${item.type.toLowerCase()}`}>{item.type}</span>
+                      <span className={`badge badge-${test.type.toLowerCase()}`}>{test.type}</span>
                     </td>
-                    <td>{item.testName}</td>
-                    <td>{item.summary}</td>
-                    <td>{item.timestamp}</td>
+                    <td>{test.summary || '요약 없음'}</td>
+                    <td>{resultSummary}</td>
                     <td>
-                      <IconComponent color={IconColor} size={24} />
+                      {(() => {
+                        const dateStr = new Date(test.created_at * 1000).toLocaleString('ko-KR', {
+                          year: 'numeric',
+                          month: '2-digit',
+                          day: '2-digit'
+                        })
+                        return dateStr.endsWith('.') ? dateStr.slice(0, -1) : dateStr
+                      })()}
+                      <br />
+                      {new Date(test.created_at * 1000).toLocaleString('ko-KR', {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: false
+                      })}
+                    </td>
+                    <td>
+                      {IconComponent && IconColor && <IconComponent color={IconColor} size={24} />}
                     </td>
                   </tr>
                 )
@@ -273,13 +249,24 @@ const TestHistoryView: React.FC = () => {
           overflow-x: auto;
           margin-top: 32px;
           margin-bottom: 20px; 
+          height: 670px;
         }
         .column-table {
           width: 100%;
           border-collapse: collapse;
           border-top: 1px solid var(--color-gray-200);
           table-layout: fixed;
-          height:670px;
+        }
+
+        .column-table tbody {
+          display: block;
+          width: 100%;
+          overflow-y: hidden;
+        }
+        .column-table tr {
+          display: table; /* display: table을 사용해 너비 계산을 유지 */
+          width: 100%;
+          table-layout: fixed;
         }
 
         .column-table th {
@@ -294,11 +281,21 @@ const TestHistoryView: React.FC = () => {
         .column-table td {
           padding: 16px;
           text-align: center;
-          vertical-align: text-top;
+          vertical-align: middle;
           border-bottom: 1px solid var(--color-gray-200);
           background-color: var(--color-white); 
           transition: background-color 0.2s ease;
           word-break: break-word;
+        }
+        .column-table tbody tr {
+          height: 67px; 
+        }
+
+        .clickable-row:hover {
+          cursor: pointer;
+        }
+        .clickable-row:hover td {
+          background-color: var(--color-light-blue); 
         }
 
         .column-table th:nth-child(1),
