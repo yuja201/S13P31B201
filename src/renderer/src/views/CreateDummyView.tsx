@@ -41,7 +41,13 @@ const parseCheckInValues = (checkConstraint: string): string[] => {
   if (!inMatch || !inMatch[1]) return [];
 
   const valuesString = inMatch[1];
-  const values = valuesString.split(',').map(v => v.trim().replace(/['"]/g, ''));
+  const values: string[] = [];
+  const regex = /'([^']*(?:''[^']*)*)'|"([^"]*(?:""[^"]*)*)"|([^,\s]+)/g;
+  let match;
+  while ((match = regex.exec(valuesString)) !== null) {
+    const value = (match[1] || match[2] || match[3]).replace(/''/g, "'").replace(/""/g, '"');
+    values.push(value.trim());
+  }
 
   return values;
 };
