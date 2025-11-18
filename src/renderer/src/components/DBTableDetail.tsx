@@ -101,8 +101,18 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
 
   const handleRowsChange = (value: number): void => {
     const MAX_ROWS = 50_000_000
-    const normalized = Number.isFinite(value) ? Math.trunc(value) : 1
-    const safeValue = Math.min(Math.max(1, normalized), MAX_ROWS)
+    const step = 100
+    let normalized = Number.isFinite(value) ? Math.trunc(value) : 1
+
+    if (normalized % step !== 0) {
+      normalized = Math.round(normalized / step) * step
+    }
+
+    if (normalized < 1) {
+      normalized = 1
+    }
+
+    const safeValue = Math.min(normalized, MAX_ROWS)
     setTableRecordCount(table.name, safeValue)
   }
 
