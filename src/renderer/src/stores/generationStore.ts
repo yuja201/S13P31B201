@@ -140,7 +140,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
 
   getTableRecordCount: (tableName: string) => {
     const table = get().tables[tableName]
-    return table?.recordCnt ?? 1000
+    return table?.recordCnt ?? 0
   },
 
   selectedTables: new Set(),
@@ -280,7 +280,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
     set((state) => {
       const existingTable = state.tables[tableName] || {
         tableName,
-        recordCnt: 1000,
+        recordCnt: 0,
         columns: {}
       }
 

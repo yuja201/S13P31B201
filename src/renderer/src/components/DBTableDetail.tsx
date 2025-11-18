@@ -36,6 +36,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
   const getTableRecordCount = useGenerationStore((s) => s.getTableRecordCount)
   const setTableRecordCount = useGenerationStore((s) => s.setTableRecordCount)
   const rows = getTableRecordCount(table.name)
+  const [displayValue, setDisplayValue] = useState(rows === 0 ? '' : rows.toLocaleString())
   const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false)
   const [isRuleModalOpen, setIsRuleModalOpen] = useState(false)
   const [selectedColumn, setSelectedColumn] = useState<ColumnDetail | null>(null)
@@ -44,6 +45,10 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
 
   const getRuleById = useRuleStore((state) => state.getRuleById)
   const fetchRules = useRuleStore((state) => state.fetchRules)
+
+  useEffect(() => {
+    setDisplayValue(rows === 0 ? '' : rows.toLocaleString())
+  }, [rows])
 
   useEffect(() => {
     fetchRules()
@@ -99,21 +104,32 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
   // ----------------------------
   // Input handlers
 
-  const handleRowsChange = (value: number): void => {
+  const handleDisplayValueChange = (inputString: string): void => {
+    const cleaned = inputString.replace(/[^0-9]/g, '')
+
+    if (cleaned === '') {
+      setTableRecordCount(table.name, 0)
+      setDisplayValue('')
+      return
+    }
+
+    const numValue = Number(cleaned)
     const MAX_ROWS = 50_000_000
-    const step = 100
-    let normalized = Number.isFinite(value) ? Math.trunc(value) : 1
 
-    if (normalized % step !== 0) {
-      normalized = Math.round(normalized / step) * step
+    if (numValue > MAX_ROWS) {
+      setTableRecordCount(table.name, MAX_ROWS)
+      setDisplayValue(MAX_ROWS.toLocaleString())
+      return
     }
 
-    if (normalized < 1) {
-      normalized = 1
-    }
+    setTableRecordCount(table.name, numValue)
 
-    const safeValue = Math.min(normalized, MAX_ROWS)
-    setTableRecordCount(table.name, safeValue)
+    setDisplayValue(numValue.toLocaleString())
+  }
+
+  const handleInputBlur = (): void => {
+    const currentRows = getTableRecordCount(table.name)
+    setDisplayValue(currentRows === 0 ? '' : currentRows.toLocaleString())
   }
 
   const handleResetRule = (column: ColumnDetail): void => {
@@ -262,13 +278,12 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <input
-                  type="number"
-                  value={rows}
-                  onChange={(e) => handleRowsChange(Number(e.target.value))}
-                  placeholder="e.g., 1,000"
+                  type="text"
+                  value={displayValue}
+                  onChange={(e) => handleDisplayValueChange(e.target.value)}
+                  onBlur={handleInputBlur}
+                  placeholder="0"
                   className="preMedium16 shadow"
-                  step="100"
-                  min={1}
                   max={50000000}
                   disabled={isFileMode}
                   style={{
@@ -427,7 +442,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
             size="md"
             style={{ width: '100%', marginTop: '8px', padding: '12px' }}
             onClick={onGenerateData}
-            disabled={!isAllReady || allWarnings.length > 0}
+            disabled={!isAllReady || allWarnings.length > 0 || rows === 0}
           >
             데이터 생성
           </Button>
