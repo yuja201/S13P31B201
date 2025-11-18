@@ -102,7 +102,8 @@ ipcMain.handle('userQueryTest:run', async (_, payload: UserQueryTestRunPayload) 
       responseTimes: executionTimes,
       stats,
       explain: explainResult,
-      warnings
+      warnings,
+      ai: []
     }
 
     const testId = insertIntoTests({
