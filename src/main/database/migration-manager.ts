@@ -2,7 +2,6 @@ import type { Database } from 'better-sqlite3'
 import fs from 'node:fs'
 import path from 'node:path'
 
-// 1) SELECT 결과 타입 정의
 interface MetaRow {
   value: string
 }
@@ -16,13 +15,34 @@ export class MigrationManager {
     this.migrationsPath = migrationsPath
   }
 
+  // 신규 설치에서만 호출됨 — 최신 버전 계산
+  public getLatestMigrationVersion(): number {
+    const files = fs.readdirSync(this.migrationsPath).filter((f) => f.endsWith('.sql'))
+
+    const versions = files.map((f) => Number(f.split('_')[0])).filter((n) => !isNaN(n))
+
+    return versions.length > 0 ? Math.max(...versions) : 1
+  }
+
+  // 신규 설치용 — schema_version 세팅
+  public setSchemaVersion(version: number): void {
+    // meta table에 값 넣기
+    this.db
+      .prepare(
+        `
+        INSERT INTO meta (key, value) VALUES ('schema_version', ?)
+        ON CONFLICT(key) DO UPDATE SET value = excluded.value;
+      `
+      )
+      .run(String(version))
+  }
+
+  // 기존 버전 읽기 (runMigrations용)
   private getCurrentVersion(): number {
     const stmt = this.db.prepare<[], MetaRow>("SELECT value FROM meta WHERE key = 'schema_version'")
-
-    // get(): MetaRow | undefined
     const row = stmt.get()
 
-    if (!row) return 1
+    if (!row) return 0
     return Number(row.value)
   }
 
@@ -36,6 +56,7 @@ export class MigrationManager {
       .run(String(version))
   }
 
+  // 기존 사용자 마이그레이션 실행
   public runMigrations(): void {
     const files = fs
       .readdirSync(this.migrationsPath)
@@ -46,9 +67,8 @@ export class MigrationManager {
 
     for (const file of files) {
       const match = file.match(/^(\d+)_/)
-      if (!match) {
-        throw new Error(`Invalid migration file name: ${file}`)
-      }
+      if (!match) throw new Error(`Invalid migration file name: ${file}`)
+
       const version = Number(match[1])
       if (version <= currentVersion) continue
 

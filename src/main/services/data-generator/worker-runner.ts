@@ -469,7 +469,9 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
         const hasInvalid = rowValues.some((v) => v === INVALID)
         if (hasInvalid) {
           if (skipInvalid) {
-            continue
+            if (!directMode) {
+              totalFailed++
+            }
           } else {
             throw new Error(
               `[행 변환 오류] ${tableName} ${totalProcessed + rowIdx + 1}행 변환 실패`
@@ -478,6 +480,10 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
         }
 
         rows.push(`(${rowValues.join(', ')})`)
+
+        if (!directMode) {
+          totalProcessed++
+        }
       }
 
       // === DIRECT_DB bulk insert + fallback ===
