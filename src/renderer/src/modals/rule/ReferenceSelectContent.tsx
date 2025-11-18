@@ -37,7 +37,10 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
   const referencedColumnName = schemaRef?.referenced_column || ''
 
   const [strategy, setStrategy] = useState<ReferenceStrategy>(() => {
-    if (initialConfig?.dataSource === 'FIXED' || initialConfig?.dataSource === 'DEFAULT') {
+    if (
+      !isUnique &&
+      (initialConfig?.dataSource === 'FIXED' || initialConfig?.dataSource === 'DEFAULT')
+    ) {
       return 'FIXED_VALUE'
     }
     return 'RANDOM_SAMPLE'
@@ -264,7 +267,7 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
                 value="FIXED_VALUE"
                 checked={strategy === 'FIXED_VALUE'}
                 onChange={() => setStrategy('FIXED_VALUE')}
-                disabled={samplePreview.status === 'empty'}
+                disabled={samplePreview.status === 'empty' || isUnique}
               />
               <div className="radio-label">
                 <span className="preSemiBold16">고정값 검색/지정</span>
@@ -298,7 +301,7 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
         )}
 
         {/* ---  고정값 선택 시: 검색 UI --- */}
-        {strategy === 'FIXED_VALUE' && (
+        {strategy === 'FIXED_VALUE' && !isUnique && (
           <div className="select-group">
             <label className="preSemiBold14">참조값 검색</label>
             <div className="search-group">
