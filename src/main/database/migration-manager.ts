@@ -83,14 +83,18 @@ export class MigrationManager {
       } catch (err) {
         this.db.exec('ROLLBACK')
         const isDuplicateColumnError =
-          err instanceof Error && err.message.includes('duplicate column name')
+          err instanceof Error && /duplicate column name/i.test(err.message)
 
         if (!isDuplicateColumnError) {
           throw err
         }
-        console.warn(`Migration for version ${version} skipped:`, err.message)
-      }
 
+        this.setVersion(version)
+        console.warn(
+          `Migration for version ${version} skipped due to duplicate column:`,
+          err.message
+        )
+      }
       currentVersion = version
     }
   }
