@@ -44,7 +44,7 @@ const TestHistoryView: React.FC = () => {
   }, [location.pathname, projectId])
 
   const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 8
+  const itemsPerPage = 9
 
   const totalItems = tests.length
   const totalPages = Math.ceil(totalItems / itemsPerPage)
@@ -249,7 +249,7 @@ const TestHistoryView: React.FC = () => {
           overflow-x: auto;
           margin-top: 32px;
           margin-bottom: 20px; 
-          height: 670px;
+          height: 700px;
         }
         .column-table {
           width: 100%;

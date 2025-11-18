@@ -67,6 +67,7 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
   const showToast = useToastStore((s) => s.showToast)
 
   const isPk = useMemo(() => column.constraints.includes('PK'), [column.constraints])
+  const isUnique = useMemo(() => column.constraints.includes('UNIQUE'), [column.constraints])
 
   const handleSelectRule = (rule: Rule): void => {
     // 선택한 rule을 부모로 전달
@@ -203,12 +204,16 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
           }
           size="small"
         />
-
+        {column.checkConstraint && (
+          <div className="check-constraint-notice">
+            ※ 참고: 이 컬럼에는 <span>{formatCheckConstraint(column.checkConstraint)}</span> CHECK 제약이 있습니다.
+          </div>
+        )}
         <hr className="rule-select__divider" />
       </div>
 
       {/* 고정값 입력 */}
-      {!isPk && (
+      {!isPk && !isUnique && (
         <div className="rule-select__section">
           <div className="relative">
             <InputField
@@ -229,24 +234,17 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
             />
             {column.checkConstraint && (
               <div
-                className={` constraint-helper
-              ${isCheckValid === null && 'notice'}
-              ${isCheckValid === true && 'success'}
-              ${isCheckValid === false && 'error'}`}
+                className={`check-validation-message ${isCheckValid === true ? 'success' : isCheckValid === false ? 'error' : 'hidden'
+                  }`}
               >
-                {isCheckValid === null && (
-                  <>※ 참고: {formatCheckConstraint(column.checkConstraint)}</>
-                )}
-                {isCheckValid === true && <> 제약 조건을 만족합니다.</>}
-                {isCheckValid === false && (
-                  <> {formatCheckConstraint(column.checkConstraint)}을(를) 위반합니다.</>
-                )}
+                {isCheckValid === true && '✓ 제약 조건을 만족합니다.'}
+                {isCheckValid === false &&
+                  `✗ ${formatCheckConstraint(column.checkConstraint)}을(를) 위반합니다.`}
               </div>
             )}
           </div>
         </div>
       )}
-
       {/* 이전 설정 */}
       <div className="rule-select__section">
         <div className="rule-select__section-header">
@@ -282,7 +280,7 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
         <Button variant="gray" onClick={onCancel}>
           취소
         </Button>
-        {!isPk && (
+        {!isPk && !isUnique && (
           <Button variant="orange" onClick={handleConfirmFixed} disabled={isCheckValid === false}>
             확인
           </Button>
@@ -323,24 +321,33 @@ const RuleSelectContent: React.FC<RuleSelectContentProps> = ({
           box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.2) !important;
         }
 
-        .constraint-helper {
+        .check-constraint-notice {
+          background-color: var(--color-light-yellow);
+          border: 1px solid var(--color-orange);
+          border-radius: 8px;
+          padding: 10px 12px;
           font: var(--preRegular14);
-          padding: 6px 12px;
-          margin-top: 8px; 
-          border-radius: 6px;
-          transition: all 0.2s ease;
+          color: var(--color-dark-gray);
+          margin-top: 16px;
         }
-        .constraint-helper.notice {
-          color: #A16207; 
-          background-color: #FEFCE8; 
+        .check-constraint-notice span {
+          font-weight: var(--fw-semiBold);
+          color: var(--color-black);
         }
-        .constraint-helper.success {
-          color: #166534; 
+        .check-validation-message {
+          font-size: 13px;
+          margin-top: 8px;
+          padding-left: 4px;
+          height: 18px;
         }
-        .constraint-helper.error {
-          color: #991B1B;
-          background-color: #FEF2F2;
-          font-weight: var(--fw-medium);
+        .check-validation-message.hidden {
+          visibility: hidden;
+        }
+        .check-validation-message.success {
+          color: #16a34a;
+        }
+        .check-validation-message.error {
+          color: #dc2626;
         }
 
         .rule-select__section {

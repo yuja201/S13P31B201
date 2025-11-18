@@ -184,7 +184,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
       <div className="table-detail-container shadow">
         {/* --- 상세 헤더 --- */}
         <div className="detail-header shadow">
-          <h2 className="preBold24">{table.name}</h2>
+          <h2 className="preBold20">{table.name}</h2>
           <span className="preRegular14">
             {table.columns} columns · {table.rows} row
           </span>
