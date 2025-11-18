@@ -155,6 +155,11 @@ interface API {
       checkConstraint: string
       columnName: string
     }) => Promise<boolean>
+    getUniqueValueCount: (params: {
+      databaseId: number
+      table: string
+      column: string
+    }) => Promise<{ count: number }>
   }
 
   /* ======================= FILE ======================= */

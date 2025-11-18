@@ -42,7 +42,7 @@ const parseCheckInValues = (checkConstraint: string): string[] => {
 
   const valuesString = inMatch[1];
   const values: string[] = [];
-  const regex = /'([^']*(?:''[^']*)*)'|"([^"]*(?:""[^"]*)*)"|([^,\s]+)/g;
+  const regex = /'([^']*(?:''[^']*)*)'|"([^"]*(?:""[^']*)*)"|([^,\s]+)/g;
   let match;
   while ((match = regex.exec(valuesString)) !== null) {
     const value = (match[1] || match[2] || match[3]).replace(/''/g, "'").replace(/""/g, '"');

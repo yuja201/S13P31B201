@@ -289,3 +289,68 @@ ipcMain.handle(
     }
   }
 )
+
+// 참조 테이블의 고유값 개수 세는 핸들러
+ipcMain.handle(
+  'schema:getUniqueValueCount',
+  async (
+    _event,
+    { databaseId, table, column }: { databaseId: number; table: string; column: string }
+  ): Promise<{ count: number }> => {
+    try {
+      const config = getConnectionConfig(databaseId)
+      const dbmsName = config.dbType
+      let count = 0
+
+      const isValidIdentifier = (name: string) => /^[A-Za-z0-9_]+$/.test(name)
+      if (!isValidIdentifier(table) || !isValidIdentifier(column)) {
+        throw new Error(`Invalid table or column name: ${table}, ${column}`)
+      }
+
+      if (dbmsName === 'MySQL') {
+        const connection = await (
+          await import('mysql2/promise')
+        ).createConnection({
+          host: config.host,
+          port: config.port,
+          user: config.username,
+          password: config.password,
+          database: config.database
+        })
+        try {
+          const [rows] = await connection.execute(
+            `SELECT COUNT(DISTINCT \`${column}\`) as count FROM \`${table}\``
+          )
+          count = (rows as any[])[0].count
+        } finally {
+          await connection.end()
+        }
+      } else if (dbmsName === 'PostgreSQL') {
+        // PostgreSQL
+        const { Client } = await import('pg')
+        const client = new Client({
+          host: config.host,
+          port: config.port,
+          user: config.username,
+          password: config.password,
+          database: config.database
+        })
+        await client.connect()
+        try {
+          const res = await client.query(
+            `SELECT COUNT(DISTINCT "${column}") as count FROM "${table}"`
+          )
+          count = parseInt(res.rows[0].count, 10)
+        } finally {
+          await client.end()
+        }
+      } else {
+        throw new Error(`Unsupported database type: ${dbmsName}`)
+      }
+      return { count }
+    } catch (error) {
+      logger.error('Failed to get unique value count:', error)
+      throw error
+    }
+  }
+)

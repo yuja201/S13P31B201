@@ -29,16 +29,20 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
   const showToast = useToastStore((s) => s.showToast)
 
   const databaseId = selectedProject?.database?.id
-  const isUnique = useMemo(() => column.constraints.includes('UNIQUE'), [column])
+  const isEffectivelyUnique = useMemo(
+    () => column.constraints.includes('UNIQUE') || column.constraints.includes('PK'),
+    [column.constraints]
+  )
 
   // --- FK 참조 정보 ---
   const schemaRef = useMemo(() => column.foreignKeys?.[0], [column.foreignKeys])
   const referencedTableName = schemaRef?.referenced_table || ''
   const referencedColumnName = schemaRef?.referenced_column || ''
+  const [refColCount, setRefColCount] = useState<number | null>(null);
 
   const [strategy, setStrategy] = useState<ReferenceStrategy>(() => {
     if (
-      !isUnique &&
+      !isEffectivelyUnique &&
       (initialConfig?.dataSource === 'FIXED' || initialConfig?.dataSource === 'DEFAULT')
     ) {
       return 'FIXED_VALUE'
@@ -132,11 +136,28 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
         setValidationState('invalid') // DB 에러 발생 시 'invalid'로 처리
       })
   }
-
+  useEffect(() => {
+    console.log('[DEBUG] Strategy state changed to:', strategy);
+  }, [strategy]);
   // 검색창 값이 바뀔 때마다 검증 상태 초기화
   useEffect(() => {
     setValidationState('idle')
   }, [searchValue])
+
+  useEffect(() => {
+    if (databaseId && referencedTableName && referencedColumnName) {
+      window.api.schema.getUniqueValueCount({
+        databaseId,
+        table: referencedTableName,
+        column: referencedColumnName
+      }).then(result => {
+        setRefColCount(result.count);
+      }).catch(err => {
+        console.error('Failed to get unique value count:', err);
+      });
+    }
+  }, [databaseId, referencedTableName, referencedColumnName]);
+
 
   // 저장 로직
   const handleSave = (): void => {
@@ -156,7 +177,8 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
           refColumn: referencedColumnName,
           previewValue: samplePreview.value,
           fixedValue: samplePreview.value,
-          ensureUnique: isUnique
+          ensureUnique: isEffectivelyUnique,
+          refColCount: refColCount
         }
       })
     } else {
@@ -249,16 +271,16 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
               />
               <div className="radio-label">
                 <span className="preSemiBold16">
-                  {isUnique ? '고유값 샘플링 (Unique Sampling)' : '무작위 샘플링 (권장)'}
+                  {isEffectivelyUnique ? '고유값 샘플링 (Unique Sampling)' : '무작위 샘플링 (권장)'}
                 </span>
                 <span className="preRegular14">
-                  {referencedTableName} 테이블의 값 중 {isUnique ? '중복 없이' : '무작위'}
+                  {referencedTableName} 테이블의 값 중 {isEffectivelyUnique ? '중복 없이' : '무작위'}
                   선택
                 </span>
               </div>
             </label>
             {/* 옵션 2: 고정값 */}
-            {!isUnique && (
+            {!isEffectivelyUnique && (
               <label
                 className={`radio-option ${strategy === 'FIXED_VALUE' ? 'selected' : ''} ${samplePreview.status === 'empty' ? 'disabled' : ''}`}
               >
@@ -268,7 +290,7 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
                   value="FIXED_VALUE"
                   checked={strategy === 'FIXED_VALUE'}
                   onChange={() => setStrategy('FIXED_VALUE')}
-                  disabled={samplePreview.status === 'empty' || isUnique}
+                  disabled={samplePreview.status === 'empty' || isEffectivelyUnique}
                 />
                 <div className="radio-label">
                   <span className="preSemiBold16">고정값 검색/지정</span>
@@ -299,7 +321,7 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
         )}
 
         {/* ---  고정값 선택 시: 검색 UI --- */}
-        {strategy === 'FIXED_VALUE' && !isUnique && (
+        {strategy === 'FIXED_VALUE' && !isEffectivelyUnique && (
           <div className="select-group">
             <label className="preSemiBold14">참조값 검색</label>
             <div className="search-group">
