@@ -180,5 +180,3 @@ INSERT OR IGNORE INTO domains (id, category_id, name, description, logical_type)
   (54, 14, '노래 이름', '랜덤 노래 제목', 'string'),
   (55, 14, '동물 이름', '동물 이름', 'string');
 `
-// 초기 스키마 버전 설정
-export const insertInitialSchemaVersion = `INSERT OR IGNORE INTO meta (key, value) VALUES ('schema_version', '1');`
