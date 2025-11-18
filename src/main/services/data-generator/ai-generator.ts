@@ -1,4 +1,7 @@
-import { createAIGateway } from '@main/services/ai/ai-factory'
+import { AIGateway } from '@main/services/ai/ai-client'
+import { OpenAIAdapter } from '@main/services/ai/openai-adapter'
+import { AnthropicAdapter } from '@main/services/ai/anthropic-adapter'
+import { GoogleAdapter } from '@main/services/ai/google-adapter'
 import {
   AIGenRequest,
   AIGenResult,
@@ -11,6 +14,24 @@ import { getDomainGuideline } from './domain-config'
 import { buildAjvValidator, enforceUniqueness, parseValuesArray } from '../../utils/validators'
 import { resolveModel } from '../ai/model-map'
 import type { Column as SchemaColumn, Table } from '../../database/types'
+
+type AIVendor = 'openai' | 'anthropic' | 'google'
+
+/**
+ * AI Gateway 팩토리
+ * 환경변수에서 설정을 자동으로 로드하여 어댑터 생성
+ */
+function createAIGateway(vendor: AIVendor): AIGateway {
+  switch (vendor) {
+    case 'anthropic':
+      return new AnthropicAdapter()
+    case 'google':
+      return new GoogleAdapter()
+    case 'openai':
+    default:
+      return new OpenAIAdapter()
+  }
+}
 
 /**
  * AI 스트림 생성 요청 파라미터
