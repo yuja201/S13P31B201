@@ -195,7 +195,6 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
   // ------------------------
   // 컬럼 규칙 저장
   setColumnRule: (tableName, columnName, rule) => {
-    console.log('[DEBUG] generationStore received rule:', JSON.stringify(rule, null, 2))
     let dataSource: DataSourceType
     let metaData: ColumnMetaData
 
@@ -283,7 +282,6 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
       dataSource,
       metaData
     }
-    console.log('[DEBUG] generationStore saving newConfig:', JSON.stringify(newConfig, null, 2))
 
     set((state) => {
       const existingTable = state.tables[tableName] || {

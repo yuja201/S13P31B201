@@ -111,8 +111,6 @@ export async function runDataGenerator(
 
     const workerPath = path.join(baseDir, 'out', 'main', 'worker-runner.js')
 
-    console.log('[DEBUG] data-generator-service creating task:', JSON.stringify(task, null, 2))
-
     const child = spawn('node', [workerPath], {
       stdio: ['pipe', 'pipe', 'pipe'],
       env: {

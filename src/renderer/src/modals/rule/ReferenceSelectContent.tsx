@@ -179,7 +179,6 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
           refColCount: refColCount
         }
       }
-      console.log('[DEBUG] ReferenceSelectContent sending:', JSON.stringify(ruleSelection, null, 2))
       onConfirm(ruleSelection)
     } else {
       if (validationState !== 'valid') {
@@ -191,7 +190,6 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
         dataSource: 'FIXED',
         metaData: { fixedValue: searchValue }
       }
-      console.log('[DEBUG] ReferenceSelectContent sending:', JSON.stringify(ruleSelection, null, 2))
       onConfirm(ruleSelection)
     }
   }
