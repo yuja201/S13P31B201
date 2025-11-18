@@ -38,6 +38,7 @@ function createColumnStream(
 ): AsyncGenerator<string | null | undefined> {
   const { projectId, table, schema, database, rules } = task
   const { tableName } = table
+
   const dataSource = col.dataSource as DataSourceType
 
   switch (dataSource) {
@@ -61,6 +62,7 @@ function createColumnStream(
         recordCnt,
         metaData: meta,
         domainName: rule.domain_name,
+        locale: rule.locale ?? 'en',
         schema
       })
     }
@@ -261,6 +263,10 @@ function convertValue(
     } catch {
       return INVALID
     }
+  }
+
+  if (!type || type.includes('char') || type.includes('text')) {
+    return `'${s.replace(/'/g, "''")}'`
   }
 
   // 일반 문자열

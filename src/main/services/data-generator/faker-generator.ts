@@ -1,7 +1,12 @@
-import { faker, Faker } from '@faker-js/faker'
 import { fakerMapper } from '../../utils/faker-mapper'
 import type { FakerMetaData } from '@shared/types'
 import type { Table, Column as SchemaColumn } from '../../database/types'
+import { Faker, fakerEN, fakerKO } from '@faker-js/faker'
+
+const LOCALE_FAKERS = {
+  en: fakerEN,
+  ko: fakerKO
+} as const
 
 /**
  * Faker 생성 요청 파라미터
@@ -13,6 +18,7 @@ export interface FakerGenerateRequest {
   recordCnt: number
   metaData: FakerMetaData
   domainName: string
+  locale: string
   schema: Table[]
 }
 
@@ -75,6 +81,7 @@ export async function* generateFakeStream({
   recordCnt,
   schema,
   domainName,
+  locale,
   metaData
 }: FakerGenerateRequest): AsyncGenerator<string, void, unknown> {
   // 스키마에서 테이블/컬럼 찾기
@@ -84,6 +91,8 @@ export async function* generateFakeStream({
   const sqlType = column?.type ?? 'VARCHAR(255)'
   const { min, max, maxLength } = column ? extractSimpleConstraints(sqlType, column) : {}
 
+  const localeKey = locale ?? 'en'
+  const faker = LOCALE_FAKERS[localeKey] ?? LOCALE_FAKERS.en
   // faker 경로 매핑
   const fakerPath = fakerMapper[domainName]
   if (!fakerPath) {

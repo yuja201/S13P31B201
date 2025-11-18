@@ -7,6 +7,8 @@ import {
   insertDefaultDomainCategories,
   insertDefaultDomainData
 } from './schema'
+import { MigrationManager } from './migration-manager'
+import fs from 'node:fs'
 
 let db: Database.Database | null = null
 
@@ -34,6 +36,15 @@ export function initDatabase(): Database.Database {
   // FK 제약조건 활성화
   db.pragma('foreign_keys = ON')
 
+  // meta 테이블 생성
+  db.exec(`
+  CREATE TABLE IF NOT EXISTS meta (
+    key TEXT PRIMARY KEY,
+    value TEXT
+  );
+  INSERT OR IGNORE INTO meta (key, value) VALUES ('schema_version', '1');
+`)
+
   // 데이터베이스 스키마 생성
   db.exec(createTablesSQL)
   try {
@@ -55,6 +66,25 @@ export function initDatabase(): Database.Database {
   // 도메인 종류 저장
   db.exec(insertDefaultDomainCategories)
   db.exec(insertDefaultDomainData)
+
+  // migration 실행 경로 자동 분기
+  let migrationsPath: string
+
+  if (!app.isPackaged) {
+    // dev 환경 — src 직접 읽음
+    migrationsPath = path.join(process.cwd(), 'src', 'main', 'database', 'migrations')
+  } else {
+    // build 환경 — electron-builder가 복사한 폴더
+    migrationsPath = path.join(process.resourcesPath, 'migrations')
+  }
+
+  // 폴더 존재 여부 확인 (안전)
+  if (!fs.existsSync(migrationsPath)) {
+    console.warn('[Migration] migrations folder not found:', migrationsPath)
+  } else {
+    const migrationManager = new MigrationManager(db, migrationsPath)
+    migrationManager.runMigrations()
+  }
 
   return db
 }
