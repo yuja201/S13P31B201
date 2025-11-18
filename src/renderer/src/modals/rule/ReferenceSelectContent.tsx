@@ -258,26 +258,24 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
               </div>
             </label>
             {/* 옵션 2: 고정값 */}
-            <label
-              className={`radio-option ${strategy === 'FIXED_VALUE' ? 'selected' : ''} ${samplePreview.status === 'empty' ? 'disabled' : ''}`}
-            >
-              <input
-                type="radio"
-                name="ref-strategy"
-                value="FIXED_VALUE"
-                checked={strategy === 'FIXED_VALUE'}
-                onChange={() => setStrategy('FIXED_VALUE')}
-                disabled={samplePreview.status === 'empty' || isUnique}
-              />
-              <div className="radio-label">
-                <span className="preSemiBold16">고정값 검색/지정</span>
-                <span className="preRegular14">
-                  {isUnique
-                    ? 'UNIQUE 컬럼에는 고정값을 사용할 수 없습니다.'
-                    : '참조할 특정 값을 검색하여 지정'}
-                </span>
-              </div>
-            </label>
+            {!isUnique && (
+              <label
+                className={`radio-option ${strategy === 'FIXED_VALUE' ? 'selected' : ''} ${samplePreview.status === 'empty' ? 'disabled' : ''}`}
+              >
+                <input
+                  type="radio"
+                  name="ref-strategy"
+                  value="FIXED_VALUE"
+                  checked={strategy === 'FIXED_VALUE'}
+                  onChange={() => setStrategy('FIXED_VALUE')}
+                  disabled={samplePreview.status === 'empty' || isUnique}
+                />
+                <div className="radio-label">
+                  <span className="preSemiBold16">고정값 검색/지정</span>
+                  <span className="preRegular14">참조할 특정 값을 검색하여 지정</span>
+                </div>
+              </label>
+            )}
           </div>
         </div>
 
