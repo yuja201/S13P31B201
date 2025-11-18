@@ -14,7 +14,7 @@ const MainLayout: React.FC = () => {
 
   useEffect(() => {
     if (projectId) {
-      ; (async () => {
+      ;(async () => {
         try {
           await selectProjectById(projectId)
         } catch (error) {
@@ -75,7 +75,7 @@ const MainLayout: React.FC = () => {
         flex-direction: column;
         overflow-y: auto;
         background-color: var(--color-background);
-        padding: 100px 80px;
+        padding: 80px;
         min-width: 1180px;
       }
 
