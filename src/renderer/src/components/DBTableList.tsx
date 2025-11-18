@@ -53,7 +53,7 @@ const DBTableList: React.FC<DBTableListProps> = ({
       <div className="table-list-container shadow">
         {/* --- 테이블 목록 헤더 --- */}
         <div className="list-header">
-          <h3 className="preSemiBold20">테이블 목록</h3>
+          <h3 className="preSemiBold18">테이블 목록</h3>
           <div className="list-header-actions">
             <span className="preRegular14">{filteredTables.length} tables</span>
           </div>
@@ -198,7 +198,6 @@ const DBTableList: React.FC<DBTableListProps> = ({
         }
         .list-header span {
           color: var(--color-dark-gray);
-          padding: 4px;
         }
         .search-bar {
           width: 100%;
