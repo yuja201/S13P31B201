@@ -36,15 +36,6 @@ export function initDatabase(): Database.Database {
   // FK 제약조건 활성화
   db.pragma('foreign_keys = ON')
 
-  // meta 테이블 생성
-  db.exec(`
-  CREATE TABLE IF NOT EXISTS meta (
-    key TEXT PRIMARY KEY,
-    value TEXT
-  );
-  INSERT OR IGNORE INTO meta (key, value) VALUES ('schema_version', '1');
-`)
-
   // 데이터베이스 스키마 생성
   db.exec(createTablesSQL)
   try {

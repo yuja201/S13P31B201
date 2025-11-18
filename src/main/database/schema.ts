@@ -61,6 +61,7 @@ CREATE TABLE IF NOT EXISTS rules (
   domain_id INTEGER NOT NULL,
   model_id NUMERIC,
   prompt TEXT,
+  locale TEXT,
   created_at NUMERIC NOT NULL DEFAULT (strftime('%s', 'now')),
   updated_at NUMERIC NOT NULL DEFAULT (strftime('%s', 'now')),
   FOREIGN KEY (domain_id) REFERENCES domains(id) ON DELETE CASCADE
@@ -78,6 +79,12 @@ CREATE TABLE IF NOT EXISTS tests (
   response_time REAL,
   index_ratio REAL,
   FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+);
+
+-- 메타 정보 테이블
+CREATE TABLE IF NOT EXISTS meta (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
 );
 
 -- 인덱스 생성
@@ -173,3 +180,5 @@ INSERT OR IGNORE INTO domains (id, category_id, name, description, logical_type)
   (54, 14, '노래 이름', '랜덤 노래 제목', 'string'),
   (55, 14, '동물 이름', '동물 이름', 'string');
 `
+// 초기 스키마 버전 설정
+export const insertInitialSchemaVersion = `INSERT OR IGNORE INTO meta (key, value) VALUES ('schema_version', '1');`

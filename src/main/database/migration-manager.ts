@@ -22,7 +22,7 @@ export class MigrationManager {
     // get(): MetaRow | undefined
     const row = stmt.get()
 
-    if (!row) return 1
+    if (!row) return 0
     return Number(row.value)
   }
 
