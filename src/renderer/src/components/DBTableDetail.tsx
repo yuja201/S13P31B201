@@ -97,9 +97,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
 
     onColumnUpdate(selectedColumn.name, result.generation, result.setting)
     closeRuleModal()
-
   }
-
 
   // ----------------------------
   // Input handlers
@@ -250,7 +248,6 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
     }
     return warnings
   }, [hasMissing, warningMessage, uniqueRefWarningColumnName, columnConfigs])
-
 
   return (
     <>

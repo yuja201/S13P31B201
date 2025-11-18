@@ -195,6 +195,7 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
   // ------------------------
   // 컬럼 규칙 저장
   setColumnRule: (tableName, columnName, rule) => {
+    console.log('[DEBUG] generationStore received rule:', JSON.stringify(rule, null, 2))
     let dataSource: DataSourceType
     let metaData: ColumnMetaData
 
@@ -224,12 +225,12 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
       case 'FIXED':
       case 'ENUM': {
         const fixedValue = rule.metaData.fixedValue
-        if (typeof fixedValue !== 'string') {
-          console.warn(`유효하지 않은 고정값: ${fixedValue}`)
+        if (fixedValue == null) {
+          console.warn(`고정값이 없습니다: ${fixedValue}`)
           return
         }
         dataSource = 'FIXED'
-        metaData = { kind: 'fixed', fixedValue }
+        metaData = { kind: 'fixed', fixedValue: String(fixedValue) }
         break
       }
 
@@ -277,17 +278,18 @@ export const useGenerationStore = create<GenerationState>((set, get) => ({
         return
     }
 
+    const newConfig: ColumnConfig = {
+      columnName,
+      dataSource,
+      metaData
+    }
+    console.log('[DEBUG] generationStore saving newConfig:', JSON.stringify(newConfig, null, 2))
+
     set((state) => {
       const existingTable = state.tables[tableName] || {
         tableName,
         recordCnt: 0,
         columns: {}
-      }
-
-      const newConfig: ColumnConfig = {
-        columnName,
-        dataSource,
-        metaData
       }
 
       return {

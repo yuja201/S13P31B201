@@ -38,7 +38,7 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
   const schemaRef = useMemo(() => column.foreignKeys?.[0], [column.foreignKeys])
   const referencedTableName = schemaRef?.referenced_table || ''
   const referencedColumnName = schemaRef?.referenced_column || ''
-  const [refColCount, setRefColCount] = useState<number | null>(null);
+  const [refColCount, setRefColCount] = useState<number | null>(null)
 
   const [strategy, setStrategy] = useState<ReferenceStrategy>(() => {
     if (
@@ -136,9 +136,6 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
         setValidationState('invalid') // DB 에러 발생 시 'invalid'로 처리
       })
   }
-  useEffect(() => {
-    console.log('[DEBUG] Strategy state changed to:', strategy);
-  }, [strategy]);
   // 검색창 값이 바뀔 때마다 검증 상태 초기화
   useEffect(() => {
     setValidationState('idle')
@@ -146,18 +143,20 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
 
   useEffect(() => {
     if (databaseId && referencedTableName && referencedColumnName) {
-      window.api.schema.getUniqueValueCount({
-        databaseId,
-        table: referencedTableName,
-        column: referencedColumnName
-      }).then(result => {
-        setRefColCount(result.count);
-      }).catch(err => {
-        console.error('Failed to get unique value count:', err);
-      });
+      window.api.schema
+        .getUniqueValueCount({
+          databaseId,
+          table: referencedTableName,
+          column: referencedColumnName
+        })
+        .then((result) => {
+          setRefColCount(result.count)
+        })
+        .catch((err) => {
+          console.error('Failed to get unique value count:', err)
+        })
     }
-  }, [databaseId, referencedTableName, referencedColumnName]);
-
+  }, [databaseId, referencedTableName, referencedColumnName])
 
   // 저장 로직
   const handleSave = (): void => {
@@ -169,28 +168,31 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
           '샘플링 오류'
         )
       }
-      onConfirm({
+      const ruleSelection: RuleSelection = {
         columnName: column.name,
         dataSource: 'REFERENCE',
         metaData: {
           refTable: referencedTableName,
           refColumn: referencedColumnName,
           previewValue: samplePreview.value,
-          fixedValue: samplePreview.value,
           ensureUnique: isEffectivelyUnique,
           refColCount: refColCount
         }
-      })
+      }
+      console.log('[DEBUG] ReferenceSelectContent sending:', JSON.stringify(ruleSelection, null, 2))
+      onConfirm(ruleSelection)
     } else {
       if (validationState !== 'valid') {
         showToast('유효한 값을 입력하고 "검증하기"를 완료해야 합니다.', 'warning', '검증 필요')
         return
       }
-      onConfirm({
+      const ruleSelection: RuleSelection = {
         columnName: column.name,
         dataSource: 'FIXED',
         metaData: { fixedValue: searchValue }
-      })
+      }
+      console.log('[DEBUG] ReferenceSelectContent sending:', JSON.stringify(ruleSelection, null, 2))
+      onConfirm(ruleSelection)
     }
   }
 
@@ -226,7 +228,8 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
       />
       {column.checkConstraint && (
         <div className="check-constraint-notice">
-          ※ 참고: 이 컬럼에는 <span>{formatCheckConstraint(column.checkConstraint)}</span> CHECK 제약이 있습니다.
+          ※ 참고: 이 컬럼에는 <span>{formatCheckConstraint(column.checkConstraint)}</span> CHECK
+          제약이 있습니다.
         </div>
       )}
       <div className="divider" />
@@ -274,7 +277,8 @@ const ReferenceSelectContent: React.FC<ReferenceSelectContentProps> = ({
                   {isEffectivelyUnique ? '고유값 샘플링 (Unique Sampling)' : '무작위 샘플링 (권장)'}
                 </span>
                 <span className="preRegular14">
-                  {referencedTableName} 테이블의 값 중 {isEffectivelyUnique ? '중복 없이' : '무작위'}
+                  {referencedTableName} 테이블의 값 중{' '}
+                  {isEffectivelyUnique ? '중복 없이' : '무작위'}
                   선택
                 </span>
               </div>

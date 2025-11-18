@@ -12,7 +12,7 @@ export async function* generateReferenceStream({
   recordCnt,
   metaData,
   connectionConfig
-}: ReferenceGenerateRequest): AsyncGenerator<string, void, unknown> {
+}: ReferenceGenerateRequest): AsyncGenerator<string | null, void, unknown> {
   const { refTable, refColumn, ensureUnique } = metaData
 
   if (ensureUnique) {
@@ -35,7 +35,6 @@ export async function* generateReferenceStream({
     }
   } else {
     // --- 고유값 보장이 필요 없는 경우 ---
-    // (성능을 위해 한 번에 가져오거나, 한 개씩 가져오는 방식 선택 가능)
     const samples = await fetchReferenceRandomSamples(
       connectionConfig,
       refTable,
@@ -43,8 +42,18 @@ export async function* generateReferenceStream({
       recordCnt
     )
 
-    for (const row of samples) {
-      yield String(row[refColumn])
+    // 참조 테이블이 비어있으면 값을 생성할 수 없음
+    if (samples.length === 0) {
+      for (let i = 0; i < recordCnt; i++) {
+        yield null
+      }
+      return
+    }
+
+    // 가져온 샘플을 재활용하여 요청된 개수만큼 생성
+    for (let i = 0; i < recordCnt; i++) {
+      const randomRow = samples[i % samples.length]
+      yield String(randomRow[refColumn])
     }
   }
 }

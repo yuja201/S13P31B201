@@ -54,6 +54,7 @@ const RuleModal: React.FC<RuleModalProps> = ({
   }
 
   const handleConfirmSelect = (value: RuleSelection): void => {
+    console.log('[DEBUG] RuleModal received:', JSON.stringify(value, null, 2))
     if (tableName) {
       setRule(tableName, column.name, value)
     }
