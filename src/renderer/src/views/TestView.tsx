@@ -189,6 +189,7 @@ const TestView: React.FC = () => {
             unit="ms"
             currentPrefix="최근 응답"
             showUnitAfterTotal
+            reversed={true}
           />
         </div>
       </section>

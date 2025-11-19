@@ -9,9 +9,10 @@ interface TestSummaryCardProps {
   changePercent: number
   data: { name: string; value: number }[]
   positive?: boolean
-  unit?: string // "번", "%", "ms" 등
-  currentPrefix?: string // "이번 주", "최근 개선율" 등
+  unit?: string
+  currentPrefix?: string
   showUnitAfterTotal?: boolean
+  reversed?: boolean
 }
 
 const TestSummaryCard: React.FC<TestSummaryCardProps> = ({
@@ -24,11 +25,22 @@ const TestSummaryCard: React.FC<TestSummaryCardProps> = ({
   positive = true,
   unit = '번',
   currentPrefix = '이번 주',
-  showUnitAfterTotal = true
+  showUnitAfterTotal = true,
+  reversed = false
 }) => {
   const formattedChangePercent = Math.abs(changePercent)
   const sign = positive ? '+' : '-'
-  const color = positive ? '#10b981' : '#ef4444'
+
+  const color = (() => {
+    const upColor = '#10b981'
+    const downColor = '#ef4444'
+
+    if (!reversed) {
+      return positive ? upColor : downColor
+    } else {
+      return positive ? downColor : upColor
+    }
+  })()
 
   const gradientId = `stats-card-gradient-${title.replace(/\s+/g, '-')}`
 
@@ -52,11 +64,7 @@ const TestSummaryCard: React.FC<TestSummaryCardProps> = ({
               {unit}
             </div>
 
-            <div
-              className={`stats-card__percent ${
-                positive ? 'stats-card__percent--up' : 'stats-card__percent--down'
-              }`}
-            >
+            <div className="stats-card__percent" style={{ color }}>
               {sign}
               {formattedChangePercent}% 지난 주 대비
             </div>
