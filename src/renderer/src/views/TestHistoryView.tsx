@@ -181,7 +181,7 @@ const TestHistoryView: React.FC = () => {
                     <td>
                       <span className={`badge badge-${test.type.toLowerCase()}`}>{test.type}</span>
                     </td>
-                    <td>{test.summary || '요약 없음'}</td>
+                    <td className="summary-cell">{test.summary || '요약 없음'}</td>
                     <td>{resultSummary}</td>
                     <td>
                       {(() => {
@@ -244,12 +244,9 @@ const TestHistoryView: React.FC = () => {
         }
         .table-scroll-wrapper {
           flex-grow: 1; 
-          overflow-y: auto; 
           min-height: 0; 
-          overflow-x: auto;
           margin-top: 32px;
           margin-bottom: 20px; 
-          height: 700px;
         }
         .column-table {
           width: 100%;
@@ -264,7 +261,7 @@ const TestHistoryView: React.FC = () => {
           overflow-y: hidden;
         }
         .column-table tr {
-          display: table; /* display: table을 사용해 너비 계산을 유지 */
+          display: table; 
           width: 100%;
           table-layout: fixed;
         }
@@ -371,7 +368,12 @@ const TestHistoryView: React.FC = () => {
           opacity: 0.5;
           cursor: not-allowed;
         }
-        
+        .column-table td.summary-cell {
+          max-width: 200px; /* Adjust as needed */
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+        }
       `}</style>
     </>
   )
