@@ -111,14 +111,10 @@ export const Checkbox: React.FC<CheckboxProps> = ({ label, size = 'md', ...props
 
         /* disabled 상태 */
         .checkbox__input:disabled + .checkbox__box {
-          background-color: var(--color-placeholder);
-          border-color: var(--color-placeholder);
           cursor: not-allowed;
-          opacity: 0.6;
         }
 
         .checkbox__input:disabled ~ .checkbox__label {
-          color: var(--color-placeholder);
           cursor: not-allowed;
         }
       `}</style>
