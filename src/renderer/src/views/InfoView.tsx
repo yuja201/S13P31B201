@@ -7,6 +7,7 @@ import RadioButton from '@renderer/components/RadioButton'
 import { useToastStore } from '@renderer/stores/toastStore'
 import { useProjectStore } from '@renderer/stores/projectStore'
 import { useSchemaStore } from '@renderer/stores/schemaStore'
+import { useDebounce } from 'use-debounce'
 
 interface ProjectInfo {
   projectName: string
@@ -41,26 +42,77 @@ const InfoView: React.FC = () => {
   const [selected, setSelected] = useState('MySQL')
   const [isConnectionTested, setIsConnectionTested] = useState(false)
   const [isTestingConnection, setIsTestingConnection] = useState(false)
+  const projects = useProjectStore((state) => state.projects)
+  const [nameFeedback, setNameFeedback] = useState<string | null>(null)
+  const [isNameAvailable, setIsNameAvailable] = useState<boolean>(true)
+  const [debouncedProjectName] = useDebounce(formData.projectName, 500)
+  const [initialDbConfig, setInitialDbConfig] = useState<{
+    dbType: 'MySQL' | 'PostgreSQL'
+    host: string
+    port: string
+    username: string
+    password: string
+    databaseName: string
+  } | null>(null)
 
   useEffect(() => {
     if (selectedProject && selectedProject.database) {
       const [host, port] = selectedProject.database.url.split(':')
-      const dbType = selectedProject.dbms?.name === 'PostgreSQL' ? 'PostgreSQL' : 'MySQL'
+      const dbType: 'MySQL' | 'PostgreSQL' =
+        selectedProject.dbms?.name === 'PostgreSQL' ? 'PostgreSQL' : 'MySQL'
+
+      const dbConfig = {
+        dbType,
+        host,
+        port,
+        username: selectedProject.database.username,
+        password: selectedProject.database.password,
+        databaseName: selectedProject.database.database_name
+      }
 
       setFormData({
         projectName: selectedProject.name,
         description: selectedProject.description,
-        dbType: dbType,
-        host: host,
-        port: port,
-        username: selectedProject.database.username,
-        password: selectedProject.database.password,
-        databaseName: selectedProject.database.database_name
+        ...dbConfig
       })
 
+      setInitialDbConfig(dbConfig)
       setSelected(dbType)
+      setIsNameAvailable(true)
+      setNameFeedback(null)
+      setIsConnectionTested(true)
     }
   }, [selectedProject])
+
+  useEffect(() => {
+    if (!selectedProject) return
+
+    if (debouncedProjectName.trim() === '') {
+      setNameFeedback(null)
+      setIsNameAvailable(false)
+      return
+    }
+
+    if (debouncedProjectName.trim().toLowerCase() === selectedProject.name.trim().toLowerCase()) {
+      setNameFeedback(null)
+      setIsNameAvailable(true)
+      return
+    }
+
+    const isDuplicate = projects.some(
+      (p) =>
+        p.id !== selectedProject.id &&
+        p.name.toLowerCase() === debouncedProjectName.trim().toLowerCase()
+    )
+
+    if (isDuplicate) {
+      setNameFeedback('이미 존재하는 프로젝트명입니다.')
+      setIsNameAvailable(false)
+    } else {
+      setNameFeedback('사용 가능한 프로젝트명입니다.')
+      setIsNameAvailable(true)
+    }
+  }, [debouncedProjectName, projects, selectedProject])
 
   const validateRequiredFields = (): boolean => {
     const required: [keyof ProjectInfo, string][] = [
@@ -113,6 +165,11 @@ const InfoView: React.FC = () => {
   }
 
   const handleInputChange = (field: keyof ProjectInfo, value: string): void => {
+    if (field === 'projectName') {
+      setNameFeedback(null)
+      setIsNameAvailable(false)
+    }
+
     if (field !== 'projectName' && field !== 'description') {
       setIsConnectionTested(false)
     }
@@ -126,13 +183,37 @@ const InfoView: React.FC = () => {
   const handleSubmit = async (): Promise<void> => {
     if (!validateRequiredFields()) return
 
-    if (!isConnectionTested) {
-      showToast('연결 테스트를 먼저 진행해주세요.', 'error', '연결 필요')
+    const trimmedName = formData.projectName.trim()
+    const isDuplicateOnSubmit = projects.some(
+      (p) => p.id !== selectedProject?.id && p.name.toLowerCase() === trimmedName.toLowerCase()
+    )
+
+    if (isDuplicateOnSubmit) {
+      showToast('이미 존재하는 프로젝트명입니다.', 'warning', '입력 오류')
+      return
+    }
+
+    if (nameFeedback && !isNameAvailable) {
+      showToast('프로젝트명을 확인해주세요.', 'warning', '입력 오류')
       return
     }
 
     if (!selectedProject) {
       showToast('프로젝트 정보를 찾을 수 없습니다.', 'error', '오류')
+      return
+    }
+
+    const hasDbConfigChanged =
+      initialDbConfig &&
+      (formData.dbType !== initialDbConfig.dbType ||
+        formData.host !== initialDbConfig.host ||
+        formData.port !== initialDbConfig.port ||
+        formData.username !== initialDbConfig.username ||
+        formData.password !== initialDbConfig.password ||
+        formData.databaseName !== initialDbConfig.databaseName)
+
+    if (hasDbConfigChanged && !isConnectionTested) {
+      showToast('연결 테스트를 먼저 진행해주세요.', 'error', '연결 필요')
       return
     }
 
@@ -184,6 +265,17 @@ const InfoView: React.FC = () => {
     }
   }
 
+  const hasDbConfigChanged =
+    initialDbConfig &&
+    (formData.dbType !== initialDbConfig.dbType ||
+      formData.host !== initialDbConfig.host ||
+      formData.port !== initialDbConfig.port ||
+      formData.username !== initialDbConfig.username ||
+      formData.password !== initialDbConfig.password ||
+      formData.databaseName !== initialDbConfig.databaseName)
+
+  const isNextButtonEnabled = !hasDbConfigChanged || isConnectionTested
+
   return (
     <>
       <style>
@@ -203,35 +295,35 @@ const InfoView: React.FC = () => {
           }
 
           .info-view-header {
-            margin-bottom: 40px;
+            margin-bottom: 14px;
           }
 
           .info-view-form-container {
             display: flex;
             flex-direction: column;
-            gap: 32px;
+            gap: 14px;
           }
 
           .info-view-input-group {
             display: flex;
             flex-direction: column;
-            gap: 20px;
+            gap: 14px;
           }
 
           .info-view-dbms-section {
-            margin-bottom: 12px;
+            margin-bottom: 14px;
             font-size: 16px;
             font-weight: 500;
           }
 
           .info-view-radio-group {
             display: flex;
-            gap: 24px;
+            gap: 14px;
           }
 
           .info-view-row-group {
             display: flex;
-            gap: 24px;
+            gap: 14px;
             width: 100%;
           }
 
@@ -243,15 +335,14 @@ const InfoView: React.FC = () => {
           .info-view-button-container {
             display: flex;
             justify-content: flex-end;
-            gap: 16px;
-            margin-top: 56px;
+            gap: 14px;
+            margin-top: 14px;
           }
         `}
       </style>
 
       <div className="info-view-wrapper">
         <div className="info-view-container">
-
           <div className="info-view-header">
             <PageTitle
               title="프로젝트 정보"
@@ -260,20 +351,25 @@ const InfoView: React.FC = () => {
           </div>
 
           <div className="info-view-form-container">
-
             {/* 프로젝트명 + 설명 */}
             <div className="info-view-input-group">
               <InputField
                 title="프로젝트명"
                 placeholder="프로젝트명"
                 required
+                maxLength={50}
                 value={formData.projectName}
                 width={300}
                 onChange={(v) => handleInputChange('projectName', v)}
+                description={nameFeedback || ' '}
+                descriptionClassName={
+                  isNameAvailable ? 'input-success-message' : 'input-error-message'
+                }
               />
               <InputField
                 title="프로젝트 설명"
                 placeholder="프로젝트 설명"
+                maxLength={300}
                 value={formData.description}
                 onChange={(v) => handleInputChange('description', v)}
               />
@@ -324,6 +420,7 @@ const InfoView: React.FC = () => {
                 title="호스트"
                 placeholder="127.0.0.1"
                 required
+                maxLength={100}
                 value={formData.host}
                 onChange={(v) => handleInputChange('host', v)}
               />
@@ -331,6 +428,7 @@ const InfoView: React.FC = () => {
                 title="포트"
                 placeholder="3306"
                 required
+                maxLength={10}
                 value={formData.port}
                 onChange={(v) => handleInputChange('port', v)}
               />
@@ -342,6 +440,7 @@ const InfoView: React.FC = () => {
                 title="사용자명"
                 placeholder="user"
                 required
+                maxLength={50}
                 value={formData.username}
                 onChange={(v) => handleInputChange('username', v)}
               />
@@ -349,6 +448,7 @@ const InfoView: React.FC = () => {
                 title="비밀번호"
                 placeholder="password"
                 required
+                maxLength={100}
                 value={formData.password}
                 password
                 onChange={(v) => handleInputChange('password', v)}
@@ -360,6 +460,7 @@ const InfoView: React.FC = () => {
               title="데이터베이스명"
               placeholder="sakila"
               required
+              maxLength={100}
               value={formData.databaseName}
               onChange={(v) => handleInputChange('databaseName', v)}
             />
@@ -370,11 +471,10 @@ const InfoView: React.FC = () => {
             <Button variant="gray" onClick={handleConnectionTest} isLoading={isTestingConnection}>
               연결테스트
             </Button>
-            <Button onClick={handleSubmit} disabled={!isConnectionTested}>
+            <Button onClick={handleSubmit} disabled={!isNextButtonEnabled}>
               다음
             </Button>
           </div>
-
         </div>
       </div>
     </>

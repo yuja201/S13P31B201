@@ -6,7 +6,9 @@ import type {
   DashboardData,
   Test,
   TestInput,
-  AIRecommendationItem
+  AIRecommendationItem,
+  MySQLExplainResult,
+  PostgresExplainResult
 } from '@shared/types'
 
 import type { ElectronAPI } from '@electron-toolkit/preload'
