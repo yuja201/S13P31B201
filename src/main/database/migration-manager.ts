@@ -39,11 +39,57 @@ export class MigrationManager {
 
   // 기존 버전 읽기 (runMigrations용)
   private getCurrentVersion(): number {
-    const stmt = this.db.prepare<[], MetaRow>("SELECT value FROM meta WHERE key = 'schema_version'")
-    const row = stmt.get()
+    try {
+      const stmt = this.db.prepare<[], MetaRow>(
+        "SELECT value FROM meta WHERE key = 'schema_version'"
+      )
+      const row = stmt.get()
 
-    if (!row) return 0
-    return Number(row.value)
+      if (!row) {
+        // 테이블은 있지만 schema_version row가 없을 때 → 기본값 0 기록
+        this.db
+          .prepare(
+            `
+        INSERT OR IGNORE INTO meta (key, value)
+        VALUES ('schema_version', '0')
+      `
+          )
+          .run()
+        return 0
+      }
+
+      return Number(row.value)
+    } catch (err: any) {
+      // 테이블 자체가 없을 때
+      if (err.message.includes('no such table')) {
+        // meta 테이블 생성
+        this.db
+          .prepare(
+            `
+        CREATE TABLE IF NOT EXISTS meta (
+          key TEXT PRIMARY KEY,
+          value TEXT NOT NULL
+        )
+      `
+          )
+          .run()
+
+        // 기본 버전 0 저장
+        this.db
+          .prepare(
+            `
+        INSERT INTO meta (key, value)
+        VALUES ('schema_version', '0')
+      `
+          )
+          .run()
+
+        return 0
+      }
+
+      // 다른 오류는 그냥 throw
+      throw err
+    }
   }
 
   private setVersion(version: number): void {
