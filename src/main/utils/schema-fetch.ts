@@ -352,6 +352,13 @@ async function fetchPostgreSQLSchema(config: DatabaseConfig): Promise<DatabaseSc
       const foreignKeys = await fetchPostgreSQLForeignKeys(client, tableName)
       const indexes = await fetchPostgreSQLIndexes(client, tableName)
 
+      const fkColumnNames = new Set(foreignKeys.map((fk) => fk.column_name))
+      columns.forEach((col) => {
+        if (fkColumnNames.has(col.name)) {
+          col.isForeignKey = true
+        }
+      })
+
       tables.push({
         name: tableName,
         rowCount,
