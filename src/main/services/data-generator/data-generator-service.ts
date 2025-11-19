@@ -111,7 +111,9 @@ export async function runDataGenerator(
 
     const workerPath = path.join(baseDir, 'out', 'main', 'worker-runner.js')
 
-    const child = spawn('node', [workerPath], {
+    const nodeBinary = path.join(process.resourcesPath, 'bin', 'node.exe')
+
+    const child = spawn(nodeBinary, [workerPath], {
       stdio: ['pipe', 'pipe', 'pipe'],
       env: {
         ...process.env,
