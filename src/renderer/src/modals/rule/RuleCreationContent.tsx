@@ -52,7 +52,10 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
   } | null>(null)
 
   const [ensureUnique, setEnsureUnique] = useState(false)
-  const isUniqueColumn = useMemo(() => column.constraints.includes('UNIQUE'), [column])
+  const isUniqueColumn = useMemo(
+    () => column.constraints.includes('UNIQUE') || column.constraints.includes('PK'),
+    [column]
+  )
   const addRule = useRuleStore((state) => state.addRule)
   const [locale, setLocale] = useState<'en' | 'ko'>('en')
 
@@ -119,7 +122,7 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
           result: result.id,
           domainId: selectedDomain!.id,
           domainName: selectedDomain!.name,
-          ensureUnique: ensureUnique
+          ensureUnique: isUniqueColumn || ensureUnique
         })
 
         showToast('Faker 규칙이 저장되었습니다.', 'success', '성공')
@@ -144,7 +147,7 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
           result: result.id,
           domainId: selectedDomain!.id,
           domainName: selectedDomain!.name,
-          ensureUnique: ensureUnique
+          ensureUnique: isUniqueColumn || ensureUnique
         })
 
         showToast('AI 규칙이 저장되었습니다.', 'success', '성공')
@@ -199,7 +202,8 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
         />
         {column.checkConstraint && (
           <div className="check-constraint-notice">
-            ※ 참고: 이 컬럼에는 <span>{formatCheckConstraint(column.checkConstraint)}</span> CHECK 제약이 있습니다.
+            ※ 참고: 이 컬럼에는 <span>{formatCheckConstraint(column.checkConstraint)}</span> CHECK
+            제약이 있습니다.
           </div>
         )}
         <br />
@@ -295,17 +299,24 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
           </select>
         </div>
       )}
-      {(selectedSource === 'FAKER' || selectedSource === 'AI') && isUniqueColumn && (
+      {(selectedSource === 'FAKER' || selectedSource === 'AI') && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
           <Checkbox
             id="ensure-unique"
             label="고유값 보장 (Ensure Uniqueness)"
-            checked={ensureUnique}
+            checked={isUniqueColumn || ensureUnique}
             onChange={(e) => setEnsureUnique(e.target.checked)}
+            disabled={isUniqueColumn}
           />
-          <p style={{ margin: '0 0 0 28px', fontSize: '13px', color: 'var(--color-gray-600)' }}>
-            데이터 생성 시 중복되지 않는 값을 보장합니다. 생성 속도가 느려질 수 있습니다.
-          </p>
+          {isUniqueColumn ? (
+            <p style={{ margin: '0 0 0 28px', fontSize: '13px', color: 'var(--color-gray-600)' }}>
+              이 컬럼은 UNIQUE 제약조건이 있어 항상 고유값이 보장됩니다.
+            </p>
+          ) : (
+            <p style={{ margin: '0 0 0 28px', fontSize: '13px', color: 'var(--color-gray-600)' }}>
+              데이터 생성 시 중복되지 않는 값을 보장합니다. 생성 속도가 느려질 수 있습니다.
+            </p>
+          )}
         </div>
       )}
 
