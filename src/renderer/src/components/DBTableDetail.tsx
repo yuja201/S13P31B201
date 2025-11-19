@@ -291,7 +291,8 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
                   style={{
                     width: '200px',
                     opacity: isFileMode ? 0.6 : 1,
-                    cursor: isFileMode ? 'not-allowed' : 'auto'
+                    cursor: isFileMode ? 'not-allowed' : 'auto',
+                    borderColor: rows === 0 ? 'var(--color-orange)' : 'var(--color-gray-200)'
                   }}
                 />
                 {isFileMode && (
