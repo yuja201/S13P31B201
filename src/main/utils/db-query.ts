@@ -10,14 +10,15 @@ async function fetchMySQLRandomSample(
 ): Promise<{ sample: unknown }> {
   let connection
   try {
-    connection = await mysql.createConnection({
+    const mysqlConfig = {
       host: config.host,
       port: config.port,
       user: config.username,
       password: config.password,
       database: config.database,
       connectTimeout: 5000
-    })
+    }
+    connection = await mysql.createConnection(mysqlConfig)
     const [rows] = await connection.query('SELECT ?? FROM ?? ORDER BY RAND() LIMIT 1', [
       column,
       table
@@ -42,14 +43,15 @@ async function checkMySQLFkValue(
 ): Promise<{ isValid: boolean }> {
   let connection
   try {
-    connection = await mysql.createConnection({
+    const mysqlConfig = {
       host: config.host,
       port: config.port,
       user: config.username,
       password: config.password,
       database: config.database,
       connectTimeout: 5000 // 5초
-    })
+    }
+    connection = await mysql.createConnection(mysqlConfig)
     const [rows] = await connection.query('SELECT 1 FROM ?? WHERE ?? = ? LIMIT 1', [
       table,
       column,
@@ -174,8 +176,14 @@ export async function fetchReferenceRandomSamples(
   if (config.dbType === 'MySQL') {
     let connection
     try {
-      connection = await mysql.createConnection(config)
-      // mysql2 라이브러리의 ??, ? 문법으로 SQL Injection을 방지합니다.
+      const mysqlConfig = {
+        host: config.host,
+        port: config.port,
+        user: config.username,
+        password: config.password,
+        database: config.database
+      }
+      connection = await mysql.createConnection(mysqlConfig)
       const [rows] = await connection.query('SELECT ?? FROM ?? ORDER BY RAND() LIMIT ?', [
         column,
         table,
@@ -218,7 +226,14 @@ export async function fetchReferenceUniqueSamples(
   if (config.dbType === 'MySQL') {
     let connection
     try {
-      connection = await mysql.createConnection(config)
+      const mysqlConfig = {
+        host: config.host,
+        port: config.port,
+        user: config.username,
+        password: config.password,
+        database: config.database
+      }
+      connection = await mysql.createConnection(mysqlConfig)
       // DISTINCT 키워드를 추가하여 고유값을 조회합니다.
       const [rows] = await connection.query(
         'SELECT DISTINCT ?? FROM ?? ORDER BY    RAND() LIMIT ?',

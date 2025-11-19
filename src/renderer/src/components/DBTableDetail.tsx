@@ -97,9 +97,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
 
     onColumnUpdate(selectedColumn.name, result.generation, result.setting)
     closeRuleModal()
-
   }
-
 
   // ----------------------------
   // Input handlers
@@ -235,22 +233,26 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
   }, [columnConfigs, rows])
 
   const allWarnings = useMemo(() => {
-    const warnings: string[] = []
-    if (hasMissing && warningMessage) {
-      warnings.push(warningMessage)
-    }
     if (uniqueRefWarningColumnName) {
       const colConfig = columnConfigs[uniqueRefWarningColumnName]
       if (colConfig && colConfig.metaData.kind === 'reference') {
-        warnings.push(
+        return [
           `⚠️ '${colConfig.metaData.refTable}' 테이블의 '${colConfig.metaData.refColumn}' 컬럼은
       고유값이 ${colConfig.metaData.refColCount}개 뿐입니다. 생성할 행의 수를 ${colConfig.metaData.refColCount}개 이하로 줄여주세요.`
-        )
+        ]
       }
     }
-    return warnings
-  }, [hasMissing, warningMessage, uniqueRefWarningColumnName, columnConfigs])
 
+    if (hasMissing && warningMessage) {
+      return [warningMessage]
+    }
+
+    if (rows === 0) {
+      return ['⚠️ 생성할 데이터 개수를 1개 이상 입력해주세요.']
+    }
+
+    return []
+  }, [hasMissing, warningMessage, uniqueRefWarningColumnName, columnConfigs, rows])
 
   return (
     <>
