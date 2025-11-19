@@ -79,19 +79,21 @@ const UserQueryTestView: React.FC = () => {
   const [aiRequested, setAiRequested] = useState(false)
   const [aiLoading, setAiLoading] = useState(false)
   const resultContainerRef = useRef<HTMLDivElement>(null)
+  const [parsedResult, setParsedResult] = useState<UserQueryTestResultJson | null>(null)
 
   useEffect(() => {
     if (!testId) return
 
     window.api.tests.getById(Number(testId)).then((data?: Test | null) => {
       if (data) {
+        setTest(data)
         try {
-          setTest(data)
           const parsed: UserQueryTestResultJson = JSON.parse(data.result)
+          setParsedResult(parsed)
           setAiList(parsed.ai ?? [])
         } catch (error) {
           console.error('테스트 결과 파싱 실패:', error)
-          setTest(data)
+          setParsedResult(null)
           setAiList([])
         }
       }
@@ -99,8 +101,11 @@ const UserQueryTestView: React.FC = () => {
   }, [testId])
 
   if (!test) return <div className="view-container">Loading...</div>
+  if (!parsedResult) {
+    return <div className="view-container">테스트 결과를 불러오는 중 오류가 발생했습니다.</div>
+  }
 
-  const result: UserQueryTestResultJson = JSON.parse(test.result)
+  const result = parsedResult
   const stats = result.stats
   const explain: ExplainResult = result.explain
   const warnings = result.warnings
