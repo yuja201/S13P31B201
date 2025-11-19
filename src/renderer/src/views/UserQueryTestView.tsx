@@ -86,13 +86,14 @@ const UserQueryTestView: React.FC = () => {
 
     window.api.tests.getById(Number(testId)).then((data?: Test | null) => {
       if (data) {
-        setTest(data)
         try {
           const parsed: UserQueryTestResultJson = JSON.parse(data.result)
+          setTest(data)
           setParsedResult(parsed)
           setAiList(parsed.ai ?? [])
         } catch (error) {
           console.error('테스트 결과 파싱 실패:', error)
+          setTest(data)
           setParsedResult(null)
           setAiList([])
         }
