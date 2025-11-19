@@ -172,7 +172,7 @@ const TestView: React.FC = () => {
             currentWeek={formatNumber(indexMap[days.at(-1)!] ?? 0)}
             changePercent={formatNumber(dashboard.indexChangeRate)}
             data={weeklyIndexGraph}
-            positive
+            positive={dashboard.indexChangeRate >= 0}
             unit="%"
             currentPrefix="최근 사용율"
             showUnitAfterTotal
@@ -185,10 +185,11 @@ const TestView: React.FC = () => {
             currentWeek={formatNumber(queryMap[days.at(-1)!] ?? 0)}
             changePercent={formatNumber(dashboard.queryChangeRate)}
             data={weeklyQueryGraph}
-            positive
+            positive={dashboard.queryChangeRate >= 0}
             unit="ms"
             currentPrefix="최근 응답"
             showUnitAfterTotal
+            reversed={true}
           />
         </div>
       </section>
