@@ -164,14 +164,6 @@ const TestSummaryCard: React.FC<TestSummaryCardProps> = ({
           font: var(--preMedium14);
         }
 
-        .stats-card__percent--up {
-          color: #10b981;
-        }
-
-        .stats-card__percent--down {
-          color: #ef4444;
-        }
-
         .stats-card__chart {
           flex: 2;
           height: 100%;
