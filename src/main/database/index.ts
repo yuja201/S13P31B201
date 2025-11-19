@@ -57,13 +57,9 @@ export function initDatabase(): Database.Database {
     // 도메인 종류 저장
     db.exec(insertDefaultDomainCategories)
     db.exec(insertDefaultDomainData)
-
-    // migration 실행 경로 자동 분기
-    const latest = migrationManager.getLatestMigrationVersion()
-    migrationManager.setSchemaVersion(latest)
-  } else {
-    migrationManager.runMigrations()
   }
+
+  migrationManager.runMigrations()
 
   return db
 }
