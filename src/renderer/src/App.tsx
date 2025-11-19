@@ -14,11 +14,13 @@ import InfoView from '@renderer/views/InfoView'
 import SchemaView from '@renderer/views/SchemaView'
 import CreateDummyView from '@renderer/views/CreateDummyView'
 import TestView from '@renderer/views/TestView'
-import HistoryView from '@renderer/views/HistoryView'
+import IndexTestView from '@renderer/views/IndexTestView'
+import HistoryView from '@renderer/views/TestHistoryView'
 import SelectMethodView from '@renderer/views/SelectMethodView'
 import DummyInsertView from '@renderer/views/DummyInsertView'
 import ErrorView from '@renderer/views/ErrorView'
 import GenerationFlowWrapper from '@renderer/views/generation/GenerationFlowWrapper'
+import UserQueryTestView from '@renderer/views/UserQueryTestView'
 
 const router = createHashRouter([
   {
@@ -44,6 +46,11 @@ const router = createHashRouter([
       { path: 'main/info/:projectId', element: <InfoView />, errorElement: <ErrorView /> },
       { path: 'main/schema/:projectId', element: <SchemaView />, errorElement: <ErrorView /> },
       { path: 'main/test/:projectId', element: <TestView />, errorElement: <ErrorView /> },
+      {
+        path: 'main/test/:projectId/index',
+        element: <IndexTestView />,
+        errorElement: <ErrorView />
+      },
       { path: 'main/history/:projectId', element: <HistoryView />, errorElement: <ErrorView /> },
       {
         path: 'main/dummy/:projectId',
@@ -54,6 +61,11 @@ const router = createHashRouter([
           { path: 'select-method', element: <SelectMethodView /> },
           { path: 'insert/sql', element: <DummyInsertView /> }
         ]
+      },
+      {
+        path: 'main/test/:projectId/user-query/:testId',
+        element: <UserQueryTestView />,
+        errorElement: <ErrorView />
       }
     ]
   }

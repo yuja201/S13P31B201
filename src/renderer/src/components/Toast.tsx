@@ -129,6 +129,7 @@ const Toast: React.FC<ToastProps> = ({
         display: flex;
         flex-direction: column;
         margin-left: 38px;
+        white-space: pre-line;
       }
 
       .toast-footer {

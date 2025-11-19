@@ -45,13 +45,22 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
   const [apiToken, setApiToken] = useState('')
   const [prompt, setPrompt] = useState('')
   const [selectedModel, setSelectedModel] = useState('1')
-  const [selectedDomain, setSelectedDomain] = useState<{ id: number; name: string } | null>(null)
+  const [selectedDomain, setSelectedDomain] = useState<{
+    id: number
+    name: string
+    locales: string[]
+  } | null>(null)
+
   const [ensureUnique, setEnsureUnique] = useState(false)
-  const isUniqueColumn = useMemo(() => column.constraints.includes('UNIQUE'), [column])
+  const isUniqueColumn = useMemo(
+    () => column.constraints.includes('UNIQUE') || column.constraints.includes('PK'),
+    [column]
+  )
   const addRule = useRuleStore((state) => state.addRule)
+  const [locale, setLocale] = useState<'en' | 'ko'>('en')
 
   const handleDomainChange = useCallback(
-    (domain: { id: number; name: string }) => {
+    (domain: { id: number; name: string; locales: string[] }) => {
       setSelectedDomain(domain)
     },
     [setSelectedDomain]
@@ -100,7 +109,8 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
       if (selectedSource === 'FAKER') {
         const result = await window.api.rule.createFaker({
           name: settingName,
-          domain: selectedDomain!.id
+          domain: selectedDomain!.id,
+          locale: locale
         })
         addRule(result)
 
@@ -112,7 +122,7 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
           result: result.id,
           domainId: selectedDomain!.id,
           domainName: selectedDomain!.name,
-          ensureUnique: ensureUnique
+          ensureUnique: isUniqueColumn || ensureUnique
         })
 
         showToast('Faker 규칙이 저장되었습니다.', 'success', '성공')
@@ -137,7 +147,7 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
           result: result.id,
           domainId: selectedDomain!.id,
           domainName: selectedDomain!.name,
-          ensureUnique: ensureUnique
+          ensureUnique: isUniqueColumn || ensureUnique
         })
 
         showToast('AI 규칙이 저장되었습니다.', 'success', '성공')
@@ -167,6 +177,17 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
     }
   }, [selectedModel, selectedSource])
 
+  // 도메인 선택 시 locale 자동으로 설정
+  useEffect(() => {
+    if (selectedDomain?.locales?.length) {
+      // 도메인의 첫 번째 locale을 선택
+      setLocale(selectedDomain.locales[0] as 'en' | 'ko')
+    } else {
+      // 도메인 없으면 기본값 English
+      setLocale('en')
+    }
+  }, [selectedDomain])
+
   return (
     <div className="rule-create">
       {/* 상단 타입 표시 */}
@@ -181,7 +202,8 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
         />
         {column.checkConstraint && (
           <div className="check-constraint-notice">
-            ※ 참고: 이 컬럼에는 <span>{formatCheckConstraint(column.checkConstraint)}</span> 제약 조건이 있습니다.
+            ※ 참고: 이 컬럼에는 <span>{formatCheckConstraint(column.checkConstraint)}</span> CHECK
+            제약이 있습니다.
           </div>
         )}
         <br />
@@ -239,17 +261,62 @@ const RuleCreationContent: React.FC<RuleCreationContentProps> = ({
           onChange={handleDomainChange}
         />
       </div>
-      {(selectedSource === 'FAKER' || selectedSource === 'AI') && isUniqueColumn && (
+      {/* Faker Locale 선택 추가 */}
+      {selectedSource === 'FAKER' && (
+        <div style={{ marginTop: '12px' }}>
+          <div className="preSemiBold14" style={{ marginBottom: '6px' }}>
+            언어 <span style={{ color: '#ED3F27' }}>*</span>
+          </div>
+          <select
+            value={selectedDomain ? locale : 'placeholder'}
+            onChange={(e) => {
+              if (selectedDomain) setLocale(e.target.value as 'en' | 'ko')
+            }}
+            style={{
+              width: '100%',
+              height: '42px',
+              border: '1px solid #c9d8eb',
+              borderRadius: '10px',
+              padding: '0 16px',
+              fontSize: '15px',
+              fontFamily: 'var(--font-family)',
+              backgroundColor: 'var(--color-white)'
+            }}
+          >
+            {/* placeholder만 표시 */}
+            {!selectedDomain && (
+              <option value="placeholder" disabled>
+                도메인을 먼저 선택해주세요
+              </option>
+            )}
+
+            {/* 도메인 선택 후에만 locale 옵션 표시 */}
+            {selectedDomain?.locales?.map((lc) => (
+              <option key={lc} value={lc}>
+                {lc === 'en' ? 'English' : lc === 'ko' ? '한국어' : lc}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+      {(selectedSource === 'FAKER' || selectedSource === 'AI') && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '10px' }}>
           <Checkbox
             id="ensure-unique"
             label="고유값 보장 (Ensure Uniqueness)"
-            checked={ensureUnique}
+            checked={isUniqueColumn || ensureUnique}
             onChange={(e) => setEnsureUnique(e.target.checked)}
+            disabled={isUniqueColumn}
           />
-          <p style={{ margin: '0 0 0 28px', fontSize: '13px', color: 'var(--color-gray-600)' }}>
-            데이터 생성 시 중복되지 않는 값을 보장합니다. 생성 속도가 느려질 수 있습니다.
-          </p>
+          {isUniqueColumn ? (
+            <p style={{ margin: '0 0 0 28px', fontSize: '13px', color: 'var(--color-gray-600)' }}>
+              이 컬럼은 UNIQUE 제약조건이 있어 항상 고유값이 보장됩니다.
+            </p>
+          ) : (
+            <p style={{ margin: '0 0 0 28px', fontSize: '13px', color: 'var(--color-gray-600)' }}>
+              데이터 생성 시 중복되지 않는 값을 보장합니다. 생성 속도가 느려질 수 있습니다.
+            </p>
+          )}
         </div>
       )}
 

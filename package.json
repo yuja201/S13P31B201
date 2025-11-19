@@ -1,6 +1,6 @@
 {
   "name": "heresdummy",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "productName": "Here's Dummy",
   "description": "An Electron application with React and TypeScript",
   "main": "out/main/index.js",
@@ -35,7 +35,9 @@
     "better-sqlite3": "^12.4.1",
     "electron-log": "^5.4.3",
     "electron-updater": "^6.3.9",
+    "html-to-image": "^1.11.13",
     "mysql2": "^3.15.3",
+    "node-sql-parser": "^5.3.13",
     "openai": "^6.7.0",
     "pg": "^8.16.3",
     "react-feather": "^2.0.10",
@@ -73,6 +75,19 @@
     "files": [
       "out/**",
       "node_modules/**"
+    ],
+    "extraResources": [
+      {
+        "from": "src/main/database/migrations",
+        "to": "migrations",
+        "filter": [
+          "*.sql"
+        ]
+      },
+      {
+        "from": "build/node/node.exe",
+        "to": "bin/node.exe"
+      }
     ],
     "directories": {
       "output": "dist",

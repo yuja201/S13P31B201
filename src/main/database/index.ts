@@ -7,6 +7,8 @@ import {
   insertDefaultDomainCategories,
   insertDefaultDomainData
 } from './schema'
+import { MigrationManager } from './migration-manager'
+import fs from 'node:fs'
 
 let db: Database.Database | null = null
 
@@ -22,6 +24,8 @@ export function initDatabase(): Database.Database {
   const userDataPath = app.getPath('userData')
   const dbPath = path.join(userDataPath, 'heresdummy.db')
 
+  const isFreshInstall = !fs.existsSync(dbPath)
+
   // 데이터베이스 연결
   db = new Database(dbPath, {
     // 개발 중 SQL 쿼리 로깅
@@ -34,27 +38,28 @@ export function initDatabase(): Database.Database {
   // FK 제약조건 활성화
   db.pragma('foreign_keys = ON')
 
-  // 데이터베이스 스키마 생성
-  db.exec(createTablesSQL)
-  try {
-    // domains 테이블에 logical_type 컬럼이 없으면 추가
-    db.prepare("ALTER TABLE domains ADD COLUMN logical_type TEXT NOT NULL DEFAULT 'string'").run()
-    console.log('Database migration: Added logical_type to domains table.')
-  } catch (err) {
-    const isDuplicateColumnError =
-      err instanceof Error && err.message.includes('duplicate column name')
-
-    if (!isDuplicateColumnError) {
-      throw err
-    }
+  //  migration 폴더 위치
+  let migrationsPath: string
+  if (!app.isPackaged) {
+    migrationsPath = path.join(process.cwd(), 'src', 'main', 'database', 'migrations')
+  } else {
+    migrationsPath = path.join(process.resourcesPath, 'migrations')
   }
 
-  // DBMS 종류 저장
-  db.exec(insertDefaultDBMSData)
+  const migrationManager = new MigrationManager(db, migrationsPath)
 
-  // 도메인 종류 저장
-  db.exec(insertDefaultDomainCategories)
-  db.exec(insertDefaultDomainData)
+  if (isFreshInstall) {
+    db.exec(createTablesSQL)
+
+    // DBMS 종류 저장
+    db.exec(insertDefaultDBMSData)
+
+    // 도메인 종류 저장
+    db.exec(insertDefaultDomainCategories)
+    db.exec(insertDefaultDomainData)
+  }
+
+  migrationManager.runMigrations()
 
   return db
 }

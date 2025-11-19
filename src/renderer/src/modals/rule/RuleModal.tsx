@@ -10,7 +10,7 @@ import { ColumnConfig } from '@renderer/stores/generationStore'
 
 export type GenerationType = 'Faker.js' | 'AI' | '참조' | '파일 업로드' | '고정값' | 'ENUM'
 
-export type RuleResult = {
+export type RuleResult = RuleSelection & {
   generation: GenerationType
   setting: string
 }
@@ -58,11 +58,21 @@ const RuleModal: React.FC<RuleModalProps> = ({
       setRule(tableName, column.name, value)
     }
 
+    let setting = ''
+    if (value.metaData.ruleName) {
+      setting = value.metaData.ruleName
+    } else if (value.metaData.domainName) {
+      setting = value.metaData.domainName
+    } else if (value.metaData.fixedValue !== undefined && value.metaData.fixedValue !== null) {
+      setting = String(value.metaData.fixedValue)
+    } else if (value.metaData.refTable && value.metaData.refColumn) {
+      setting = `${value.metaData.refTable}.${value.metaData.refColumn}`
+    }
+
     onConfirm({
+      ...value,
       generation: generationLabelMap[value.dataSource],
-      setting: String(
-        value.metaData.ruleName ?? value.metaData.domainName ?? value.metaData.fixedValue ?? ''
-      )
+      setting
     })
 
     onClose()

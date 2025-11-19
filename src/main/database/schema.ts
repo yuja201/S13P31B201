@@ -61,6 +61,7 @@ CREATE TABLE IF NOT EXISTS rules (
   domain_id INTEGER NOT NULL,
   model_id NUMERIC,
   prompt TEXT,
+  locale TEXT,
   created_at NUMERIC NOT NULL DEFAULT (strftime('%s', 'now')),
   updated_at NUMERIC NOT NULL DEFAULT (strftime('%s', 'now')),
   FOREIGN KEY (domain_id) REFERENCES domains(id) ON DELETE CASCADE
@@ -71,12 +72,19 @@ CREATE TABLE IF NOT EXISTS tests (
   id INTEGER PRIMARY KEY AUTOINCREMENT,
   project_id INTEGER NOT NULL,
   type TEXT CHECK(type IN ('QUERY', 'INDEX')) NOT NULL,
+  grade TEXT CHECK(grade IN('good', 'warning', 'critical')),
   summary TEXT,
   created_at NUMERIC NOT NULL DEFAULT (strftime('%s', 'now')),
   result TEXT NOT NULL,
   response_time REAL,
   index_ratio REAL,
   FOREIGN KEY (project_id) REFERENCES projects(id) ON DELETE CASCADE
+);
+
+-- 메타 정보 테이블
+CREATE TABLE IF NOT EXISTS meta (
+  key TEXT PRIMARY KEY,
+  value TEXT NOT NULL
 );
 
 -- 인덱스 생성

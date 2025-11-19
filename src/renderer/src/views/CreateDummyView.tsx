@@ -2,6 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react'
 import PageTitle from '@renderer/components/PageTitle'
 import DBTableList from '@renderer/components/DBTableList'
 import DBTableDetail from '@renderer/components/DBTableDetail'
+import LoadingSpinner from '@renderer/components/LoadingSpinner'
 import { useSchemaStore } from '@renderer/stores/schemaStore'
 import { useProjectStore } from '@renderer/stores/projectStore'
 import type { Table, Column, ForeignKey } from '@main/database/types'
@@ -23,6 +24,7 @@ export type ColumnDetail = {
   isForeignKey: boolean
   foreignKeys: ForeignKey[] | null
   previewValue?: unknown
+  isEnum: boolean
 }
 
 // 테이블 전체 정보 타입
@@ -34,6 +36,23 @@ export type TableInfo = {
   columnDetails: ColumnDetail[]
 }
 
+const parseCheckInValues = (checkConstraint: string): string[] => {
+  const inMatch = checkConstraint.match(/IN\s*\(([^)]+)\)/i);
+  if (!inMatch || !inMatch[1]) return [];
+
+  const valuesString = inMatch[1];
+  const values: string[] = [];
+  const regex = /'([^']*(?:''[^']*)*)'|"([^"]*(?:""[^']*)*)"|([^,\s]+)/g;
+  let match;
+  while ((match = regex.exec(valuesString)) !== null) {
+    const value = (match[1] || match[2] || match[3]).replace(/''/g, "'").replace(/""/g, '"');
+    values.push(value.trim());
+  }
+
+  return values;
+};
+
+
 // Store의 Column 타입을 View의 ColumnDetail 타입으로 변환
 const convertColumn = (col: Column, table: Table): ColumnDetail => {
   const constraints: string[] = []
@@ -44,7 +63,13 @@ const convertColumn = (col: Column, table: Table): ColumnDetail => {
   if (col.default) constraints.push('DEFAULT')
   if (col.check) constraints.push('CHECK')
 
-  const enumValues = Array.isArray(col.enum) ? col.enum : []
+  let enumValues = Array.isArray(col.enum) ? col.enum : []
+  const isCheckIn = col.check && /IN\s*\(/i.test(col.check);
+
+  if (isCheckIn) {
+    enumValues = parseCheckInValues(col.check!);
+  }
+
   const hasEnumValues = enumValues.length > 0
   const isEnum = hasEnumValues || col.type.toLowerCase().startsWith('enum')
 
@@ -77,7 +102,8 @@ const convertColumn = (col: Column, table: Table): ColumnDetail => {
     checkConstraint: col.check || null,
     enumList: hasEnumValues ? enumValues : null,
     isForeignKey,
-    foreignKeys: columnForeignKeys
+    foreignKeys: columnForeignKeys,
+    isEnum: isEnum
   }
 }
 
@@ -171,10 +197,8 @@ const CreateDummyView: React.FC = () => {
     return new Map(validationResults.map((v) => [v.table.name, v.isReady]))
   }, [validationResults])
 
-  // 선택된 테이블이 없으면 false
   const hasSelectedTables = selectedTables.size > 0
 
-  // 각 테이블에 최소 1개 이상 생성 규칙 존재하는지 확인
   const hasAnyRule = validationResults.some((v) => {
     const config = generationTables[v.table.name]
     return config && Object.keys(config.columns).length > 0
@@ -203,9 +227,13 @@ const CreateDummyView: React.FC = () => {
     setSelectedTables(next)
   }
 
+  const handleDeselectAll = (): void => {
+    setSelectedTables(new Set())
+  }
+
   const handleGenerateData = (): void => {
     if (selectedTables.size === 0) return
-    if (!allReady) return // 불완전한 테이블 있으면 차단
+    if (!allReady) return
 
     const payload = Array.from(selectedTables).map((name) => {
       const t = tables.find((tbl) => tbl.name === name)!
@@ -232,7 +260,26 @@ const CreateDummyView: React.FC = () => {
   }
 
   if (isLoading) {
-    return <div>스키마 로딩 중...</div>
+    return (
+      <div className="loading-container">
+        <LoadingSpinner size={48} />
+        <p className="loading-text">스키마 정보를 불러오는 중...</p>
+        <style>{`
+          .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            gap: 16px;
+          }
+          .loading-text {
+            color: var(--color-gray-600);
+            font-size: 16px;
+          }
+        `}</style>
+      </div>
+    )
   }
   if (error) {
     return <div>오류: {error}</div>
@@ -253,6 +300,7 @@ const CreateDummyView: React.FC = () => {
             selectedTables={selectedTables}
             handleCheckboxChange={handleToggleTable}
             onTableSelect={(table) => setFocusedTable({ ...table })}
+            onDeselectAll={handleDeselectAll}
             validationStatus={validationStatus}
           />
           {focusedTable && (

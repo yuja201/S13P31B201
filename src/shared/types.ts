@@ -35,6 +35,7 @@ export type AIMetaData = {
 export type FixedMetaData = {
   fixedValue: string
 }
+
 export type ReferenceMetaData = {
   kind: 'reference'
   refTable: string
@@ -114,6 +115,7 @@ export interface WorkerTask {
     id: number
     domain_name: string
     model_id: number | null
+    locale: string | null
   }>
   mode?: GenerationMode
   connection?: {
@@ -171,9 +173,6 @@ export interface AIGenRequest {
   info: ColumnSchemaInfo
 }
 
-/**
- * AI 생성 결과
- */
 export interface AIGenResult {
   values: string[]
   diagnostics: {
@@ -185,20 +184,154 @@ export interface AIGenResult {
 }
 
 /**
- * Faker 규칙 입력
+ * Faker / AI rule
  */
 export interface FakerRuleInput {
   name: string
   domain: number
+  locale?: string | null
 }
 
-/**
- * AI 규칙 입력
- */
 export interface AIRuleInput {
   name: string
   domain: number
   model_id: number
   token: string
   prompt?: string
+}
+
+/* ============================================================
+   feature/be/user-query-test — 테스트/Explain/쿼리 타입
+   ============================================================ */
+
+/**
+ * 공용 Database Test 타입
+ */
+export interface Test {
+  id: number
+  project_id: number
+  project_name: string
+  type: 'QUERY' | 'INDEX'
+  grade: 'good' | 'warning' | 'critical' | null
+  summary: string | null
+  result: string
+  response_time: number | null
+  index_ratio: number | null
+  created_at: number
+}
+
+/**
+ * PostgreSQL 실행 계획 타입
+ */
+export interface PostgresExplainResult {
+  raw: unknown[]
+  planType: string
+  estimatedRows: number
+  actualRows: number
+  cost: {
+    startup: number
+    total: number
+  }
+}
+
+/**
+ * MySQL 실행 계획 타입
+ */
+export interface MySQLExplainResult {
+  raw: string[]
+  planType: string
+  estimatedRows: number
+  cost: number
+}
+
+export type ExplainResult = PostgresExplainResult | MySQLExplainResult
+
+/**
+ * 사용자 쿼리 테스트 결과 JSON 타입
+ */
+export interface UserQueryTestResultJson {
+  query: string
+  runCount: number
+  timeout: number
+  dbms: 'mysql' | 'postgresql'
+  responseTimes: number[]
+  stats: {
+    avg: number
+    min: number
+    max: number
+    p50: number
+    p95: number
+    p99: number
+  }
+  explain: ExplainResult
+  warnings: string[]
+  ai?: AIRecommendationItem[]
+}
+
+/* ============================================================
+   develop — 대시보드/일간 통계 타입
+   ============================================================ */
+
+/**
+ * 최근 7일 사용자 쿼리 평균 응답 시간
+ */
+export interface DailyQueryStat {
+  date: string
+  avg_response_time: number | null
+}
+
+/**
+ * 최근 7일 인덱스 평균 사용율
+ */
+export interface DailyIndexStat {
+  date: string
+  avg_index_ratio: number | null
+}
+
+/**
+ * 테스트 요약 (평균 응답/평균 인덱스 사용율)
+ */
+export interface TestSummary {
+  count: number
+  avg_value: number | null
+}
+
+/**
+ * 전체 대시보드 데이터 구조
+ */
+export interface DashboardData {
+  thisWeek: number
+  growthRate: number
+  weeklyTotalStats: { date: string; count: number }[]
+  weeklyQueryStats: DailyQueryStat[]
+  weeklyIndexStats: DailyIndexStat[]
+  querySummary: TestSummary
+  indexSummary: TestSummary
+  queryChangeRate: number
+  indexChangeRate: number
+}
+
+/**
+ * AI 쿼리 개선 추천
+ */
+export interface AIRecommendationItem {
+  id: number
+  type: 'improve' | 'index' | 'rewrite'
+  title: string
+  description: string
+  suggestion: string
+  exampleSQL: string | null
+}
+
+export interface Domain {
+  id: number
+  name: string
+  description: string
+  logical_type: string
+  locales: string[]
+}
+
+export interface DomainCategory {
+  category: string
+  items: Domain[]
 }

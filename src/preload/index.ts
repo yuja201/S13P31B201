@@ -15,10 +15,17 @@ import type {
   RuleInput,
   RuleUpdate,
   DatabaseSchema,
-  DomainCategory
+  Test,
+  TestInput
 } from '../main/database/types'
 
-import { FakerRuleInput, AIRuleInput, GenerateRequest, GenerationResult } from '@shared/types'
+import {
+  FakerRuleInput,
+  AIRuleInput,
+  GenerateRequest,
+  GenerationResult,
+  DomainCategory
+} from '@shared/types'
 
 // Custom APIs for renderer
 const api = {
@@ -78,6 +85,15 @@ const api = {
       ipcRenderer.invoke('db:rule:getByLogicalType', logicalType)
   },
 
+  // Test operations
+  test: {
+    create: (data: TestInput): Promise<Test> => ipcRenderer.invoke('db:test:create', data),
+    getAll: (): Promise<Test[]> => ipcRenderer.invoke('db:test:getAll'),
+    getById: (id: number): Promise<Test | undefined> => ipcRenderer.invoke('db:test:getById', id),
+    getDashboardData: (projectId: number) =>
+      ipcRenderer.invoke('tests:get-dashboard-data', projectId)
+  },
+
   // Database connection test
   testConnection: (config: {
     dbType: 'MySQL' | 'PostgreSQL'
@@ -119,7 +135,13 @@ const api = {
       value: string
       checkConstraint: string
       columnName: string
-    }): Promise<boolean> => ipcRenderer.invoke('schema:validate-check-constraint', args)
+    }): Promise<boolean> => ipcRenderer.invoke('schema:validate-check-constraint', args),
+
+    getUniqueValueCount: (params: {
+      databaseId: number
+      table: string
+      column: string
+    }): Promise<{ count: number }> => ipcRenderer.invoke('schema:getUniqueValueCount', params)
   },
 
   file: {
@@ -172,7 +194,25 @@ const api = {
     getAll: (): Promise<DomainCategory[]> => ipcRenderer.invoke('domain:getAll'),
     getByLogicalType: (logicalType: string): Promise<DomainCategory[]> =>
       ipcRenderer.invoke('domain:getByLogicalType', logicalType)
-  }
+  },
+
+  tests: {
+    getById: (id: number): Promise<unknown> => ipcRenderer.invoke('tests:getById', id)
+  },
+
+  userQueryTest: {
+    run: (payload: { projectId: number; query: string; runCount: number; timeout: number }) =>
+      ipcRenderer.invoke('userQueryTest:run', payload),
+    AIGenerate: (payload) => ipcRenderer.invoke('userQueryTest:AIGenerate', payload)
+  },
+
+  // Index test operations
+  indexTest: {
+    analyze: (databaseId: number) => ipcRenderer.invoke('index:analyze', databaseId)
+  },
+
+  validateSQL: (payload: { projectId: number; query: string }) =>
+    ipcRenderer.invoke('validate-sql', payload)
 }
 
 // Use `contextBridge` APIs to expose Electron APIs to

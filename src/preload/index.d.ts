@@ -1,5 +1,16 @@
-import { FakerRuleInput, AIRuleInput, GenerationResult } from '@shared/types'
-import { ElectronAPI } from '@electron-toolkit/preload'
+import type {
+  FakerRuleInput,
+  AIRuleInput,
+  GenerateRequest,
+  GenerationResult,
+  DashboardData,
+  Test,
+  TestInput,
+  AIRecommendationItem
+} from '@shared/types'
+
+import type { ElectronAPI } from '@electron-toolkit/preload'
+
 import type {
   DBMS,
   DBMSInput,
@@ -14,11 +25,12 @@ import type {
   RuleInput,
   RuleUpdate,
   DatabaseSchema,
-  DomainCategory
+  DomainCategory,
+  IndexAnalysisSummary
 } from '../main/database/types'
-import type { GenerateRequest, GenerationResult } from '@shared/types'
 
 interface API {
+  /* ======================= DBMS ======================= */
   dbms: {
     getAll: () => Promise<DBMS[]>
     getById: (id: number) => Promise<DBMS | undefined>
@@ -26,6 +38,8 @@ interface API {
     update: (data: DBMSUpdate) => Promise<DBMS | undefined>
     delete: (id: number) => Promise<boolean>
   }
+
+  /* ======================= PROJECT ======================= */
   project: {
     getAll: () => Promise<Project[]>
     getById: (id: number) => Promise<Project | undefined>
@@ -34,6 +48,8 @@ interface API {
     delete: (id: number) => Promise<boolean>
     updateUpdatedAt: (id: number) => Promise<Project | undefined>
   }
+
+  /* ======================= DATABASE ======================= */
   database: {
     getAll: () => Promise<Database[]>
     getById: (id: number) => Promise<Database | undefined>
@@ -43,6 +59,8 @@ interface API {
     delete: (id: number) => Promise<boolean>
     updateConnectedAt: (id: number) => Promise<Database | undefined>
   }
+
+  /* ======================= RULE ======================= */
   rule: {
     getAll: () => Promise<Rule[]>
     getById: (id: number) => Promise<Rule | undefined>
@@ -54,6 +72,54 @@ interface API {
     createAI: (data: AIRuleInput) => Promise<Rule>
     getByLogicalType: (logicalType: string) => Promise<Rule[]>
   }
+
+  /* ======================= TEST (대시보드용) ======================= */
+  test: {
+    create: (data: TestInput) => Promise<Test>
+    getAll: () => Promise<Test[]>
+    getById: (id: number) => Promise<Test | undefined>
+    getDashboardData: (projectId: number) => Promise<DashboardData>
+  }
+
+  /* ======================= TESTS (단건 조회용) ======================= */
+  tests: {
+    getById: (id: number) => Promise<Test | undefined>
+  }
+
+  /* ======================= USER QUERY TEST ======================= */
+  userQueryTest: {
+    run: (payload: {
+      projectId: number
+      query: string
+      runCount: number
+      timeout: number
+    }) => Promise<{ testId: number }>
+    AIGenerate: (payload: {
+      testId: number
+      projectId: number
+      query: string
+      modelId?: number | null
+    }) => Promise<{
+      explain: MySQLExplainResult | PostgresExplainResult
+      ai: AIRecommendationItem[]
+    }>
+  }
+
+  /* ======================= INDEX TEST ======================= */
+  indexTest: {
+    analyze: (databaseId: number) => Promise<{
+      success: boolean
+      data?: IndexAnalysisSummary
+      error?: string
+    }>
+  }
+
+  validateSQL: (payload: {
+    projectId: number
+    query: string
+  }) => Promise<{ valid: boolean; error?: string }>
+
+  /* ======================= CONNECTION TEST ======================= */
   testConnection: (config: {
     dbType: 'MySQL' | 'PostgreSQL'
     host: string
@@ -69,34 +135,41 @@ interface API {
       connectionTime?: number
     }
   }>
+
+  /* ======================= SCHEMA ======================= */
   schema: {
     fetch: (databaseId: number) => Promise<DatabaseSchema>
-
     getRandomSample: (params: {
       databaseId: number
       table: string
       column: string
     }) => Promise<{ sample: unknown }>
-
     validateFkValue: (params: {
       databaseId: number
       table: string
       column: string
       value: unknown
     }) => Promise<{ isValid: boolean }>
-
     validateCheckConstraint: (args: {
       value: string
       checkConstraint: string
       columnName: string
     }) => Promise<boolean>
+    getUniqueValueCount: (params: {
+      databaseId: number
+      table: string
+      column: string
+    }) => Promise<{ count: number }>
   }
 
+  /* ======================= FILE ======================= */
   file: {
     cache: {
-      write: (payload: { content: string; encoding?: string; extension?: string }) => Promise<{
-        filePath: string
-      }>
+      write: (payload: {
+        content: string
+        encoding?: string
+        extension?: string
+      }) => Promise<{ filePath: string }>
       remove: (filePath: string) => Promise<boolean>
       stream: {
         open: (payload: { extension?: string }) => Promise<{ streamId: string; filePath: string }>
@@ -108,18 +181,24 @@ interface API {
       }
     }
   }
+
+  /* ======================= DATA GENERATOR ======================= */
   dataGenerator: {
     generate: (payload: GenerateRequest) => Promise<GenerationResult>
     onProgress: (callback: (msg: unknown) => void) => void
     removeProgressListeners: () => void
     downloadZip: (zipPath: string) => void
   }
+
+  /* ======================= ENV ======================= */
   env: {
     updateApiKey: (key: string, value: string) => Promise<{ success: boolean; error?: string }>
     load: () => Promise<Record<string, string>>
     getPath: () => Promise<string>
     openFolder: () => Promise<void>
   }
+
+  /* ======================= LOGGER ======================= */
   logger: {
     debug: (...args: unknown[]) => void
     info: (...args: unknown[]) => void
@@ -127,6 +206,8 @@ interface API {
     error: (...args: unknown[]) => void
     verbose: (...args: unknown[]) => void
   }
+
+  /* ======================= DOMAIN ======================= */
   domain: {
     getAll: () => Promise<DomainCategory[]>
     getByLogicalType: (logicalType: string) => Promise<DomainCategory[]>

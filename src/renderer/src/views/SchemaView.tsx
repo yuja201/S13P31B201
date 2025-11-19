@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import Button from '@renderer/components/Button'
 import PageTitle from '@renderer/components/PageTitle'
 import TableInfoContainer from '@renderer/components/TableInfoContainer'
+import LoadingSpinner from '@renderer/components/LoadingSpinner'
 import { useSchemaStore } from '@renderer/stores/schemaStore'
 import { useProjectStore } from '@renderer/stores/projectStore'
 import type { Table } from '../../../main/database/types'
@@ -72,6 +73,20 @@ const SchemaView: React.FC = () => {
             overflow-y: auto;
           }
 
+          .loading-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            gap: 16px;
+          }
+
+          .loading-text {
+            color: var(--color-gray-600);
+            font-size: 16px;
+          }
+
           .schema-view-button-container {
             display: flex;
             justify-content: flex-end;
@@ -91,8 +106,9 @@ const SchemaView: React.FC = () => {
 
         <div className="schema-view-content">
           {isLoading ? (
-            <div className="schema-view-loading">
-              <p>스키마 정보를 불러오는 중...</p>
+            <div className="loading-container">
+              <LoadingSpinner size={48} />
+              <p className="loading-text">스키마 정보를 불러오는 중...</p>
             </div>
           ) : errorMessage ? (
             <div className="schema-view-error">

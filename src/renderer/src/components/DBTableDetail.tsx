@@ -36,6 +36,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
   const getTableRecordCount = useGenerationStore((s) => s.getTableRecordCount)
   const setTableRecordCount = useGenerationStore((s) => s.setTableRecordCount)
   const rows = getTableRecordCount(table.name)
+  const [displayValue, setDisplayValue] = useState(rows === 0 ? '' : rows.toLocaleString())
   const [isFileUploadModalOpen, setIsFileUploadModalOpen] = useState(false)
   const [isRuleModalOpen, setIsRuleModalOpen] = useState(false)
   const [selectedColumn, setSelectedColumn] = useState<ColumnDetail | null>(null)
@@ -44,6 +45,10 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
 
   const getRuleById = useRuleStore((state) => state.getRuleById)
   const fetchRules = useRuleStore((state) => state.fetchRules)
+
+  useEffect(() => {
+    setDisplayValue(rows === 0 ? '' : rows.toLocaleString())
+  }, [rows])
 
   useEffect(() => {
     fetchRules()
@@ -83,6 +88,13 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
 
   const handleRuleConfirm = (result: RuleResult): void => {
     if (!selectedColumn) return
+
+    setColumnRule(table.name, selectedColumn.name, {
+      columnName: selectedColumn.name,
+      dataSource: result.dataSource,
+      metaData: result.metaData
+    })
+
     onColumnUpdate(selectedColumn.name, result.generation, result.setting)
     closeRuleModal()
   }
@@ -90,11 +102,32 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
   // ----------------------------
   // Input handlers
 
-  const handleRowsChange = (value: number): void => {
+  const handleDisplayValueChange = (inputString: string): void => {
+    const cleaned = inputString.replace(/[^0-9]/g, '')
+
+    if (cleaned === '') {
+      setTableRecordCount(table.name, 0)
+      setDisplayValue('')
+      return
+    }
+
+    const numValue = Number(cleaned)
     const MAX_ROWS = 50_000_000
-    const normalized = Number.isFinite(value) ? Math.trunc(value) : 1
-    const safeValue = Math.min(Math.max(1, normalized), MAX_ROWS)
-    setTableRecordCount(table.name, safeValue)
+
+    if (numValue > MAX_ROWS) {
+      setTableRecordCount(table.name, MAX_ROWS)
+      setDisplayValue(MAX_ROWS.toLocaleString())
+      return
+    }
+
+    setTableRecordCount(table.name, numValue)
+
+    setDisplayValue(numValue.toLocaleString())
+  }
+
+  const handleInputBlur = (): void => {
+    const currentRows = getTableRecordCount(table.name)
+    setDisplayValue(currentRows === 0 ? '' : currentRows.toLocaleString())
   }
 
   const handleResetRule = (column: ColumnDetail): void => {
@@ -163,7 +196,11 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
             break
           case 'REFERENCE':
             generation = '참조'
-            setting = col.setting
+            if (config.metaData.kind === 'reference') {
+              setting = `${config.metaData.refTable}.${config.metaData.refColumn}`
+            } else {
+              setting = col.setting
+            }
             break
         }
 
@@ -179,12 +216,50 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
     return Object.values(columnConfigs).some((c) => c.dataSource === 'FILE')
   }, [columnConfigs])
 
+  const uniqueRefWarningColumnName = useMemo(() => {
+    for (const [columnName, colConfig] of Object.entries(columnConfigs)) {
+      if (
+        colConfig.dataSource === 'REFERENCE' &&
+        colConfig.metaData.kind === 'reference' &&
+        colConfig.metaData.ensureUnique &&
+        colConfig.metaData.refColCount !== null &&
+        colConfig.metaData.refColCount !== undefined &&
+        rows > colConfig.metaData.refColCount
+      ) {
+        return columnName
+      }
+    }
+    return null
+  }, [columnConfigs, rows])
+
+  const allWarnings = useMemo(() => {
+    if (uniqueRefWarningColumnName) {
+      const colConfig = columnConfigs[uniqueRefWarningColumnName]
+      if (colConfig && colConfig.metaData.kind === 'reference') {
+        return [
+          `⚠️ '${colConfig.metaData.refTable}' 테이블의 '${colConfig.metaData.refColumn}' 컬럼은
+      고유값이 ${colConfig.metaData.refColCount}개 뿐입니다. 생성할 행의 수를 ${colConfig.metaData.refColCount}개 이하로 줄여주세요.`
+        ]
+      }
+    }
+
+    if (hasMissing && warningMessage) {
+      return [warningMessage]
+    }
+
+    if (rows === 0) {
+      return ['⚠️ 생성할 데이터 개수를 1개 이상 입력해주세요.']
+    }
+
+    return []
+  }, [hasMissing, warningMessage, uniqueRefWarningColumnName, columnConfigs, rows])
+
   return (
     <>
       <div className="table-detail-container shadow">
         {/* --- 상세 헤더 --- */}
         <div className="detail-header shadow">
-          <h2 className="preBold24">{table.name}</h2>
+          <h2 className="preBold20">{table.name}</h2>
           <span className="preRegular14">
             {table.columns} columns · {table.rows} row
           </span>
@@ -205,19 +280,20 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
 
               <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                 <input
-                  type="number"
-                  value={rows}
-                  onChange={(e) => handleRowsChange(Number(e.target.value))}
-                  placeholder="e.g., 1,000"
+                  type="text"
+                  value={displayValue}
+                  onChange={(e) => handleDisplayValueChange(e.target.value)}
+                  onBlur={handleInputBlur}
+                  placeholder="0"
                   className="preMedium16 shadow"
-                  step="100"
-                  min={1}
                   max={50000000}
                   disabled={isFileMode}
                   style={{
                     width: '200px',
                     opacity: isFileMode ? 0.6 : 1,
-                    cursor: isFileMode ? 'not-allowed' : 'auto'
+                    cursor: isFileMode ? 'not-allowed' : 'auto',
+                    borderColor: rows === 0 ? 'var(--color-orange)' : 'var(--color-gray-200)',
+                    borderWidth: rows === 0 ? '1.5px' : '1px'
                   }}
                 />
                 {isFileMode && (
@@ -266,10 +342,13 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
                   const hasSetting = col.setting && col.setting !== '-'
                   const isEditableSetting = col.generation !== 'Auto Increment'
                   const isMissing = missingColumns?.includes(col.name)
+                  const isUniqueRefWarningColumn = col.name === uniqueRefWarningColumnName
 
                   const rowClassName = [
                     col.generation && col.generation !== '-' ? 'has-generation-method' : '',
-                    isMissing ? 'missing-rule' : ''
+                    isMissing ? 'missing-rule' : '',
+                    // [추가] 오류 컬럼일 경우 클래스 추가
+                    isUniqueRefWarningColumn ? 'unique-ref-warning-row' : ''
                   ]
                     .filter(Boolean)
                     .join(' ')
@@ -354,8 +433,12 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
             </table>
           </div>
           {/* 데이터 생성 버튼 위 경고문 */}
-          {hasMissing && warningMessage && (
-            <div className="validation-warning">{warningMessage}</div>
+          {allWarnings.length > 0 && (
+            <div className="validation-warning">
+              {allWarnings.map((warning, index) => (
+                <div key={index}>{warning}</div>
+              ))}
+            </div>
           )}
 
           <Button
@@ -363,7 +446,7 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
             size="md"
             style={{ width: '100%', marginTop: '8px', padding: '12px' }}
             onClick={onGenerateData}
-            disabled={!isAllReady}
+            disabled={!isAllReady || allWarnings.length > 0 || rows === 0}
           >
             데이터 생성
           </Button>
@@ -476,9 +559,12 @@ const TableDetail: React.FC<DBTableDetailProps> = ({
         .column-table tr.has-generation-method td {
           background-color: var(--color-light-blue); 
         }
-        .column-table tr.missing-rule td {
+
+        .column-table tr.missing-rule td, 
+        .column-table tr.unique-ref-warning-row td {
           background-color: #FFFBEB;
         }
+
 
         .generation-method-cell {
           color: var(--color-main-blue); 

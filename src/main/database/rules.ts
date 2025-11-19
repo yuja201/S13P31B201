@@ -17,6 +17,7 @@ export function getAllRules(): Rule[] {
       c.name AS category_name,
       r.model_id,
       r.prompt,
+      r.locale,
       r.created_at,
       r.updated_at
     FROM rules r
@@ -42,6 +43,7 @@ export function getRuleById(id: number): Rule | undefined {
       c.name AS category_name,
       r.model_id,
       r.prompt,
+      r.locale,
       r.created_at,
       r.updated_at
     FROM rules r
@@ -67,6 +69,7 @@ export function getRulesByDomain(domainId: number): Rule[] {
       c.name AS category_name,
       r.model_id,
       r.prompt,
+      r.locale,
       r.created_at,
       r.updated_at
     FROM rules r
@@ -86,8 +89,8 @@ export function createRule(data: RuleInput): Rule {
   const now = Math.floor(Date.now() / 1000)
 
   const stmt = db.prepare(`
-    INSERT INTO rules (name, data_source, domain_id, model_id, prompt, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?)
+    INSERT INTO rules (name, data_source, domain_id, model_id, prompt, locale, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
   `)
 
   const result = stmt.run(
@@ -96,6 +99,7 @@ export function createRule(data: RuleInput): Rule {
     data.domain,
     data.model_id ?? null,
     data.prompt ?? null,
+    data.locale ?? null,
     now,
     now
   )
@@ -185,6 +189,7 @@ export function getRulesByLogicalType(logicalType: string): Rule[] {
       c.name AS category_name,
       r.model_id,
       r.prompt,
+      r.locale,
       r.created_at,
       r.updated_at
     FROM rules r

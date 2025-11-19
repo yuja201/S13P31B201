@@ -63,7 +63,8 @@ export async function runDataGenerator(
     .map((rule) => ({
       id: rule.id,
       domain_name: rule.domain_name,
-      model_id: rule.model_id
+      model_id: rule.model_id,
+      locale: rule.locale
     }))
 
   const databaseInfo = {
@@ -110,7 +111,9 @@ export async function runDataGenerator(
 
     const workerPath = path.join(baseDir, 'out', 'main', 'worker-runner.js')
 
-    const child = spawn('node', [workerPath], {
+    const nodeBinary = path.join(process.resourcesPath, 'bin', 'node.exe')
+
+    const child = spawn(nodeBinary, [workerPath], {
       stdio: ['pipe', 'pipe', 'pipe'],
       env: {
         ...process.env,
@@ -157,17 +160,19 @@ export async function runDataGenerator(
     child.on('close', (code) => {
       running.delete(child)
       if (code === 0) {
-        const resultLine = stdout
-          .split('\n')
-          .find((line) => line.startsWith('{') && line.includes('"success"'))
-        if (resultLine) {
-          results.push(JSON.parse(resultLine))
+        // stdout 안에서 success 포함 JSON 객체 전부 추출
+        const matches = stdout.match(/\{[^}]*"success"[^}]*\}/g)
+
+        if (matches && matches.length > 0) {
+          // 가장 마지막 JSON이 최종 결과 JSON
+          const finalJson = matches[matches.length - 1]
+          results.push(JSON.parse(finalJson))
         } else {
           results.push({
             success: false,
             tableName: table.tableName,
             sqlPath: '',
-            error: 'Worker finished without returning a result payload.'
+            error: 'Worker finished without a valid result JSON.'
           })
         }
       } else {

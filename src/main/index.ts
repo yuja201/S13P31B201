@@ -12,6 +12,11 @@ import './ipc/rule-handlers'
 import './ipc/file-handlers'
 import './ipc/env-handlers'
 import './ipc/domain-handler'
+import './ipc/index-test-handlers'
+import './ipc/test-handler'
+import './ipc/user-query-test-handlers'
+import './ipc/tests-handlers'
+import './ipc/validate-sql'
 
 const logger = createLogger('Main')
 
@@ -111,7 +116,7 @@ function createWindow(): void {
 
   // Create the browser window.
   const mainWindow = new BrowserWindow({
-    width: 1440,
+    width: 1540,
     height: 1024,
     minWidth: 1000,
     minHeight: 800,

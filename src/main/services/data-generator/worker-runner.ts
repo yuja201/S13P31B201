@@ -19,6 +19,9 @@ import {
   FixedMetaData,
   ReferenceMetaData
 } from '@shared/types'
+import { createLogger } from '../../utils/logger.js'
+
+const logger = createLogger('worker-runner')
 
 const INVALID = { __invalid: true } as const
 type CellValue = string | typeof INVALID
@@ -35,6 +38,7 @@ function createColumnStream(
 ): AsyncGenerator<string | null | undefined> {
   const { projectId, table, schema, database, rules } = task
   const { tableName } = table
+
   const dataSource = col.dataSource as DataSourceType
 
   switch (dataSource) {
@@ -58,6 +62,7 @@ function createColumnStream(
         recordCnt,
         metaData: meta,
         domainName: rule.domain_name,
+        locale: rule.locale ?? 'en',
         schema
       })
     }
@@ -260,6 +265,10 @@ function convertValue(
     }
   }
 
+  if (!type || type.includes('char') || type.includes('text')) {
+    return `'${s.replace(/'/g, "''")}'`
+  }
+
   // 일반 문자열
   return `'${s.replace(/'/g, "''")}'`
 }
@@ -325,8 +334,9 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
 
   const { quote } = DBMS_MAP[dbType]
   const columnNames = columns.map((c) => `${quote}${c.columnName}${quote}`).join(', ')
-  const CHUNK_SIZE = 1000
+  const CHUNK_SIZE = 500
   const MAX_AI_CONCURRENT = 2
+  let totalFailed = 0
 
   const directMode = mode === 'DIRECT_DB' && Boolean(connection)
   let directContext: DirectContext | null = null
@@ -336,7 +346,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
       directContext = await createDirectContext(dbType, connection)
     }
 
-    console.log(`[${tableName}] 시작: ${recordCnt.toLocaleString()}행, ${columns.length}컬럼`)
+    logger.info(`[${tableName}] 시작: ${recordCnt.toLocaleString()}행, ${columns.length}컬럼`)
     const startTime = Date.now()
     let totalProcessed = 0
     const numChunks = Math.max(1, Math.ceil(recordCnt / CHUNK_SIZE))
@@ -349,7 +359,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
         continue
       }
 
-      console.log(`\n[${tableName}] 청크 ${chunkIdx + 1}/${numChunks} 처리 중 (${chunkSize}행)`)
+      logger.info(`\n[${tableName}] 청크 ${chunkIdx + 1}/${numChunks} 처리 중 (${chunkSize}행)`)
       const chunkStartTime = Date.now()
 
       const columnStreams = columns.map((col) => createColumnStream(col, task, chunkSize))
@@ -358,13 +368,13 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
 
       // === Non-AI 컬럼 처리 (예외 처리 일관화) ===
       if (nonAiColumns.length > 0) {
-        console.log(`[${tableName}] Non-AI 컬럼 동시 처리:`)
+        logger.info(`[${tableName}] Non-AI 컬럼 동시 처리:`)
         const nonAiResults = await Promise.all(
           nonAiColumns.map(async (colIdx) => {
             const col = columns[colIdx]
             const stream = columnStreams[colIdx]
             const colStart = Date.now()
-            console.log(`  ▶ [${col.columnName}] 처리 (${col.dataSource})`)
+            logger.info(`  ▶ [${col.columnName}] 처리 (${col.dataSource})`)
 
             const values: (string | typeof INVALID)[] = []
             for (let i = 0; i < chunkSize; i++) {
@@ -385,7 +395,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
             }
 
             const colDuration = ((Date.now() - colStart) / 1000).toFixed(2)
-            console.log(`  ✓ [${col.columnName}] 완료 (${colDuration}초)`)
+            logger.info(`  ✓ [${col.columnName}] 완료 (${colDuration}초)`)
 
             return { colIdx, values }
           })
@@ -398,7 +408,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
 
       // === AI 컬럼 처리 (동시 MAX_AI_CONCURRENT개, 예외 처리 통일) ===
       if (aiColumns.length > 0) {
-        console.log(`[${tableName}] AI 컬럼 처리 (동시 ${MAX_AI_CONCURRENT}개):`)
+        logger.info(`[${tableName}] AI 컬럼 처리 (동시 ${MAX_AI_CONCURRENT}개):`)
 
         for (let i = 0; i < aiColumns.length; i += MAX_AI_CONCURRENT) {
           const batch = aiColumns.slice(i, i + MAX_AI_CONCURRENT)
@@ -408,7 +418,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
               const col = columns[colIdx]
               const stream = columnStreams[colIdx]
               const colStart = Date.now()
-              console.log(`  ▶ [${col.columnName}] 처리 (${col.dataSource})`)
+              logger.info(`  ▶ [${col.columnName}] 처리 (${col.dataSource})`)
 
               const values: (string | typeof INVALID)[] = []
               for (let j = 0; j < chunkSize; j++) {
@@ -429,7 +439,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
               }
 
               const colDuration = ((Date.now() - colStart) / 1000).toFixed(2)
-              console.log(`  ✓ [${col.columnName}] 완료 (${colDuration}초)`)
+              logger.info(`  ✓ [${col.columnName}] 완료 (${colDuration}초)`)
 
               return { colIdx, values }
             })
@@ -440,7 +450,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
           })
 
           if (i + MAX_AI_CONCURRENT < aiColumns.length) {
-            console.log(`  … 다음 AI 컬럼 대기 (1초)...`)
+            logger.info(`  … 다음 AI 컬럼 대기 (1초)...`)
             await new Promise((res) => setTimeout(res, 1000))
           }
         }
@@ -459,7 +469,9 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
         const hasInvalid = rowValues.some((v) => v === INVALID)
         if (hasInvalid) {
           if (skipInvalid) {
-            continue
+            if (!directMode) {
+              totalFailed++
+            }
           } else {
             throw new Error(
               `[행 변환 오류] ${tableName} ${totalProcessed + rowIdx + 1}행 변환 실패`
@@ -468,19 +480,71 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
         }
 
         rows.push(`(${rowValues.join(', ')})`)
-        totalProcessed++
+
+        if (!directMode) {
+          totalProcessed++
+        }
       }
 
+      // === DIRECT_DB bulk insert + fallback ===
       if (rows.length > 0) {
-        const sql = `INSERT INTO ${quote}${tableName}${quote} (${columnNames}) VALUES\n${rows.join(',\n')};\n`
+        const bulkSQL = `INSERT INTO ${quote}${tableName}${quote} (${columnNames}) VALUES\n${rows.join(',\n')};`
+
+        let successOnThisChunk = 0
+        let failedOnThisChunk = 0
+
         if (directMode && directContext) {
-          await directContext.execute(sql)
+          try {
+            // 1) bulk insert
+            await directContext.execute(bulkSQL)
+            successOnThisChunk = rows.length
+          } catch {
+            logger.warn(`[${tableName}] bulk insert 실패 → 행 단위 fallback 실행`)
+
+            // 2) fallback: row-by-row insert
+            for (let i = 0; i < rows.length; i++) {
+              const singleSQL = `INSERT INTO ${quote}${tableName}${quote} (${columnNames}) VALUES ${rows[i]};`
+
+              try {
+                await directContext.execute(singleSQL)
+                successOnThisChunk++
+              } catch (singleErr) {
+                failedOnThisChunk++
+
+                // UI-friendly message only
+                process.stdout.write(
+                  JSON.stringify({
+                    type: 'row-error',
+                    tableName
+                  }) + '\n'
+                )
+
+                // skipInvalidRows === false → 즉시 중단
+                if (task.skipInvalidRows === false) {
+                  throw singleErr
+                }
+              }
+            }
+          }
         }
-        await fs.promises.appendFile(sqlPath, sql, 'utf8')
+
+        totalProcessed += successOnThisChunk // 성공한 row만 증가
+        totalFailed += failedOnThisChunk // fallback에서 실패한 row
+
+        process.stdout.write(
+          JSON.stringify({
+            type: 'row-delta',
+            tableName,
+            success: successOnThisChunk,
+            fail: failedOnThisChunk
+          }) + '\n'
+        )
+
+        await fs.promises.appendFile(sqlPath, bulkSQL + '\n', 'utf8')
       }
 
       const chunkDuration = ((Date.now() - chunkStartTime) / 1000).toFixed(2)
-      console.log(`\n[${tableName}] 청크 ${chunkIdx + 1} 완료 (${chunkDuration}초)`)
+      logger.info(`\n[${tableName}] 청크 ${chunkIdx + 1} 완료 (${chunkDuration}초)`)
 
       const progressPercent =
         chunkIdx + 1 === numChunks ? 100 : Math.floor((chunkEnd / recordCnt) * 100)
@@ -510,7 +574,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
     }
 
     const totalDuration = ((Date.now() - startTime) / 1000).toFixed(2)
-    console.log(
+    logger.info(
       `\n[${tableName}] 전체 완료 (${totalDuration}초, ${totalProcessed.toLocaleString()}행)`
     )
 
@@ -523,7 +587,10 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
     process.stdout.write(
       JSON.stringify({
         type: 'table-complete',
-        tableName
+        tableName,
+        totalRows: recordCnt,
+        successRows: totalProcessed,
+        failedRows: totalFailed
       }) + '\n'
     )
 
@@ -533,7 +600,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
       success: true,
       directInserted: directMode ? true : undefined
     }
-    console.log(JSON.stringify(result))
+    console.log('\n' + JSON.stringify(result) + '\n')
     return result
   } catch (err) {
     if (directContext) {
@@ -548,7 +615,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
       success: false,
       error: (err as Error).message
     }
-    console.error('worker-runner error:', err)
+    logger.error('worker-runner error:', err)
     console.log(JSON.stringify(result))
     return result
   }
@@ -557,7 +624,7 @@ async function runWorker(task: WorkerTask): Promise<WorkerResult> {
 async function main(): Promise<void> {
   const taskEnv = process.env.TASK
   if (!taskEnv) {
-    console.error('TASK environment variable is missing.')
+    logger.error('TASK environment variable is missing.')
     process.exit(1)
   }
 
@@ -568,9 +635,9 @@ async function main(): Promise<void> {
     const fd = await fs.promises.open(result.sqlPath, 'r+')
     await fd.sync()
     await fd.close()
-    console.log(`[FLUSH] ${result.tableName} flush complete`)
+    logger.info(`[FLUSH] ${result.tableName} flush complete`)
   } catch (e) {
-    console.warn('fsync failed:', e)
+    logger.warn('fsync failed:', e)
   }
 
   await new Promise((res) => setTimeout(res, 500))
