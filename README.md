@@ -1,157 +1,162 @@
-# <img src="docs/images/yuja.png" alt="icon" width="50" style="vertical-align: middle;"> 여깄덤 <small> - 시간을 아껴주는 DB 파트너</small>
+<h1 align="center">
+  <img src="docs/images/yuja.png" width="65">
+  <br/>
+  <strong>Here’s Dummy</strong>
+</h1>
 
-<p align="center">
-  <a href="README.md">🇰🇷 한국어</a> • <a href="README.en.md">🇺🇸 English</a>
-</p>
-
-<p align="center">
- <a href="http://k13b201.p.ssafy.io/">🌐 Website - open-source</a> 
-</p>
-
-<p align="center">
-  <a href="./LICENSE">
-    <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License">
-  </a>
-  <a href="https://github.com/yuja201/here-is-dummy/releases">
-    <img src="https://img.shields.io/github/v/release/yuja201/here-is-dummy" alt="Releases">
-  </a>
-  <a href="https://www.buymeacoffee.com/heresdummy">
-    <img src="https://img.shields.io/badge/-Buy%20Me%20a%20Coffee-orange?logo=buy-me-a-coffee&logoColor=white" alt="Buy Me A Coffee">
-  </a>
-</p>
+<h3 align="center">Your time-saving DB partner</h3>
 
 </br>
 
-## 목차
-
-- [프로젝트 소개](#-프로젝트-소개)
-- [주요 기능](#-주요-기능)
-- [시작하기](#-시작하기)
-- [사용 방법](#-사용-방법)
-- [기술 스택](#️-기술-스택)
-- [개발자용 가이드](#-개발자용-가이드)
-- [기여하기](#-기여하기)
-- [라이선스](#-라이선스)
-- [문의 및 지원](#-문의-및-지원)
-
-</br>
-
-## 📌 프로젝트 소개
-
-<strong>여깄덤(Here’s Dummy)</strong>은 데이터베이스 스키마를 자동으로 분석하고, AI 또는 Faker.js를 활용하여 현실적인 대용량 더미 데이터를 생성하는 데스크탑 애플리케이션입니다. 개발 및 테스트 단계에서 필요한 데이터를 쉽고 빠르게 확보하여 생산성을 높일 수 있습니다.
-
-**[ 랜딩 페이지 바로가기](http://k13b201.p.ssafy.io/)**
-
-</br>
-
-## 핵심 기능
-
-여깄덤은 크게 **데이터 생성**과 **성능 테스트** 두 가지 영역에서 개발자와 테스터의 생산성을 극대화합니다.
-
-### 1. 지능형 더미 데이터 생성
-
-- `스키마 자동 분석`: 테이블 구조, 제약 조건, 관계(FK)를 자동으로 파악하고 데이터 생성 규칙을 **추천**합니다.
-- `다중 데이터베이스 지원`: **MySQL, PostgreSQL** 등 다양한 DB에 연결하여 데이터를 생성할 수 있습니다.
-- `고속 대량 생성`: **Faker.js 기반**으로 10만 건 데이터를 약 10초 내에 생성 및 삽입할 수 있습니다.
-- `AI 기반 생성`: **GPT, Claude, Gemini**를 활용하여 컬럼의 문맥에 맞는 똑똑하고 현실적인 데이터를 생성합니다.
-- `파일 기반 데이터 변환`: **CSV, TXT, JSON** 파일을 업로드하여 DB 구조에 맞게 데이터를 변환하고 삽입합니다.
-
-### 2. DB 성능 및 안정성 테스트 (New Feature Highlight!)
-
-- `테스트 자동 수행`: 다양한 부하 테스트(Load, Stress, Spike)를 자동 수행합니다.
-- `사용자 쿼리 테스트`: 쿼리 성능을 분석하고 개선 방안을 추천해드립니다.
-- `테스트 히스토리`: 진행된 테스트 이력을 확인할 수 있습니다.
-  </br>
-
-## 🚀 시작하기
-
-### 다운로드 및 설치
-
-최신 릴리즈는 [Releases 페이지](https://github.com/yuja201/here-is-dummy/releases)에서 다운로드하실 수 있습니다.
-
-- **Windows**: `HeresDummy-Setup-{version}.exe` 파일 실행
-- **macOS**: `HeresDummy-{version}.dmg` 파일을 열어 Applications 폴더로 드래그
-- **Linux**: `HeresDummy-{version}.AppImage` 파일에 실행 권한 부여 (`chmod +x`) 후 실행
-
-</br>
-</br>
-
-## 📖 사용 가이드
-
-### 1️⃣ 프로젝트 생성 및 DB 연결
-
-`+` 버튼을 눌러 프로젝트를 생성하고, MySQL, PostgreSQL 등의 접속 정보를 입력하여 DB를 연결합니다. `연결 테스트`를 통해 상태를 미리 확인할 수 있습니다.
-
+<!-- 언어 선택 -->
 <p align="center">
-  <img src="docs/images/create_project.gif" alt="프로젝트 생성 및 DB 연결" width="80%">
+  <a href="README.ko.md">🇰🇷 한국어</a> • 
+  <a href="README.md">🇺🇸 English</a>
+</p>
+
+<!-- Main links -->
+<p align="center">
+  <a href="https://heresdummy.co.kr/">🌐 Website</a> •
+  <a href="https://github.com/yuja201/here-is-dummy/releases">⬇️ Releases</a> •
+  <a href="https://www.buymeacoffee.com/heresdummy">☕ Support</a>
+</p>
+
+<!-- Badges -->
+<p align="center">
+  <img src="https://img.shields.io/badge/License-MIT-blue?style=flat-square">
+  <img src="https://img.shields.io/github/v/release/yuja201/here-is-dummy?style=flat-square">
 </p>
 
 <br/>
 
-### 2️⃣ 스키마 확인 및 데이터 규칙 설정
+## Table of Contents
 
-DB가 연결되면 테이블 목록이 자동으로 분석되어 표시됩니다. 데이터를 생성할 테이블을 선택하고, 컬럼별로 **Faker(랜덤값), AI(지능형 생성), 파일 업로드** 중 원하는 방식을 설정하세요.
+- [Introduction](#-introduction)
+- [Key Features](#-key-features)
+- [Getting Started](#-getting-started)
+- [User Guide](#-user-guide)
+- [Tech Stack](#️-tech-stack)
+- [Developer Guide](#-developer-guide)
+- [Advanced Configuration](#️-advanced-configuration)
+- [Contributing](#-contributing)
+- [License](#-license)
+- [Contact & Support](#-contact--support)
+
+<br/>
+
+## 📌 Introduction
+
+<strong>Here’s Dummy</strong> is a desktop application that automatically analyzes database schemas and utilizes AI or Faker.js to generate realistic, high-volume dummy data. It allows you to quickly secure the necessary data during development and testing phases, significantly boosting productivity.
+
+**[➡️ Visit Landing Page](https://heresdummy.co.kr/)**
+
+<br/>
+
+## ✨ Key Features
+
+Here's Dummy maximizes productivity for developers and testers in two main areas: **Data Generation** and **Performance Testing**.
+
+### 1. Intelligent Dummy Data Generation
+
+- `Schema Auto-Analysis`: Automatically analyzes table structures, constraints, and relationships (FK).
+- `Multi-Database Support`: Supports connection to various DBs like **MySQL and PostgreSQL**.
+- `High-Speed Generation`: Capable of generating and inserting **100,000 records** in approximately **10 seconds** using Faker.js.
+- `AI-Powered Generation`: Utilizes **GPT, Claude, and Gemini** to generate smart, contextually relevant data.
+- `File-Based Conversion`: Upload **CSV, TXT, or JSON** files to convert and insert data matching the DB structure.
+
+### 2. DB Performance & Stability Test (New Feature Highlight!)
+
+- `Index Test`: Analyzes the effectiveness of your database indexes.
+- `User Query Test`: Measures and evaluates SQL query performance.
+- `Test History`: View and compare past test results.
+
+<br/>
+
+## 🚀 Getting Started
+
+### Download & Install
+
+Get the latest release from the [Releases page](https://github.com/yuja201/here-is-dummy/releases).
+
+- Run the installer: `heresdummy-setup.exe`
+
+<br/>
+
+## 📖 User Guide
+
+### 1️⃣ Create Project & Connect DB
+
+Click the `+` button to create a project and enter connection details for MySQL, PostgreSQL, etc. You can check the status in advance via `Test Connection`.
 
 <p align="center">
-  <img src="docs/images/schema_check.gif" alt="스키마 및 규칙 설정" width="80%">
+  <img src="docs/images/create_project.gif" alt="Project Creation and DB Connection" width="80%">
 </p>
 
 <br/>
 
-### 3️⃣ 데이터 생성 및 삽입
+### 2️⃣ Check Schema & Set Data Rules
 
-생성할 데이터 개수(Row)를 입력하고 `데이터 생성` 버튼을 누릅니다. 생성된 결과는 `SQL 파일로 내보내기`하거나 `DB에 즉시 삽입`할 수 있습니다.
+Once the DB is connected, the table list is automatically analyzed and displayed. Select a table and set the desired generation method for each column: **Faker (Random), AI (Intelligent), or File Upload**.
 
 <p align="center">
-  <img src="docs/images/data_creation.gif" alt="데이터 생성 및 삽입" width="80%">
+  <img src="docs/images/schema_check.gif" alt="Schema Check and Rule Setup" width="80%">
 </p>
 
 <br/>
 
-### 4️⃣ 인덱스 테스트
+### 3️⃣ Generate & Insert Data
 
-**인덱스 테스트**의 `테스트 시작` 버튼을 눌러 데이터베이스 인덱스의 효율성을 분석할 수 있습니다.
-
-인덱스는 기준에 따라 정상, 권장, 심각으로 분류됩니다. 권장이나 심각으로 분류된 인덱스는 문제점과 개선사항이 함께 표시됩니다. 사용하지 않거나 효율이 낮은 인덱스를 삭제해보세요.
+Enter the number of rows to generate and click the `Generate Data` button. The result can be `Exported to SQL File` or `Inserted Directly into DB`.
 
 <p align="center">
-  <img src="docs/images/index_test.gif" alt="성능 테스트 대시보드" width="80%">
+  <img src="docs/images/data_creation.gif" alt="Data Generation and Insertion" width="80%">
 </p>
 
 <br/>
 
-### 5️⃣ 사용자 쿼리 테스트
+### 4️⃣ Index Test
 
-**사용자 쿼리 테스트**의 `테스트 시작` 버튼을 눌러 테스트하고 싶은 SQL을 입력하고, 실행 횟수와 타임아웃을 설정한 뒤 테스트를 진행할 수 있습니다.
+Click the `Start Test` button in the **Index Test** tab to analyze the efficiency of your database indexes.
 
-**문법 검증**을 통해 쿼리가 정상적인지 확인 할 수 있으며, 확인하지 않아도 시작시 문법 검증을 진행하여 정상쿼리만 테스트가 진행됩니다.
-
-테스트 결과는 평균 응답 시간과 P50, P95 등의 응답시간 분포를 제공합니다.
-또한 쿼리 실행계획을 분석하여 어떻게 쿼리가 진행되는지 확인 할 수 있습니다.
+Indexes are classified as **Normal**, **Recommended**, or **Critical**. Indexes marked as Recommended or Critical will display issues along with improvement suggestions. Try deleting unused or inefficient indexes.
 
 <p align="center">
-  <img src="docs/images/query_Test.gif" alt="성능 테스트 대시보드" width="80%">
-</p>
-
-AI 응답 생성 버튼을 눌러 쿼리의 개선 사항을 추천 받을 수 있습니다. 서브쿼리와 조인 등 복잡한 쿼리를 더욱 효율적으로 개선하고, 필요한 인덱스를 추가해보세요.
-
-<p align="center">
-  <img src="docs/images/test_history.gif" alt="성능 테스트 대시보드" width="80%">
+  <img src="docs/images/index_test.gif" alt="Index Test Dashboard" width="80%">
 </p>
 
 <br/>
 
-### 6️⃣ 테스트 히스토리
+### 5️⃣ User Query Test
 
-테스트 히스토리 탭에서 진행한 테스트 이력을 확인할 수 있습니다. 결과를 비교해 포트폴리오에 사용해보세요.
+In the **User Query Test** tab, click `Start Test`, enter the SQL you want to test, set the execution count and timeout, and proceed.
+
+**Syntax Validation** ensures the query is valid before running. (Validation is also performed automatically upon start).
+
+The results provide **Average Response Time**, **P50**, **P95** distributions, and **Explain Plan** analysis to visualize how the query is executed.
 
 <p align="center">
-  <img src="docs/images/test_history.gif" alt="성능 테스트 대시보드" width="80%">
+  <img src="docs/images/query_Test.gif" alt="User Query Test Dashboard" width="80%">
+</p>
+
+Click the **AI Response Generation** button to get optimization recommendations. Improve complex queries (like Subqueries and Joins) and add necessary indexes based on the advice.
+
+<p align="center">
+  <img src="docs/images/test_history.gif" alt="AI Recommendations" width="80%">
 </p>
 
 <br/>
 
-## ⚙️ 기술 스택
+### 6️⃣ Test History
+
+You can view past test logs in the **Test History** tab. Compare results and use them for your portfolio or performance reports.
+
+<p align="center">
+  <img src="docs/images/test_history.gif" alt="Test History" width="80%">
+</p>
+
+<br/>
+
+## 🛠️ Tech Stack
 
 - **Core**: Electron, React, TypeScript, Vite
 - **Database**: mysql2, pg
@@ -160,52 +165,98 @@ AI 응답 생성 버튼을 눌러 쿼리의 개선 사항을 추천 받을 수 �
 
 <br/>
 
-## 💻 개발자용 가이드
+## 💻 Developer Guide
 
-### 요구사항
+### Requirements
 
 - Node.js 18+
-- npm 또는 yarn
+- npm or yarn
 
-### 로컬에서 실행하기
+### Run Locally
 
 ```bash
-# 1. 저장소 클론
-git clone https://github.com/yuja201/here-is-dummy.git
+# 1. Clone the repository
+git clone [https://github.com/yuja201/here-is-dummy.git](https://github.com/yuja201/here-is-dummy.git)
 cd here-is-dummy
 
-# 2. 의존성 설치
+# 2. Install dependencies
 npm install
 
-# 3. .env 파일 설정
+# 3. Set up .env file
 cp .env.example .env
-# .env 파일에 API 키를 추가하세요
+# Add your API keys to the .env file
 
-# 4. 개발 서버 실행
+# 4. Run development server
 npm run dev
 ```
 
+</br>
+
+## ⚙️ Advanced Configuration
+
+### Change API Endpoints & Timeouts
+
+To modify advanced AI settings (BASE_URL, TIMEOUT, etc.):
+
+**Windows**
+
+```
+C:\Users\{USER}\AppData\Roaming\Here's Dummy\.env
+```
+
+Edit the .env file:
+
+```
+# API endpoints
+
+OPENAI_BASE_URL=https://api.openai.com/v1
+ANTHROPIC_BASE_URL=https://api.anthropic.com
+GOOGLE_BASE_URL=https://generativelanguage.googleapis.com
+
+# Timeout (ms)
+
+OPENAI_TIMEOUT=60000
+ANTHROPIC_TIMEOUT=60000
+GOOGLE_TIMEOUT=60000
+
+# Retry Limit
+
+OPENAI_MAX_RETRIES=2
+ANTHROPIC_MAX_RETRIES=2
+GOOGLE_MAX_RETRIES=2
+```
+
+Restart the app after saving.
+
 <br/>
 
-## 🤝 기여하기
+## 🤝 Contributing
 
-기여를 환영합니다! 버그 리포트나 기능 제안은 <strong>[Issues](https://github.com/yuja201/here-is-dummy/issues)</strong>에 자유롭게 남겨주세요.
+We welcome all contributions!  
+Bug reports and feature suggestions can be submitted through our **[Issues](https://github.com/yuja201/here-is-dummy/issues)** page.
 
-<br/>
+</br>
 
-## 📝 라이선스
+<p align="center">
+  <a href="CONTRIBUTOR.md" style="padding:10px 18px; background:#134686; color:white; text-decoration:none; border-radius:8px; font-weight:600;">
+    🇰🇷 한국어 매뉴얼
+  </a>
+  &nbsp;&nbsp;
+  <a href="CONTRIBUTOR.en.md" style="padding:10px 18px; background:#1f2937; color:white; text-decoration:none; border-radius:8px; font-weight:600;">
+    🇺🇸 English Guide
+  </a>
+</p>
 
-본 프로젝트는 <strong> [MIT 라이선스](./LICENSE)를 따릅니다.
+</br>
 
-<br/>
+## 📞 Contact & Support
 
-## 📞 문의 및 지원
+Bug Reports & Feature Requests: GitHub Issues
 
-- **버그 및 기능 제안**: [GitHub Issues](https://github.com/yuja201/here-is-dummy/issues)
-- **기타 문의**: [Google Forms](https://forms.gle/ehjfVpaeZMGxTcoU7)
+Other Inquiries: Google Forms
 
-<br/>
+</br>
 
 ---
 
-이 프로젝트가 유용하다면 Star ⭐를 눌러주세요!
+If you find this project useful, please give it a Star ⭐!
