@@ -1,299 +1,211 @@
-# <img src="docs/images/yuja.png" alt="icon" width="50" style="vertical-align: middle;"> Here's Dummy
+# <img src="docs/images/yuja.png" alt="icon" width="50" style="vertical-align: middle;"> 여깄덤 <small> - 시간을 아껴주는 DB 파트너</small>
 
-데이터베이스 스키마를 자동으로 분석하고 고품질 더미 데이터를 생성해주는 데스크탑 애플리케이션입니다.
+<p align="center">
+  <a href="README.md">🇰🇷 한국어</a> • <a href="README.en.md">🇺🇸 English</a>
+</p>
 
-![alt text](docs/images/main.png)
+<p align="center">
+ <a href="http://k13b201.p.ssafy.io/">🌐 Website - open-source</a> 
+</p>
 
-## ✨ 주요 기능
+<p align="center">
+  <a href="./LICENSE">
+    <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License">
+  </a>
+  <a href="https://github.com/yuja201/here-is-dummy/releases">
+    <img src="https://img.shields.io/github/v/release/yuja201/here-is-dummy" alt="Releases">
+  </a>
+  <a href="https://www.buymeacoffee.com/heresdummy">
+    <img src="https://img.shields.io/badge/-Buy%20Me%20a%20Coffee-orange?logo=buy-me-a-coffee&logoColor=white" alt="Buy Me A Coffee">
+  </a>
+</p>
 
-### 🔌 다중 데이터베이스 지원
+</br>
 
-> MySQL, PostgreSQL을 연결할 수 있어요
+## 목차
 
-### 📊 스키마 자동 분석
+- [프로젝트 소개](#-프로젝트-소개)
+- [주요 기능](#-주요-기능)
+- [시작하기](#-시작하기)
+- [사용 방법](#-사용-방법)
+- [기술 스택](#️-기술-스택)
+- [개발자용 가이드](#-개발자용-가이드)
+- [기여하기](#-기여하기)
+- [라이선스](#-라이선스)
+- [문의 및 지원](#-문의-및-지원)
 
-> 테이블 구조와 관계를 자동으로 파악해요
+</br>
 
-### ⚡ 대량 더미 데이터 생성
+## 📌 프로젝트 소개
 
-> Faker 생성 방식을 선택하면 10만개의 데이터를 약 10초만에 생성할 수 있어요!
+<strong>여깄덤(Here’s Dummy)</strong>은 데이터베이스 스키마를 자동으로 분석하고, AI 또는 Faker.js를 활용하여 현실적인 대용량 더미 데이터를 생성하는 데스크탑 애플리케이션입니다. 개발 및 테스트 단계에서 필요한 데이터를 쉽고 빠르게 확보하여 생산성을 높일 수 있습니다.
 
-### 🤖 AI 기반 데이터 생성
+**[ 랜딩 페이지 바로가기](http://k13b201.p.ssafy.io/)**
 
-> Claude, GPT, Gemini를 활용해 똑똑한 데이터를 생성해요!
+</br>
 
-### 📁 파일 기반 데이터 삽입
+## 핵심 기능
 
-> 수집한 오픈데이터를 우리 DB에 맞게 편하게 삽입해요!
+여깄덤은 크게 **데이터 생성**과 **성능 테스트** 두 가지 영역에서 개발자와 테스터의 생산성을 극대화합니다.
 
-## 🚀 빠른 시작
+### 1. 지능형 더미 데이터 생성
+
+- `스키마 자동 분석`: 테이블 구조, 제약 조건, 관계(FK)를 자동으로 파악하고 데이터 생성 규칙을 **추천**합니다.
+- `다중 데이터베이스 지원`: **MySQL, PostgreSQL** 등 다양한 DB에 연결하여 데이터를 생성할 수 있습니다.
+- `고속 대량 생성`: **Faker.js 기반**으로 10만 건 데이터를 약 10초 내에 생성 및 삽입할 수 있습니다.
+- `AI 기반 생성`: **GPT, Claude, Gemini**를 활용하여 컬럼의 문맥에 맞는 똑똑하고 현실적인 데이터를 생성합니다.
+- `파일 기반 데이터 변환`: **CSV, TXT, JSON** 파일을 업로드하여 DB 구조에 맞게 데이터를 변환하고 삽입합니다.
+
+### 2. DB 성능 및 안정성 테스트 (New Feature Highlight!)
+
+- `테스트 자동 수행`: 다양한 부하 테스트(Load, Stress, Spike)를 자동 수행합니다.
+- `사용자 쿼리 테스트`: 쿼리 성능을 분석하고 개선 방안을 추천해드립니다.
+- `테스트 히스토리`: 진행된 테스트 이력을 확인할 수 있습니다.
+  </br>
+
+## 🚀 시작하기
 
 ### 다운로드 및 설치
 
-최신 릴리스는 [Releases 페이지](https://github.com/yuja201/here-is-dummy/releases)에서 다운로드하실 수 있습니다.
+최신 릴리즈는 [Releases 페이지](https://github.com/yuja201/here-is-dummy/releases)에서 다운로드하실 수 있습니다.
 
-#### Windows
+- **Windows**: `HeresDummy-Setup-{version}.exe` 파일 실행
+- **macOS**: `HeresDummy-{version}.dmg` 파일을 열어 Applications 폴더로 드래그
+- **Linux**: `HeresDummy-{version}.AppImage` 파일에 실행 권한 부여 (`chmod +x`) 후 실행
 
-- `HeresDummy-Setup-{version}.exe` 다운로드 후 실행
-- 설치 마법사를 따라 진행
+</br>
+</br>
 
-#### macOS
+## 📖 사용 가이드
 
-- `HeresDummy-{version}.dmg` 다운로드
-- DMG 파일을 열고 애플리케이션 폴더로 드래그
+### 1️⃣ 프로젝트 생성 및 DB 연결
 
-#### Linux
+`+` 버튼을 눌러 프로젝트를 생성하고, MySQL, PostgreSQL 등의 접속 정보를 입력하여 DB를 연결합니다. `연결 테스트`를 통해 상태를 미리 확인할 수 있습니다.
 
-- `HeresDummy-{version}.AppImage` 다운로드
-- 실행 권한 부여: `chmod +x HeresDummy-{version}.AppImage`
-- 실행: `./HeresDummy-{version}.AppImage`
+<p align="center">
+  <img src="docs/images/create_project.gif" alt="프로젝트 생성 및 DB 연결" width="80%">
+</p>
 
-## 📖 사용 방법
+<br/>
 
-### 1. 프로젝트 생성 (데이터베이스 연결)
+### 2️⃣ 스키마 확인 및 데이터 규칙 설정
 
-1. 애플리케이션 실행 후 `+` 버튼 클릭
-2. 데이터베이스 유형 선택 (MySQL, PostgreSQL)
-3. 연결 정보 입력 (호스트, 포트, 사용자명, 비밀번호, 데이터베이스명)
-4. `연결 테스트` 후 `연결`
-   ![alt text](docs/images/project_creation.png)
+DB가 연결되면 테이블 목록이 자동으로 분석되어 표시됩니다. 데이터를 생성할 테이블을 선택하고, 컬럼별로 **Faker(랜덤값), AI(지능형 생성), 파일 업로드** 중 원하는 방식을 설정하세요.
 
-### 2. 스키마 가져오기
+<p align="center">
+  <img src="docs/images/schema_check.gif" alt="스키마 및 규칙 설정" width="80%">
+</p>
 
-- 연결된 데이터베이스의 테이블 목록이 자동으로 표시됩니다
-- 더미 데이터를 생성할 테이블을 선택하세요
-  ![alt text](docs/images/project_tables.png)
+<br/>
 
-### 3. 데이터 생성 방식 선택
+### 3️⃣ 데이터 생성 및 삽입
 
-- 테이블의 칼럼별 데이터 생성 방식을 선택하세요
+생성할 데이터 개수(Row)를 입력하고 `데이터 생성` 버튼을 누릅니다. 생성된 결과는 `SQL 파일로 내보내기`하거나 `DB에 즉시 삽입`할 수 있습니다.
 
-#### Faker 생성
+<p align="center">
+  <img src="docs/images/data_creation.gif" alt="데이터 생성 및 삽입" width="80%">
+</p>
 
-- 사전 정의된 데이터 타입 선택
-- 이름, 이메일, 전화번호, 주소 등 다양한 형식 지원
-  ![alt text](docs/images/rule_faker.png)
+<br/>
 
-#### AI 생성
+### 4️⃣ 인덱스 테스트
 
-- 사전 정의된 데이터 타입 선택
-- Claude, GPT, OpenAI 중 선택
-- API 키 입력(UI에서 입력하면 앱을 재실행할 때 자동 완성됩니다)
-- 컨텍스트에 맞는 데이터 자동 생성
+**인덱스 테스트**의 `테스트 시작` 버튼을 눌러 데이터베이스 인덱스의 효율성을 분석할 수 있습니다.
 
-##### API 키 발급 방법
+인덱스는 기준에 따라 정상, 권장, 심각으로 분류됩니다. 권장이나 심각으로 분류된 인덱스는 문제점과 개선사항이 함께 표시됩니다. 사용하지 않거나 효율이 낮은 인덱스를 삭제해보세요.
 
-- **OpenAI (GPT)**: [OpenAI Platform](https://platform.openai.com/api-keys)에서 발급
-- **Anthropic (Claude)**: [Anthropic Console](https://console.anthropic.com/)에서 발급
-- **Google (Gemini)**: [Google AI Studio](https://makersuite.google.com/app/apikey)에서 발급
+<p align="center">
+  <img src="docs/images/index_test.gif" alt="성능 테스트 대시보드" width="80%">
+</p>
 
-API 키는 한 번 입력하면 앱에 안전하게 저장되어 다음에도 자동으로 불러옵니다.
+<br/>
 
-#### 파일 업로드
+### 5️⃣ 사용자 쿼리 테스트
 
-- `파일로 추가` 버튼을 눌러 CSV, TXT, JSON 파일 업로드
-- 컬럼 매핑 후 실제 데이터 패턴 기반 생성
-  ![alt text](docs/images/file_upload.png)
+**사용자 쿼리 테스트**의 `테스트 시작` 버튼을 눌러 테스트하고 싶은 SQL을 입력하고, 실행 횟수와 타임아웃을 설정한 뒤 테스트를 진행할 수 있습니다.
 
-### 4. 데이터 생성 및 내보내기
+**문법 검증**을 통해 쿼리가 정상적인지 확인 할 수 있으며, 확인하지 않아도 시작시 문법 검증을 진행하여 정상쿼리만 테스트가 진행됩니다.
 
-1. 생성할 레코드 수 지정
-2. `데이터 생성` 클릭
-3. SQL문을 출력하거나 바로 DB에 삽입하기
-   ![alt text](docs/images/insert_method.png)
-   ![alt text](docs/images/insert_result.png)
+테스트 결과는 평균 응답 시간과 P50, P95 등의 응답시간 분포를 제공합니다.
+또한 쿼리 실행계획을 분석하여 어떻게 쿼리가 진행되는지 확인 할 수 있습니다.
 
-## ⚙️ 고급 설정
+<p align="center">
+  <img src="docs/images/query_Test.gif" alt="성능 테스트 대시보드" width="80%">
+</p>
 
-### API 엔드포인트 및 타임아웃 설정
+AI 응답 생성 버튼을 눌러 쿼리의 개선 사항을 추천 받을 수 있습니다. 서브쿼리와 조인 등 복잡한 쿼리를 더욱 효율적으로 개선하고, 필요한 인덱스를 추가해보세요.
 
-AI 생성 기능의 고급 설정(BASE_URL, TIMEOUT 등)을 변경하려면:
+<p align="center">
+  <img src="docs/images/test_history.gif" alt="성능 테스트 대시보드" width="80%">
+</p>
 
-**Windows**
+<br/>
 
-```
-C:\Users\{사용자명}\AppData\Roaming\heresdummy\.env
-```
+### 6️⃣ 테스트 히스토리
 
-**macOS**
+테스트 히스토리 탭에서 진행한 테스트 이력을 확인할 수 있습니다. 결과를 비교해 포트폴리오에 사용해보세요.
 
-```
-~/Library/Application Support/heresdummy/.env
-```
+<p align="center">
+  <img src="docs/images/test_history.gif" alt="성능 테스트 대시보드" width="80%">
+</p>
 
-**Linux**
+<br/>
 
-```
-~/.config/heresdummy/.env
-```
+## ⚙️ 기술 스택
 
-위 경로의 `.env` 파일을 텍스트 에디터로 열어 다음 설정을 수정할 수 있습니다:
+- **Core**: Electron, React, TypeScript, Vite
+- **Database**: mysql2, pg
+- **Data Generation**: @faker-js/faker, openai, @anthropic-ai/sdk, @google/generative-ai
+- **State Management**: zustand
 
-```properties
-# API 엔드포인트
-OPENAI_BASE_URL=https://api.openai.com/v1
-ANTHROPIC_BASE_URL=https://api.anthropic.com
-GOOGLE_BASE_URL=https://generativelanguage.googleapis.com
-
-# 타임아웃 설정 (밀리초)
-OPENAI_TIMEOUT=60000
-ANTHROPIC_TIMEOUT=60000
-GOOGLE_TIMEOUT=60000
-
-# 최대 재시도 횟수
-OPENAI_MAX_RETRIES=2
-ANTHROPIC_MAX_RETRIES=2
-GOOGLE_MAX_RETRIES=2
-```
-
-설정 변경 후 애플리케이션을 재시작하면 적용됩니다.
-
-## 🛠️ 기술 스택
-
-### Core
-
-- **Electron** v38.4.0
-- **React** v19.1.1
-- **TypeScript** v5.9.2
-- **Vite** v7.1.6
-
-### Database Drivers
-
-- **mysql2**
-- **pg**
-
-### AI & Data Generation
-
-- **@anthropic-ai/sdk**
-- **openai**
-- **@google/generative-ai**
-- **@faker-js/faker**
-
-### State Management & Routing
-
-- **zustand**
-- **react-router-dom**
+<br/>
 
 ## 💻 개발자용 가이드
 
 ### 요구사항
 
-- Node.js 18 이상
+- Node.js 18+
 - npm 또는 yarn
 
-### 설치 및 실행
+### 로컬에서 실행하기
 
 ```bash
-# 저장소 클론
+# 1. 저장소 클론
 git clone https://github.com/yuja201/here-is-dummy.git
-cd heresdummy
+cd here-is-dummy
 
-# 의존성 설치
+# 2. 의존성 설치
 npm install
 
-# 개발 모드 실행
-npm run dev
-
-# 타입 체크
-npm run typecheck
-
-# 린트
-npm run lint
-
-# 포맷팅
-npm run format
-```
-
-### 환경 변수 설정 (개발 모드)
-
-개발 모드에서는 프로젝트 루트에 `.env` 파일을 생성하세요:
-
-```bash
+# 3. .env 파일 설정
 cp .env.example .env
+# .env 파일에 API 키를 추가하세요
+
+# 4. 개발 서버 실행
+npm run dev
 ```
 
-그리고 API 키를 입력하세요:
-
-```properties
-OPENAI_API_KEY=your_openai_api_key_here
-ANTHROPIC_API_KEY=your_anthropic_api_key_here
-GOOGLE_API_KEY=your_google_api_key_here
-```
-
-### 빌드
-
-```bash
-# 전체 빌드
-npm run build
-
-# 플랫폼별 빌드
-npm run build:win     # Windows
-npm run build:mac     # macOS
-npm run build:linux   # Linux
-
-# 압축 해제 빌드 (테스트용)
-npm run build:unpack
-```
-
-### 프로젝트 구조
-
-```
-heresdummy/
-├── src/
-│   ├── main/          # Electron 메인 프로세스
-│   ├── renderer/      # React UI 코드
-│   └── preload/       # Preload 스크립트
-├── resources/         # 앱 아이콘, 리소스
-├── out/               # 빌드 결과물
-└── dist/              # 배포용 패키지
-```
+<br/>
 
 ## 🤝 기여하기
 
-~~기여를 환영합니다! 자세한 내용은 [CONTRIBUTING.md](./docs/CONTRIBUTING.md)를 참고해주세요.~~
+기여를 환영합니다! 버그 리포트나 기능 제안은 <strong>[Issues](https://github.com/yuja201/here-is-dummy/issues)</strong>에 자유롭게 남겨주세요.
 
-현재는 개발 진행 중인 관계로 기여를 받지 않고 있습니다.
-
-### 버그 리포트 및 기능 제안
-
-[Issues](https://github.com/yuja201/here-is-dummy/issues)에서 버그 리포트나 기능 제안을 남겨주세요.
-
-## 🔒 개인정보 보호
-
-- API 키는 로컬 디바이스에만 저장되며 외부로 전송되지 않습니다
-- 생성된 더미 데이터는 사용자가 지정한 데이터베이스에만 저장됩니다
-- 애플리케이션은 사용자 데이터를 수집하지 않습니다
+<br/>
 
 ## 📝 라이선스
 
-이 프로젝트는 MIT 라이선스 하에 배포됩니다. 자세한 내용은 [LICENSE](./LICENSE) 파일을 참고하세요.
+본 프로젝트는 <strong> [MIT 라이선스](./LICENSE)를 따릅니다.
 
-```
-MIT License
-
-Copyright (c) 2025 yuja
-```
+<br/>
 
 ## 📞 문의 및 지원
 
-- 이슈 트래커: [GitHub Issues](https://github.com/yuja201/here-is-dummy/issues)
-- 소통 창구: [Google Forms](https://forms.gle/ehjfVpaeZMGxTcoU7)
+- **버그 및 기능 제안**: [GitHub Issues](https://github.com/yuja201/here-is-dummy/issues)
+- **기타 문의**: [Google Forms](https://forms.gle/ehjfVpaeZMGxTcoU7)
 
-## 🙏 감사의 말
-
-이 프로젝트는 다음 오픈소스 라이브러리를 사용합니다:
-
-- [Electron](https://www.electronjs.org/)
-- [React](https://react.dev/)
-- [Faker.js](https://fakerjs.dev/)
-- [Node.js](https://nodejs.org/)
+<br/>
 
 ---
 
-⭐ 이 프로젝트가 유용하다면 Star를 많이 많이 눌러주세요!
-
-## ☕ 후원하기
-
-만약 저희의 서비스가 도움이 되셨다면, 아래 버튼으로 커피 한 잔 부탁드립니다. 😄
-
-[![커피 한 잔 사기](https://img.shields.io/badge/-Buy%20Me%20a%20Coffee-orange?logo=buy-me-a-coffee&logoColor=white&style=for-the-badge)](https://www.buymeacoffee.com/heresdummy)
+이 프로젝트가 유용하다면 Star ⭐를 눌러주세요!
