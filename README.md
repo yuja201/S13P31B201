@@ -30,6 +30,7 @@
 - [사용 방법](#-사용-가이드)
 - [기술 스택](#️-기술-스택)
 - [개발자용 가이드](#-개발자용-가이드)
+- [고급 설정](#️-고급-설정)
 - [기여하기](#-기여하기)
 - [라이선스](#-라이선스)
 - [문의 및 지원](#-문의-및-지원)
@@ -223,6 +224,10 @@ GOOGLE_MAX_RETRIES=2
 ## 🤝 기여하기
 
 기여를 환영합니다! 버그 리포트나 기능 제안은 <strong>[Issues](https://github.com/yuja201/here-is-dummy/issues)</strong>에 자유롭게 남겨주세요.
+
+다음 매뉴얼을 참고해주세요.
+
+<a href="CONTRIBUTOR.md">🇰🇷 한국어</a> • <a href="CONTRIBUTOR.en.md">🇺🇸 English</a>
 
 <br/>
 

@@ -30,6 +30,7 @@
 - [User Guide](#-user-guide)
 - [Tech Stack](#️-tech-stack)
 - [Developer Guide](#-developer-guide)
+- [Advanced Configuration](#️-advanced-configuration)
 - [Contributing](#-contributing)
 - [License](#-license)
 - [Contact & Support](#-contact--support)
@@ -225,6 +226,10 @@ Restart the app after saving.
 ## 🤝 Contributing
 
 Contributions are welcome! Feel free to submit bug reports or feature requests via <strong>Issues</strong>.
+
+Please refer to the following manual.
+
+<a href="CONTRIBUTOR.md">🇰🇷 한국어</a> • <a href="CONTRIBUTOR.en.md">🇺🇸 English</a>
 
 </br>
 
