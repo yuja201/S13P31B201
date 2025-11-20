@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
- <a href="http://k13b201.p.ssafy.io/">🌐 Website - open-source</a> 
+ <a href="https://heresdummy.co.kr/">🌐 Website - open-source</a> 
 </p>
 
 <p align="center">
@@ -40,7 +40,7 @@
 
 <strong>Here’s Dummy</strong> is a desktop application that automatically analyzes database schemas and utilizes AI or Faker.js to generate realistic, high-volume dummy data. It allows you to quickly secure the necessary data during development and testing phases, significantly boosting productivity.
 
-**[➡️ Visit Landing Page](http://k13b201.p.ssafy.io/)**
+**[➡️ Visit Landing Page](https://heresdummy.co.kr/)**
 
 <br/>
 
@@ -50,31 +50,28 @@ Here's Dummy maximizes productivity for developers and testers in two main areas
 
 ### 1. Intelligent Dummy Data Generation
 
-- `Schema Auto-Analysis`: Automatically analyzes table structures, constraints, and relationships (FK) to **recommend** data generation rules.
+- `Schema Auto-Analysis`: Automatically analyzes table structures, constraints, and relationships (FK).
 - `Multi-Database Support`: Supports connection to various DBs like **MySQL and PostgreSQL**.
-- `High-Speed Generation`: Capable of generating and inserting 100,000 records in approximately 10 seconds using **Faker.js**.
+- `High-Speed Generation`: Capable of generating and inserting **100,000 records** in approximately **10 seconds** using Faker.js.
 - `AI-Powered Generation`: Utilizes **GPT, Claude, and Gemini** to generate smart, contextually relevant data.
 - `File-Based Conversion`: Upload **CSV, TXT, or JSON** files to convert and insert data matching the DB structure.
 
 ### 2. DB Performance & Stability Test (New Feature Highlight!)
 
-- `Automated Testing`: Automatically performs various load tests (Load, Stress, Spike).
-- `User Query Test`: Analyzes query performance and recommends optimization strategies.
-- `Test History`: Allows you to view and manage the history of conducted tests.
+- `Index Test`: Analyzes the effectiveness of your database indexes.
+- `User Query Test`: Measures and evaluates SQL query performance.
+- `Test History`: View and compare past test results.
 
 <br/>
 
 ## 🚀 Getting Started
 
-### Download & Installation
+### Download & Install
 
-You can download the latest release from the [Releases Page](https://github.com/yuja201/here-is-dummy/releases).
+Get the latest release from the [Releases page](https://github.com/yuja201/here-is-dummy/releases).
 
-- **Windows**: Run the `HeresDummy-Setup-{version}.exe` file.
-- **macOS**: Open the `HeresDummy-{version}.dmg` file and drag it to the Applications folder.
-- **Linux**: Grant execution permission (`chmod +x`) to the `HeresDummy-{version}.AppImage` file and run it.
+- Run the installer: `heresdummy-setup.exe`
 
-<br/>
 <br/>
 
 ## 📖 User Guide
@@ -151,7 +148,7 @@ You can view past test logs in the **Test History** tab. Compare results and use
 
 <br/>
 
-## ⚙️ Tech Stack
+## 🛠️ Tech Stack
 
 - **Core**: Electron, React, TypeScript, Vite
 - **Database**: mysql2, pg
@@ -186,6 +183,44 @@ npm run dev
 ```
 
 </br>
+
+## ⚙️ Advanced Configuration
+
+### Change API Endpoints & Timeouts
+
+To modify advanced AI settings (BASE_URL, TIMEOUT, etc.):
+
+**Windows**
+
+```
+C:\Users\{USER}\AppData\Roaming\Here's Dummy\.env
+```
+
+Edit the .env file:
+
+```
+# API endpoints
+
+OPENAI_BASE_URL=https://api.openai.com/v1
+ANTHROPIC_BASE_URL=https://api.anthropic.com
+GOOGLE_BASE_URL=https://generativelanguage.googleapis.com
+
+# Timeout (ms)
+
+OPENAI_TIMEOUT=60000
+ANTHROPIC_TIMEOUT=60000
+GOOGLE_TIMEOUT=60000
+
+# Retry Limit
+
+OPENAI_MAX_RETRIES=2
+ANTHROPIC_MAX_RETRIES=2
+GOOGLE_MAX_RETRIES=2
+```
+
+Restart the app after saving.
+
+<br/>
 
 ## 🤝 Contributing
 

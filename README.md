@@ -5,7 +5,7 @@
 </p>
 
 <p align="center">
- <a href="http://k13b201.p.ssafy.io/">🌐 Website - open-source</a> 
+ <a href="https://heresdummy.co.kr/">🌐 Website - open-source</a> 
 </p>
 
 <p align="center">
@@ -40,7 +40,7 @@
 
 <strong>여깄덤(Here’s Dummy)</strong>은 데이터베이스 스키마를 자동으로 분석하고, AI 또는 Faker.js를 활용하여 현실적인 대용량 더미 데이터를 생성하는 데스크탑 애플리케이션입니다. 개발 및 테스트 단계에서 필요한 데이터를 쉽고 빠르게 확보하여 생산성을 높일 수 있습니다.
 
-**[ 랜딩 페이지 바로가기](http://k13b201.p.ssafy.io/)**
+**[ 랜딩 페이지 바로가기](https://heresdummy.co.kr/)**
 
 </br>
 
@@ -70,7 +70,7 @@
 
 최신 릴리즈는 [Releases 페이지](https://github.com/yuja201/here-is-dummy/releases)에서 다운로드하실 수 있습니다.
 
-- `heresdummy-{version}-setup.exe` 파일 실행
+- `heresdummy-setup.exe` 파일 실행
 
 </br>
 
@@ -149,7 +149,7 @@ AI 응답 생성 버튼을 눌러 쿼리의 개선 사항을 추천 받을 수 �
 
 <br/>
 
-## ⚙️ 기술 스택
+## 🛠️ 기술 스택
 
 - **Core**: Electron, React, TypeScript, Vite
 - **Database**: mysql2, pg
@@ -185,9 +185,9 @@ npm run dev
 
 <br/>
 
-## **⚙️ 고급 설정**
+## ⚙️ 고급 설정
 
-### **API 엔드포인트 및 타임아웃 변경**
+### API 엔드포인트 및 타임아웃 변경
 
 AI 생성 기능의 고급 설정(BASE_URL, TIMEOUT 등)을 변경하려면:
 
